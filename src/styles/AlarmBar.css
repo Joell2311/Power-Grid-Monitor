@@ -1,0 +1,72 @@
+.alarm-bar {
+    width: 100%;
+    background: #111827;
+    padding: 10px 20px;
+    box-sizing: border-box;
+    border-bottom: 2px solid #1f2937;
+}
+
+.alarm {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    background: #7f1d1d;
+
+    color: white;
+
+    padding: 14px 20px;
+
+    border-left: 6px solid #ef4444;
+
+    border-radius: 8px;
+}
+
+.alarm-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.alarm-icon {
+    font-size: 30px;
+}
+
+.alarm-info strong {
+    font-size: 18px;
+}
+
+.alarm-info p {
+    margin: 4px 0 0;
+    color: #d1d5db;
+    font-size: 14px;
+}
+
+.alarm-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.alarm-time {
+    color: #fde68a;
+    font-weight: bold;
+}
+
+.alarm-button {
+    border: none;
+    background: #2563eb;
+    color: white;
+
+    padding: 8px 16px;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+
+    transition: 0.3s;
+}
+
+.alarm-button:hover {
+    background: #1d4ed8;
+}
