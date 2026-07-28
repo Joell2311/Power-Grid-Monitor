@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+import { Paper, Box } from "@mui/material";
+
 import {
   MapContainer,
   TileLayer,
   Marker,
   Popup,
   Polyline,
+  useMap,
 } from "react-leaflet";
 
 import "leaflet/dist/leaflet.css";
@@ -14,20 +18,37 @@ import { subestacoes } from "../data/subestacoes";
 import { alimentadores } from "../data/alimentadores";
 import { equipamentos } from "../data/equipamentos";
 
-// Corrige os ícones padrão do Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+
   iconUrl:
     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+
   shadowUrl:
     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-function MapView() {
-  const [alimentadorSelecionado, setAlimentadorSelecionado] = useState(null);
+function LocalizarMapa({ localizacao }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!localizacao) return;
+
+    map.flyTo(localizacao, 18, {
+      animate: true,
+      duration: 1.5,
+    });
+  }, [localizacao, map]);
+
+  return null;
+}
+
+function MapView({ ocorrencia, localizacaoMapa }) {
+  const [alimentadorSelecionado, setAlimentadorSelecionado] =
+    useState(null);
 
   const subestacao =
     subestacoes.length > 0
@@ -37,157 +58,185 @@ function MapView() {
           coordenadas: [-8.0238, -34.9781],
           status: "Normal",
           tensao: "13.8 kV",
-          alimentadores: 6,
-          bancoCapacitores: 2,
         };
 
   return (
-    <MapContainer
-      center={subestacao.coordenadas}
-      zoom={14}
-      style={{
-        height: "100vh",
+    <Paper
+      elevation={3}
+      sx={{
+        height: "100%",
         width: "100%",
+        overflow: "hidden",
+        borderRadius: 3,
+        bgcolor: "#111d2d",
       }}
     >
-      <TileLayer
-        attribution="&copy; OpenStreetMap contributors & CARTO"
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-      />
-
-      {/* ================= SUBESTAÇÃO ================= */}
-
-      <Marker position={subestacao.coordenadas}>
-        <Popup>
-          <div>
-            <h3>{subestacao.nome}</h3>
-
-            <p>
-              <strong>Status:</strong> {subestacao.status}
-            </p>
-
-            <p>
-              <strong>Tensão:</strong> {subestacao.tensao}
-            </p>
-
-            <p>
-              <strong>Alimentadores:</strong> {subestacao.alimentadores}
-            </p>
-
-            <p>
-              <strong>Banco de Capacitores:</strong>{" "}
-              {subestacao.bancoCapacitores}
-            </p>
-          </div>
-        </Popup>
-      </Marker>
-
-      {/* ================= ALIMENTADORES ================= */}
-
-      {alimentadores.map((alimentador) => (
-        <Polyline
-          key={alimentador.id}
-          positions={alimentador.coordenadas}
-          color={
-            alimentador.status === "Desligado"
-              ? "#ff0000"
-              : alimentador.status === "Alarme"
-              ? "#ff9800"
-              : "#00c853"
-          }
-          weight={
-            alimentadorSelecionado?.id === alimentador.id ? 8 : 5
-          }
-          opacity={
-            alimentadorSelecionado?.id === alimentador.id ? 1 : 0.7
-          }
-          eventHandlers={{
-            click: () => setAlimentadorSelecionado(alimentador),
+      <Box
+        sx={{
+          height: "100%",
+          width: "100%",
+        }}
+      >
+        <MapContainer
+          center={subestacao.coordenadas}
+          zoom={14}
+          style={{
+            height: "100%",
+            width: "100%",
           }}
         >
-          <Popup>
-            <div>
-              <h3>{alimentador.nome}</h3>
+          <LocalizarMapa localizacao={localizacaoMapa} />
 
-              <p>
-                <strong>Status:</strong> {alimentador.status}
-              </p>
+          <TileLayer
+            attribution="&copy; OpenStreetMap contributors"
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          />
 
-              <p>
-                <strong>Clientes:</strong> {alimentador.clientes}
-              </p>
+          {/* SUBESTAÇÃO */}
 
-              <p>
-                <strong>Religadores:</strong> {alimentador.religadores}
-              </p>
+          <Marker position={subestacao.coordenadas}>
+            <Popup>
+              <h3>{subestacao.nome}</h3>
 
-              <p>
-                <strong>Transformadores:</strong>{" "}
-                {alimentador.transformadores}
-              </p>
+              <p>Status: {subestacao.status}</p>
 
-              <p>
-                <strong>Tensão:</strong> {alimentador.tensao}
-              </p>
-            </div>
-          </Popup>
-        </Polyline>
-      ))}
+              <p>Tensão: {subestacao.tensao}</p>
+            </Popup>
+          </Marker>
 
-      {/* ================= EQUIPAMENTOS ================= */}
+          {/* OCORRÊNCIA */}
 
-      {equipamentos.map((equipamento) => (
-        <Marker
-          key={equipamento.id}
-          position={equipamento.coordenadas}
-        >
-          <Popup>
-            <div>
-              <h3>{equipamento.nome}</h3>
+          {ocorrencia?.localizacao && (
+            <Marker
+              position={[
+                ocorrencia.localizacao.latitude,
+                ocorrencia.localizacao.longitude,
+              ]}
+            >
+              <Popup>
+                <h3>🚨 Ocorrência Ativa</h3>
 
-              <p>
-                <strong>Tipo:</strong> {equipamento.tipo}
-              </p>
+                <p>
+                  <strong>Alimentador:</strong>{" "}
+                  {ocorrencia.alimentador}
+                </p>
 
-              <p>
-                <strong>Status:</strong> {equipamento.status}
-              </p>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+                <p>
+                  <strong>Equipamento:</strong>{" "}
+                  {ocorrencia.equipamento}
+                </p>
 
-      {/* ================= MARCADOR DO ALIMENTADOR SELECIONADO ================= */}
+                <p>
+                  <strong>Clientes:</strong>{" "}
+                  {ocorrencia.impacto.clientesAfetados}
+                </p>
 
-      {alimentadorSelecionado && (
-        <Marker position={alimentadorSelecionado.coordenadas[0]}>
-          <Popup>
-            <div>
-              <h3>{alimentadorSelecionado.nome}</h3>
+                <p>
+                  <strong>Causa:</strong>{" "}
+                  {ocorrencia.causa}
+                </p>
+              </Popup>
+            </Marker>
+          )}
 
-              <p>
-                <strong>Status:</strong> {alimentadorSelecionado.status}
-              </p>
+          {/* ALIMENTADORES */}
 
-              <p>
-                <strong>Clientes:</strong>{" "}
-                {alimentadorSelecionado.clientes}
-              </p>
+          {alimentadores.map((alimentador) => (
+            <Polyline
+              key={alimentador.id}
+              positions={alimentador.coordenadas}
+              color={
+                ocorrencia?.alimentador === alimentador.nome
+                  ? "#ff0000"
+                  : ocorrencia?.manobra?.alternativa === alimentador.nome
+                  ? "#ff9800"
+                  : "#00c853"
+              }
+              weight={
+                ocorrencia?.alimentador === alimentador.nome
+                  ? 8
+                  : ocorrencia?.manobra?.alternativa === alimentador.nome
+                  ? 7
+                  : alimentadorSelecionado?.id === alimentador.id
+                  ? 8
+                  : 5
+              }
+              opacity={0.8}
+              eventHandlers={{
+                click: () => setAlimentadorSelecionado(alimentador),
+              }}
+            >
+              <Popup>
+                <h3>{alimentador.nome}</h3>
 
-              <p>
-                <strong>Religadores:</strong>{" "}
-                {alimentadorSelecionado.religadores}
-              </p>
+                <p>Status: {alimentador.status}</p>
 
-              <p>
-                <strong>Transformadores:</strong>{" "}
-                {alimentadorSelecionado.transformadores}
-              </p>
-            </div>
-          </Popup>
-        </Marker>
-      )}
-    </MapContainer>
+                <p>Clientes: {alimentador.clientes}</p>
+              </Popup>
+            </Polyline>
+          ))}
+                    {/* EQUIPAMENTOS */}
+
+          {equipamentos.map((equipamento) => (
+            <Marker
+              key={equipamento.id}
+              position={equipamento.coordenadas}
+            >
+              <Popup>
+                <h3>{equipamento.nome}</h3>
+
+                <p>
+                  <strong>Tipo:</strong> {equipamento.tipo}
+                </p>
+
+                {equipamento.plaqueta && (
+                  <p>
+                    <strong>Plaqueta:</strong> {equipamento.plaqueta}
+                  </p>
+                )}
+
+                {equipamento.pt && (
+                  <p>
+                    <strong>PT:</strong> {equipamento.pt}
+                  </p>
+                )}
+
+                <p>
+                  <strong>Alimentador:</strong>{" "}
+                  {equipamento.alimentador}
+                </p>
+
+                <p>
+                  <strong>Status:</strong>{" "}
+                  {equipamento.status}
+                </p>
+
+                {equipamento.interligacao && (
+                  <>
+                    <hr />
+
+                    <p>
+                      <strong>Interligação:</strong>
+                    </p>
+
+                    <p>
+                      {equipamento.alimentador}
+                    </p>
+
+                    <p>↓</p>
+
+                    <p>
+                      {equipamento.alimentadorDestino}
+                    </p>
+                  </>
+                )}
+              </Popup>
+            </Marker>
+          ))}
+
+        </MapContainer>
+      </Box>
+    </Paper>
   );
 }
 

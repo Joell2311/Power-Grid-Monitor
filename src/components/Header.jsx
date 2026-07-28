@@ -1,27 +1,108 @@
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  Chip,
+} from "@mui/material";
+
+import PersonIcon from "@mui/icons-material/Person";
+import CircleIcon from "@mui/icons-material/Circle";
+
+
+const drawerWidth = 250;
+
+
 function Header() {
+
   return (
-    <header className="header">
 
-      <div className="header-left">
-        <h1>⚡ COI Monitor</h1>
-        <p>Centro de Operações Integradas</p>
-      </div>
+    <AppBar
+      position="fixed"
+      elevation={2}
+      sx={{
+        width: `calc(100% - ${drawerWidth}px)`,
+        ml: `${drawerWidth}px`,
+        backgroundColor: "#0f172a",
+        borderBottom: "2px solid #1e293b",
+        zIndex: (theme) => theme.zIndex.drawer + 1,
+      }}
+    >
 
-      <div className="header-right">
 
-        <div className="status-online">
-          <span className="status-dot"></span>
-          Sistema Online
-        </div>
+      <Toolbar
+        sx={{
+          minHeight:"70px",
+          display:"flex",
+          justifyContent:"space-between",
+          alignItems:"center",
+        }}
+      >
 
-        <div className="user-info">
-          Operador COI
-        </div>
 
-      </div>
+        {/* Identificação do sistema */}
+        <Box>
 
-    </header>
+
+
+       
+
+        </Box>
+
+
+
+        {/* Status */}
+        <Box
+          sx={{
+            display:"flex",
+            alignItems:"center",
+            gap:2,
+          }}
+        >
+
+
+          <Chip
+            icon={
+              <CircleIcon
+                sx={{
+                  color:"#22c55e !important",
+                  fontSize:12,
+                }}
+              />
+            }
+            label="Sistema Online"
+            sx={{
+              backgroundColor:"#052e16",
+              color:"#22c55e",
+              fontWeight:"bold",
+              borderRadius:"20px",
+            }}
+          />
+
+
+
+          <Chip
+            icon={<PersonIcon />}
+            label="Operador COI"
+            sx={{
+              backgroundColor:"#1e293b",
+              color:"#ffffff",
+              borderRadius:"8px",
+            }}
+          />
+
+
+        </Box>
+
+
+      </Toolbar>
+
+
+    </AppBar>
+
   );
+
 }
+
 
 export default Header;

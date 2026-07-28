@@ -1,94 +1,718 @@
-import "../styles/OccurrencePanel.css";
+import {
+  Paper,
+  Typography,
+  Box,
+  Stack,
+  Chip,
+  Divider,
+  Button,
+} from "@mui/material";
 
-function OccurrencePanel() {
+
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+
+
+import ManobraForm from "./ManobraForm";
+
+
+
+
+
+function Item({titulo, valor, destaque}) {
+
+
   return (
-    <aside className="occurrence-panel">
 
-      <div className="panel-header">
-        <h2>🔴 Ocorrência Ativa</h2>
-        <span className="priority high">Prioridade Alta</span>
-      </div>
+    <Box
 
-      <div className="occurrence-item">
-        <strong>Subestação</strong>
-        <span>CMG - Camaragibe</span>
-      </div>
+      sx={{
 
-      <div className="occurrence-item">
-        <strong>Alimentador</strong>
-        <span>CMG-01C4</span>
-      </div>
+        display:"flex",
 
-      <div className="occurrence-item">
-        <strong>Equipamento</strong>
-        <span>Religador R04</span>
-      </div>
+        justifyContent:"space-between",
 
-      <div className="occurrence-item">
-        <strong>Horário</strong>
-        <span>19:42:15</span>
-      </div>
+        gap:2,
 
-      <div className="status-off">
-        🔴 DESLIGADO
-      </div>
+        py:0.7
 
-      <hr />
+      }}
 
-      <h3>Impacto</h3>
+    >
 
-      <div className="occurrence-item">
-        <strong>Clientes</strong>
-        <span>3567</span>
-      </div>
+      <Typography
 
-      <div className="occurrence-item">
-        <strong>Hospital</strong>
-        <span>01</span>
-      </div>
+        sx={{
 
-      <div className="occurrence-item">
-        <strong>Escolas</strong>
-        <span>02</span>
-      </div>
+          color:"#94a3b8",
 
-      <hr />
+          fontSize:14
 
-      <h3>Análise da Manobra</h3>
+        }}
 
-      <div className="occurrence-item">
-        <strong>Transferência</strong>
-        <span>CMG-01C3</span>
-      </div>
+      >
 
-      <div className="occurrence-item">
-        <strong>Corrente Atual</strong>
-        <span>180 A</span>
-      </div>
+        {titulo}
 
-      <div className="occurrence-item">
-        <strong>Capacidade</strong>
-        <span>350 A</span>
-      </div>
+      </Typography>
 
-      <div className="allowed">
-        🟢 MANOBRA PERMITIDA
-      </div>
 
-      <div className="panel-buttons">
 
-        <button className="btn-blue">
-          Localizar
-        </button>
+      <Typography
 
-        <button className="btn-green">
-          Simular Manobra
-        </button>
+        fontWeight="bold"
 
-      </div>
+        sx={{
 
-    </aside>
+          color:destaque ? "#fff" : "#e2e8f0",
+
+          textAlign:"right"
+
+        }}
+
+      >
+
+        {valor}
+
+      </Typography>
+
+
+    </Box>
+
   );
+
 }
+
+
+
+
+
+
+
+
+
+function OccurrencePanel({ocorrencia, onLocalizar}) {
+
+
+
+if(!ocorrencia){
+
+return null;
+
+}
+
+
+
+
+
+
+return(
+
+
+
+<Paper
+
+elevation={3}
+
+sx={{
+
+height:"100%",
+
+minHeight:0,
+
+p:2,
+
+bgcolor:"#111d2d",
+
+color:"#fff",
+
+borderRadius:3,
+
+display:"flex",
+
+flexDirection:"column",
+
+overflow:"hidden"
+
+}}
+
+>
+
+
+
+
+
+
+
+<Stack
+
+direction="row"
+
+justifyContent="space-between"
+
+alignItems="center"
+
+mb={2}
+
+>
+
+
+
+<Typography
+
+variant="h6"
+
+fontWeight="bold"
+
+>
+
+🚨 Ocorrência Ativa
+
+</Typography>
+
+
+
+
+
+<Chip
+
+color="error"
+
+label={`Prioridade ${ocorrencia.prioridade}`}
+
+size="small"
+
+/>
+
+
+
+</Stack>
+
+
+
+
+
+
+
+
+
+<Box
+
+sx={{
+
+flex:1,
+
+minHeight:0,
+
+overflowY:"auto",
+
+pr:1
+
+}}
+
+>
+
+
+
+
+
+
+
+
+
+<Typography
+
+variant="subtitle2"
+
+sx={{
+
+color:"#38bdf8",
+
+mb:1
+
+}}
+
+>
+
+LOCALIZAÇÃO
+
+</Typography>
+
+
+
+
+
+
+
+
+<Item
+
+titulo="Subestação"
+
+valor={ocorrencia.subestacao}
+
+/>
+
+
+
+
+
+<Item
+
+titulo="Alimentador"
+
+valor={ocorrencia.alimentador}
+
+/>
+
+
+
+
+
+<Item
+
+titulo="Equipamento"
+
+valor={ocorrencia.equipamento}
+
+/>
+
+
+
+
+
+<Item
+
+titulo="Horário"
+
+valor={ocorrencia.horario}
+
+/>
+
+
+
+
+
+
+
+
+
+<Chip
+
+icon={<WarningAmberIcon/>}
+
+label={ocorrencia.status}
+
+color="error"
+
+sx={{
+
+mt:2,
+
+mb:2,
+
+fontWeight:"bold"
+
+}}
+
+/>
+
+
+
+
+
+
+
+
+
+<Divider
+
+sx={{
+
+bgcolor:"#2b3b52"
+
+}}
+
+/>
+
+
+
+
+
+
+
+
+
+
+
+<Typography
+
+variant="subtitle2"
+
+sx={{
+
+color:"#38bdf8",
+
+mt:2,
+
+mb:1
+
+}}
+
+>
+
+IMPACTO
+
+</Typography>
+
+
+
+
+
+
+
+
+
+
+
+<Item
+
+titulo="Clientes interrompidos"
+
+valor={
+
+ocorrencia.impacto.clientesAfetados.toLocaleString("pt-BR")
+
+}
+
+/>
+
+
+
+
+
+
+
+
+<Item
+
+titulo="Hospitais"
+
+valor={ocorrencia.impacto.hospitais}
+
+destaque
+
+/>
+
+
+
+
+
+
+
+
+<Item
+
+titulo="Escolas"
+
+valor={ocorrencia.impacto.escolas}
+
+/>
+
+
+
+
+
+
+
+
+<Item
+
+titulo="DEC estimado"
+
+valor={ocorrencia.impacto.decEstimado}
+
+/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<Divider
+
+sx={{
+
+bgcolor:"#2b3b52",
+
+my:2
+
+}}
+
+/>
+
+
+
+
+
+
+
+
+
+
+
+
+<Typography
+
+variant="subtitle2"
+
+sx={{
+
+color:"#38bdf8",
+
+mb:1
+
+}}
+
+>
+
+ANÁLISE DE MANOBRA
+
+</Typography>
+
+
+
+
+
+
+
+
+
+
+
+<ManobraForm
+
+ocorrencia={ocorrencia}
+
+/>
+
+
+
+
+
+
+
+
+
+<Divider
+
+sx={{
+
+bgcolor:"#2b3b52",
+
+my:2
+
+}}
+
+ />
+
+
+
+
+
+
+
+<Typography
+
+variant="subtitle2"
+
+sx={{
+
+color:"#38bdf8",
+
+mb:1
+
+}}
+
+>
+
+CAMPO
+
+</Typography>
+
+
+
+
+
+
+
+
+
+
+<Item
+
+titulo="Equipe"
+
+valor={ocorrencia.equipeCampo.equipe}
+
+/>
+
+
+
+
+
+
+
+
+<Item
+
+titulo="Status"
+
+valor={ocorrencia.equipeCampo.status}
+
+/>
+
+
+
+
+
+
+
+
+<Item
+
+titulo="Chegada estimada"
+
+valor={ocorrencia.equipeCampo.tempoChegada}
+
+/>
+
+
+
+
+
+
+
+
+</Box>
+
+
+
+
+
+
+
+
+
+
+
+
+<Box
+
+sx={{
+
+display:"flex",
+
+gap:1,
+
+pt:2,
+
+flexShrink:0
+
+}}
+
+>
+
+
+
+
+
+
+
+
+
+
+<Button
+
+variant="contained"
+
+startIcon={<LocationOnIcon/>}
+
+fullWidth
+
+onClick={()=>{
+
+
+if(onLocalizar){
+
+
+const coordenada = ocorrencia.coordenadas
+
+?
+
+ocorrencia.coordenadas
+
+:
+
+[
+
+ocorrencia.localizacao.latitude,
+
+ocorrencia.localizacao.longitude
+
+];
+
+
+
+onLocalizar(coordenada);
+
+
+}
+
+
+}}
+
+>
+
+Localizar
+
+</Button>
+
+
+
+
+
+
+
+
+
+</Box>
+
+
+
+
+
+
+
+
+
+</Paper>
+
+
+);
+
+
+}
+
+
+
+
 
 export default OccurrencePanel;

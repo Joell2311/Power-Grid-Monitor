@@ -1,11 +1,7 @@
-import DashboardCards from "../components/DashboardCards";
+import MainLayout from "../layouts/MainLayout";
 
 function Dashboard() {
-  return (
-    <section className="dashboard-page">
-      <DashboardCards />
-    </section>
-  );
+  return <MainLayout />;
 }
 
 export default Dashboard;
