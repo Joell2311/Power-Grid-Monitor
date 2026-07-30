@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
@@ -12,18 +12,81 @@ import OccurrenceSelector from "../components/OccurrenceSelector";
 
 import ocorrencias from "../data/ocorrencias";
 
+import { sugerirRecomposicao }
+from "../services/recomposicaoService";
+
+import { calcularImpactoOperacional }
+from "../services/impactoOperacionalService";
+
 function MainLayout() {
 
-  const [ocorrenciaSelecionada, setOcorrenciaSelecionada] = useState(
-    ocorrencias[0]
-  );
+  const [ocorrenciaSelecionada, setOcorrenciaSelecionada] =
+    useState(ocorrencias[0]);
 
-  // Coordenada utilizada pelo botão Localizar
-  const [localizacaoMapa, setLocalizacaoMapa] = useState(null);
+  const [localizacaoMapa, setLocalizacaoMapa] =
+    useState(null);
+
+  const [recomendacao, setRecomendacao] =
+    useState(null);
+
+  const [impactoOperacional, setImpactoOperacional] =
+    useState(null);
+
+  /*
+  =====================================
+  NOVO ESTADO GLOBAL DA SIMULAÇÃO
+  =====================================
+  */
+
+  const [correnteDesligado, setCorrenteDesligado] =
+    useState("");
+
+  const [correnteDestino, setCorrenteDestino] =
+    useState("");
+
+  const [equipamentoSelecionado, setEquipamentoSelecionado] =
+    useState(null);
+
+  const [resultadoSimulacao, setResultadoSimulacao] =
+    useState(null);
+
+  /*
+  =====================================
+  LOCALIZA OCORRÊNCIA NO MAPA
+  =====================================
+  */
 
   function localizarOcorrencia(coordenada) {
+
     setLocalizacaoMapa(coordenada);
+
   }
+
+  /*
+  =====================================
+  MOTOR DE INTELIGÊNCIA OPERACIONAL
+  =====================================
+  */
+
+  useEffect(() => {
+
+    if (ocorrenciaSelecionada) {
+
+      const resultadoRecomposicao =
+        sugerirRecomposicao(ocorrenciaSelecionada);
+
+      setRecomendacao(resultadoRecomposicao);
+
+      const resultadoImpacto =
+        calcularImpactoOperacional(
+          ocorrenciaSelecionada
+        );
+
+      setImpactoOperacional(resultadoImpacto);
+
+    }
+
+  }, [ocorrenciaSelecionada]);
 
   return (
 
@@ -115,7 +178,7 @@ function MainLayout() {
 
             </Box>
 
-            {/* PAINEL */}
+            {/* PAINEL DIREITO */}
 
             <Box
               sx={{
@@ -141,6 +204,23 @@ function MainLayout() {
               <OccurrencePanel
                 ocorrencia={ocorrenciaSelecionada}
                 onLocalizar={localizarOcorrencia}
+
+                recomendacao={recomendacao}
+                 setRecomendacao={setRecomendacao}
+                 
+                impacto={impactoOperacional}
+
+                correnteDesligado={correnteDesligado}
+                setCorrenteDesligado={setCorrenteDesligado}
+
+                correnteDestino={correnteDestino}
+                setCorrenteDestino={setCorrenteDestino}
+
+                equipamentoSelecionado={equipamentoSelecionado}
+                setEquipamentoSelecionado={setEquipamentoSelecionado}
+
+                resultadoSimulacao={resultadoSimulacao}
+                setResultadoSimulacao={setResultadoSimulacao}
               />
 
             </Box>
@@ -165,6 +245,7 @@ function MainLayout() {
     </Box>
 
   );
+
 }
 
 export default MainLayout;

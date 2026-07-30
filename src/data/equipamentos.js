@@ -214,4 +214,4 @@ export const equipamentos = [
     capacidade: 300
   }
 
-];
+];1

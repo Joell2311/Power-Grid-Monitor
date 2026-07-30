@@ -1,413 +1,280 @@
-import { trechos } from "../data/trechos";
-
+import { executarMotorCOI } from "./motorCOIService";
 
 
 export function analisarManobra({
 
-  correnteDesligado,
+    correnteDesligado,
 
-  correnteAtualDestino,
+    correnteAtualDestino,
 
-  alimentadorDestino,
+    alimentadorOrigem,
 
-  equipamentoInterligacao
+    alimentadorDestino,
+
+    equipamento
 
 }) {
 
 
+    const resultado = executarMotorCOI({
 
-const correnteTotal =
+        alimentador: alimentadorOrigem,
 
-Number(correnteDesligado) +
+        equipamento,
 
-Number(correnteAtualDestino);
+        manobra: {
 
+            correnteDesligado,
 
+            correnteDestino: correnteAtualDestino
 
+        }
 
+    });
 
-// ===============================
-// VALIDA EQUIPAMENTO DE MANOBRA
-// ===============================
 
 
-if(equipamentoInterligacao){
+    if(!resultado){
 
+        return {
 
-if(equipamentoInterligacao.bloqueado){
+            permitido:false,
 
+            motivo:
+            "Motor COI não retornou resultado."
 
-return {
+        };
 
-permitido:false,
+    }
 
 
-motivo:
 
-`
-MANOBRA NÃO DISPONÍVEL
 
 
-Equipamento:
+    /*
+    =================================================
+    MANOBRA BLOQUEADA
+    =================================================
+    */
 
-${equipamentoInterligacao.plaqueta}
 
+    if(!resultado.permitido){
 
-Motivo:
 
-O equipamento encontra-se bloqueado
-para operação.
+        return {
 
 
-Necessária atuação em campo.
-`
+            permitido:false,
 
-};
 
+            motivo:
 
-}
+                resultado.motivo ||
 
+                resultado.decisaoOperacional ||
 
 
+                "Manobra não permitida.",
 
 
-if(!equipamentoInterligacao.disponivelManobra){
 
+            carregamento:
 
-return {
+                resultado.carregamento || 0,
 
-permitido:false,
 
 
-motivo:
+            correnteTotal:
 
-`
-MANOBRA NÃO DISPONÍVEL
+                resultado.correnteFinal || 0,
 
 
-Equipamento:
 
-${equipamentoInterligacao.plaqueta}
+            trechoLimitante:
 
+                resultado.trechoLimitante || null,
 
-O equipamento não está liberado
-para execução da manobra.
-`
 
-};
 
+            justificativas:
 
-}
+                resultado.justificativas || []
 
-}
 
+        };
 
 
+    }
 
 
-// ===============================
-// BUSCA TRECHOS DO ALIMENTADOR
-// DESTINO
-// ===============================
 
 
-const trechosDestino = trechos.filter(
 
-trecho =>
 
-trecho.alimentador === alimentadorDestino
+    /*
+    =================================================
+    MANOBRA APROVADA
+    GERA RECOMPOSIÇÃO
+    =================================================
+    */
 
-);
 
+    return {
 
 
+        permitido:true,
 
 
 
-if(trechosDestino.length === 0){
+        nivel:
 
+            resultado.nivel,
 
-return {
 
 
-permitido:false,
+        carregamento:
 
+            resultado.carregamento,
 
-motivo:
 
-`
-NÃO FOI POSSÍVEL ANALISAR A MANOBRA.
 
+        correnteTotal:
 
-Não existem trechos cadastrados
-para o alimentador receptor:
+            resultado.correnteFinal,
 
-${alimentadorDestino}
 
-`
 
-};
 
 
-}
+        trechoLimitante:{
 
 
+            id:
 
+                resultado.trechoLimitante.id,
 
 
+            cabo:
 
+                resultado.trechoLimitante.cabo,
 
-// ===============================
-// IDENTIFICA O TRECHO LIMITANTE
-// MENOR CAPACIDADE
-// ===============================
 
+            capacidade:
 
-const trechoLimitante =
+                resultado.trechoLimitante.capacidade,
 
-trechosDestino.reduce(
 
-(menor, trecho)=>{
+            alimentador:
 
+                resultado.trechoLimitante.alimentador
 
-return trecho.capacidade < menor.capacidade
 
-?
+        },
 
-trecho
 
-:
 
-menor;
 
 
-}
 
-);
+        /*
+        FORMATO QUE O OCCURRENCEPANEL ESPERA
+        */
 
 
+        recomendacao:{
 
 
+            avaliacao:{
 
 
+                classificacao:
 
+                    resultado.nivel === "NORMAL"
 
-// ===============================
-// CALCULO DE CARREGAMENTO
-// ===============================
+                    ?
 
+                    "RECOMENDADA"
 
-const carregamento = Math.round(
+                    :
 
-(
+                    "ATENÇÃO",
 
-correnteTotal /
 
-trechoLimitante.capacidade
 
-)
+                nota:
 
-*
+                    resultado.carregamento > 100
 
-100
+                    ?
 
-);
+                    0
 
+                    :
 
+                    100 - resultado.carregamento
 
 
+            },
 
 
 
-const permitido = carregamento <= 80;
 
+            equipamento:
 
+                resultado.equipamento?.plaqueta || "-",
 
 
 
+            trecho:
 
+                resultado.trechoLimitante.id,
 
 
-// ===============================
-// MANOBRA PERMITIDA
-// ===============================
 
+            alimentadorDestino:
 
-if(permitido){
+                alimentadorDestino,
 
 
-return {
 
 
-permitido:true,
 
+            justificativas:
 
-correnteTotal,
+                resultado.justificativas || [],
 
 
-carregamento,
 
 
-trechoLimitante,
 
+            sequencia:[
 
 
-motivo:
+                "Confirmar comando remoto do equipamento",
 
-`
-MANOBRA PERMITIDA
+                "Abrir trecho isolado da falta",
 
+                "Fechar interligação",
 
-Alimentador receptor:
+                "Monitorar carregamento pós-manobra"
 
-${alimentadorDestino}
 
+            ]
 
 
-Trecho limitante:
+        },
 
-${trechoLimitante.id}
 
 
-Condutor:
 
-${trechoLimitante.cabo}
 
+        motivo:
 
+            "Recomposição calculada pelo Motor COI."
 
-Capacidade do trecho:
 
-${trechoLimitante.capacidade} A
 
-
-
-Corrente prevista após transferência:
-
-${correnteTotal} A
-
-
-
-Carregamento:
-
-${carregamento}%
-
-
-
-Análise:
-
-O trecho permanece dentro do limite
-operacional recomendado.
-
-
-Equipamento de interligação:
-
-${equipamentoInterligacao?.plaqueta || "Não informado"}
-
-
-Comando:
-
-${equipamentoInterligacao?.comando || "Não informado"}
-
-`
-
-};
-
-
-}
-
-
-
-
-
-
-
-
-
-// ===============================
-// MANOBRA NEGADA
-// ===============================
-
-
-return {
-
-
-permitido:false,
-
-
-correnteTotal,
-
-
-carregamento,
-
-
-trechoLimitante,
-
-
-
-motivo:
-
-`
-MANOBRA NÃO PERMITIDA
-
-
-Trecho limitante identificado:
-
-${trechoLimitante.id}
-
-
-
-Condutor:
-
-${trechoLimitante.cabo}
-
-
-
-Capacidade máxima do trecho:
-
-${trechoLimitante.capacidade} A
-
-
-
-Corrente prevista após manobra:
-
-${correnteTotal} A
-
-
-
-Carregamento:
-
-${carregamento}%
-
-
-
-Motivo técnico:
-
-A corrente prevista ultrapassa
-o limite operacional do condutor
-do trecho receptor.
-
-
-
-Risco operacional:
-
-- Sobrecarga do condutor;
-- Aquecimento do trecho;
-- Atuação da proteção;
-- Possível abertura de polos;
-- Possíveis danos aos equipamentos
-  e conexões da rede.
-
-
-
-Recomendação:
-
-Manter o trecho isolado e avaliar
-alternativa de recomposição.
-
-`
-
-};
-
+    };
 
 
 }

@@ -1,156 +1,237 @@
 const ocorrencias = [
 
-  {
-    id:1,
-
-    status:"ATIVA",
-
-    prioridade:"ALTA",
-
-    subestacao:"CMG - Camaragibe",
+{
+    id:"OC001",
 
     alimentador:"CMG-01C4",
 
-    equipamento:"Religador R04",
+    equipamento:"A5577",
 
-    horario:"19:42:15",
+    causa:"Falha no trecho de rede",
 
-    causa:"Falha em rede de média tensão",
+    prioridade:"ALTA",
 
-    impacto:{
-      clientesAfetados:3567,
-      hospitais:1,
-      escolas:2,
-      decEstimado:"12 min"
-    },
+    coordenadas:[
+        -8.0250,
+        -34.9800
+    ],
 
 
     manobra:{
-      alternativa:"CMG-01C3",
-      correnteAtual:180,
-      correnteTransferida:200,
-      capacidadeTrecho:350,
-      bitola:"150 mm"
+
+        correnteAtual:200
+
     },
 
 
-    equipeCampo:{
-      equipe:"Equipe 04",
-      status:"Deslocando",
-      tempoChegada:"08 min"
+    impacto:{
+
+        clientesAfetados:3567,
+
+        consumidoresPrioritarios:{
+
+            hospitais:1,
+
+            grupoA:2,
+
+            escolas:2
+
+        },
+
+        hospitais:1,
+
+        grupoA:2,
+
+        escolas:2,
+
+        decEstimado:"8 min"
+
     },
 
 
-    localizacao:{
-      latitude:-8.0235,
-      longitude:-34.9782
-    }
+    status:"Ativa"
 
-  },
+},
 
 
 
-  {
+{
+    id:"OC002",
 
-    id:2,
+    alimentador:"CMG-01C3",
 
-    status:"ATIVA",
+    equipamento:"REC-002",
+
+    causa:"Atuação de proteção do religador",
 
     prioridade:"MÉDIA",
 
-    subestacao:"CMG - Camaragibe",
+    coordenadas:[
+        -8.0190,
+        -34.9735
+    ],
+
+
+    manobra:{
+
+        correnteAtual:120
+
+    },
+
+
+    impacto:{
+
+
+        clientesAfetados:820,
+
+
+        consumidoresPrioritarios:{
+
+            hospitais:0,
+
+            grupoA:1,
+
+            escolas:1
+
+        },
+
+
+        hospitais:0,
+
+        grupoA:1,
+
+        escolas:1,
+
+
+        decEstimado:"5 min"
+
+    },
+
+
+    status:"Ativa"
+
+},
+
+
+
+
+{
+    id:"OC003",
 
     alimentador:"CMG-01C2",
 
-    equipamento:"Religador R02",
+    equipamento:"REC-003",
 
-    horario:"19:48:20",
+    causa:"Defeito permanente em rede aérea",
 
-    causa:"Atuação proteção sobrecorrente",
+    prioridade:"BAIXA",
 
-
-    impacto:{
-      clientesAfetados:1350,
-      hospitais:0,
-      escolas:1,
-      decEstimado:"06 min"
-    },
+    coordenadas:[
+        -8.0310,
+        -34.9780
+    ],
 
 
     manobra:{
-      alternativa:"CMG-01C1",
-      correnteAtual:90,
-      correnteTransferida:80,
-      capacidadeTrecho:300,
-      bitola:"95 mm"
+
+        correnteAtual:150
+
     },
 
 
-    equipeCampo:{
-      equipe:"Equipe 02",
-      status:"Aguardando despacho",
-      tempoChegada:"15 min"
+    impacto:{
+
+
+        clientesAfetados:1350,
+
+
+        consumidoresPrioritarios:{
+
+            hospitais:0,
+
+            grupoA:0,
+
+            escolas:2
+
+        },
+
+
+        hospitais:0,
+
+        grupoA:0,
+
+        escolas:2,
+
+
+        decEstimado:"12 min"
+
     },
 
 
-    localizacao:{
-      latitude:-8.0210,
-      longitude:-34.9850
-    }
+    status:"Ativa"
 
-  },
+},
 
 
 
-  {
 
-    id:3,
-
-    status:"ATIVA",
-
-    prioridade:"CRÍTICA",
-
-    subestacao:"CMG - Camaragibe",
+{
+    id:"OC004",
 
     alimentador:"CMG-01C6",
 
-    equipamento:"Chave MT",
+    equipamento:"CHV-006",
 
-    horario:"19:51:40",
+    causa:"Falha de chave de proteção",
 
-    causa:"Defeito em cabo subterrâneo",
+    prioridade:"CRÍTICA",
 
-
-    impacto:{
-      clientesAfetados:875,
-      hospitais:1,
-      escolas:0,
-      decEstimado:"15 min"
-    },
+    coordenadas:[
+        -8.0360,
+        -34.9820
+    ],
 
 
     manobra:{
-      alternativa:"CMG-01C5",
-      correnteAtual:120,
-      correnteTransferida:100,
-      capacidadeTrecho:250,
-      bitola:"70 mm"
+
+        correnteAtual:80
+
     },
 
 
-    equipeCampo:{
-      equipe:"Equipe 01",
-      status:"Em atendimento",
-      tempoChegada:"05 min"
+    impacto:{
+
+
+        clientesAfetados:875,
+
+
+        consumidoresPrioritarios:{
+
+            hospitais:1,
+
+            grupoA:0,
+
+            escolas:0
+
+        },
+
+
+        hospitais:1,
+
+        grupoA:0,
+
+        escolas:0,
+
+
+        decEstimado:"15 min"
+
     },
 
 
-    localizacao:{
-      latitude:-8.0260,
-      longitude:-34.9800
-    }
+    status:"Ativa"
 
-  }
+}
+
 
 ];
 

@@ -1,158 +1,242 @@
 import {
   Paper,
   Typography,
-  Box,
-  Stack,
-  Chip,
   Divider,
   Button,
+  Box,
+  Chip
 } from "@mui/material";
 
-
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
-
 
 import ManobraForm from "./ManobraForm";
 
 
+function OccurrencePanel({
+
+  ocorrencia,
+  onLocalizar,
+  recomendacao,
+  setRecomendacao,
+  impacto
+
+}) {
+
+ console.log("RECOMENDACAO:", recomendacao);
+  
+  if(!ocorrencia) return null;
 
 
 
-function Item({titulo, valor, destaque}) {
+const avaliacao =
+    recomendacao || {};
+
+
+  const justificativas =
+
+    avaliacao.justificativas || [];
+
 
 
   return (
 
-    <Box
+    <Paper
 
       sx={{
 
-        display:"flex",
+        p:2,
 
-        justifyContent:"space-between",
+        bgcolor:"#111d2d",
 
-        gap:2,
+        color:"#fff",
 
-        py:0.7
+        borderRadius:3,
+
+        height:"100%",
+
+        overflow:"auto"
 
       }}
 
     >
 
-      <Typography
-
-        sx={{
-
-          color:"#94a3b8",
-
-          fontSize:14
-
-        }}
-
-      >
-
-        {titulo}
-
-      </Typography>
-
 
 
       <Typography
+
+        variant="h6"
 
         fontWeight="bold"
 
-        sx={{
-
-          color:destaque ? "#fff" : "#e2e8f0",
-
-          textAlign:"right"
-
-        }}
-
       >
 
-        {valor}
+        🚨 Ocorrência Ativa
 
       </Typography>
 
 
-    </Box>
 
-  );
+      <Divider
 
-}
+        sx={{
 
+          my:2,
 
+          bgcolor:"#334155"
 
+        }}
 
-
-
-
-
-
-function OccurrencePanel({ocorrencia, onLocalizar}) {
-
-
-
-if(!ocorrencia){
-
-return null;
-
-}
+      />
 
 
 
 
 
+      <Typography>
 
-return(
+        <b>Alimentador:</b>{" "}
+
+        {ocorrencia.alimentador}
+
+      </Typography>
 
 
 
-<Paper
+      <Typography>
 
-elevation={3}
+        <b>Equipamento:</b>{" "}
+
+        {ocorrencia.equipamento}
+
+      </Typography>
+
+
+
+      <Typography>
+
+        <b>Causa:</b>{" "}
+
+        {ocorrencia.causa}
+
+      </Typography>
+
+
+
+
+      <Typography>
+
+        <b>Clientes afetados:</b>{" "}
+
+        {ocorrencia.impacto?.clientesAfetados ?? 0}
+
+      </Typography>
+
+
+
+
+
+      {
+
+        ocorrencia.impacto?.hospitais > 0 && (
+
+
+          <Typography
+
+            sx={{
+
+              color:"#f87171"
+
+            }}
+
+          >
+
+            🏥 Hospitais afetados:
+
+            {" "}
+
+            {ocorrencia.impacto.hospitais}
+
+
+          </Typography>
+
+
+        )
+
+      }
+
+
+
+
+
+
+
+      <Button
+
+        variant="contained"
+
+        startIcon={<LocationOnIcon />}
+
+        sx={{mt:2}}
+
+        onClick={()=>onLocalizar(ocorrencia.coordenadas)}
+
+      >
+
+        Localizar no mapa
+
+
+      </Button>
+
+
+
+
+
+
+
+
+
+{/* =================================================
+IMPACTO OPERACIONAL
+================================================= */}
+
+
+
+{
+
+impacto && (
+
+
+<Box
 
 sx={{
 
-height:"100%",
-
-minHeight:0,
+mt:3,
 
 p:2,
 
-bgcolor:"#111d2d",
+borderRadius:2,
 
-color:"#fff",
+bgcolor:
 
-borderRadius:3,
+impacto.classificacao === "CRÍTICA"
 
-display:"flex",
+?
 
-flexDirection:"column",
+"#450a0a"
 
-overflow:"hidden"
+:
+
+impacto.classificacao === "ALTA"
+
+?
+
+"#7c2d12"
+
+:
+
+"#172554"
 
 }}
-
->
-
-
-
-
-
-
-
-<Stack
-
-direction="row"
-
-justifyContent="space-between"
-
-alignItems="center"
-
-mb={2}
 
 >
 
@@ -166,9 +250,24 @@ fontWeight="bold"
 
 >
 
-🚨 Ocorrência Ativa
+⚠️ Impacto Operacional
 
 </Typography>
+
+
+
+
+<Divider
+
+sx={{
+
+my:2,
+
+bgcolor:"#475569"
+
+}}
+
+/>
 
 
 
@@ -176,17 +275,112 @@ fontWeight="bold"
 
 <Chip
 
-color="error"
+label={impacto.classificacao}
 
-label={`Prioridade ${ocorrencia.prioridade}`}
+color={
 
-size="small"
+impacto.classificacao==="CRÍTICA"
+
+?
+
+"error"
+
+:
+
+impacto.classificacao==="ALTA"
+
+?
+
+"warning"
+
+:
+
+"info"
+
+}
+
+sx={{mb:2}}
 
 />
 
 
 
-</Stack>
+
+
+
+<Typography>
+
+<b>Pontuação:</b>{" "}
+
+{impacto.pontuacao}/100
+
+</Typography>
+
+
+
+
+<Typography>
+
+<b>Clientes:</b>{" "}
+
+{impacto.dados?.clientes ?? 0}
+
+</Typography>
+
+
+
+
+<Typography>
+
+<b>Hospitais:</b>{" "}
+
+{impacto.dados?.hospitais ?? 0}
+
+</Typography>
+
+
+
+
+<Typography>
+
+<b>Grupo A:</b>{" "}
+
+{impacto.dados?.grupoA ?? 0}
+
+</Typography>
+
+
+
+
+<Typography>
+
+<b>Escolas:</b>{" "}
+
+{impacto.dados?.escolas ?? 0}
+
+</Typography>
+
+
+
+
+<Typography>
+
+<b>DEC:</b>{" "}
+
+{impacto.dados?.dec ?? 0}
+
+min
+
+</Typography>
+
+
+
+</Box>
+
+
+)
+
+}
 
 
 
@@ -194,98 +388,99 @@ size="small"
 
 
 
+
+
+{/* =================================================
+MANOBRA
+================================================= */}
+
+
+
+<Box sx={{mt:3}}>
+
+
+<ManobraForm
+
+ocorrencia={ocorrencia}
+
+setRecomendacao={setRecomendacao}
+
+/>
+
+
+</Box>
+
+
+
+
+
+
+
+
+
+{/* =================================================
+RECOMPOSIÇÃO INTELIGENTE
+================================================= */}
+
+
+
+{
+
+recomendacao && (
 
 
 <Box
 
 sx={{
 
-flex:1,
+mt:3,
 
-minHeight:0,
+p:2,
 
-overflowY:"auto",
+borderRadius:2,
 
-pr:1
+bgcolor:
+
+recomendacao.permitido
+
+?
+
+"#102a22"
+
+:
+
+"#3b1d1d"
 
 }}
 
 >
-
-
-
-
-
-
 
 
 
 <Typography
 
-variant="subtitle2"
+variant="h6"
 
-sx={{
-
-color:"#38bdf8",
-
-mb:1
-
-}}
+fontWeight="bold"
 
 >
 
-LOCALIZAÇÃO
+🤖 Recomposição Inteligente
 
 </Typography>
 
 
 
 
+<Divider
 
+sx={{
 
+my:2,
 
+bgcolor:"#475569"
 
-<Item
-
-titulo="Subestação"
-
-valor={ocorrencia.subestacao}
-
-/>
-
-
-
-
-
-<Item
-
-titulo="Alimentador"
-
-valor={ocorrencia.alimentador}
-
-/>
-
-
-
-
-
-<Item
-
-titulo="Equipamento"
-
-valor={ocorrencia.equipamento}
-
-/>
-
-
-
-
-
-<Item
-
-titulo="Horário"
-
-valor={ocorrencia.horario}
+}}
 
 />
 
@@ -294,20 +489,58 @@ valor={ocorrencia.horario}
 
 
 
+
+{
+
+recomendacao.permitido
+
+?
+
+(
+
+
+
+<>
 
 
 
 <Chip
 
-icon={<WarningAmberIcon/>}
+label={
 
-label={ocorrencia.status}
+`${
 
-color="error"
+avaliacao.classificacao ||
+
+"RECOMPOSIÇÃO"
+
+}
+
+-
+
+${
+
+avaliacao.nota || 0
+
+}/100`
+
+}
+
+color={
+
+avaliacao.classificacao === "RECOMENDADA"
+
+?
+
+"success"
+
+:
+
+"warning"
+
+}
 
 sx={{
-
-mt:2,
 
 mb:2,
 
@@ -323,45 +556,43 @@ fontWeight:"bold"
 
 
 
+<Typography>
 
+<b>Equipamento:</b>{" "}
 
-<Divider
+{
 
-sx={{
+recomendacao.recomposicao?.equipamento ||
+"-"
+}
 
-bgcolor:"#2b3b52"
-
-}}
-
-/>
-
-
-
+</Typography>
 
 
 
+<Typography>
+
+<b>Trecho:</b>{" "}
+
+{
+
+recomendacao.recomposicao?.trecho ||
+"-"
+}
+
+</Typography>
 
 
 
+<Typography>
 
+<b>Alimentador destino:</b>{" "}
 
-<Typography
+{
 
-variant="subtitle2"
-
-sx={{
-
-color:"#38bdf8",
-
-mt:2,
-
-mb:1
-
-}}
-
->
-
-IMPACTO
+recomendacao.recomposicao?.alimentadorDestino ||
+"-"
+}
 
 </Typography>
 
@@ -372,74 +603,71 @@ IMPACTO
 
 
 
+<Divider
+
+sx={{
+
+my:2,
+
+bgcolor:"#475569"
+
+}}
+
+/>
 
 
 
-<Item
 
-titulo="Clientes interrompidos"
 
-valor={
 
-ocorrencia.impacto.clientesAfetados.toLocaleString("pt-BR")
+<Typography
+
+fontWeight="bold"
+
+>
+
+📋 Análise da decisão
+
+</Typography>
+
+
+
+
+
+
+{
+
+justificativas.map(
+
+(item,index)=>(
+
+
+<Typography
+
+key={index}
+
+sx={{
+
+mt:1,
+
+fontSize:"0.9rem"
+
+}}
+
+>
+
+{item}
+
+</Typography>
+
+
+
+)
+
+)
 
 }
 
-/>
-
-
-
-
-
-
-
-
-<Item
-
-titulo="Hospitais"
-
-valor={ocorrencia.impacto.hospitais}
-
-destaque
-
-/>
-
-
-
-
-
-
-
-
-<Item
-
-titulo="Escolas"
-
-valor={ocorrencia.impacto.escolas}
-
-/>
-
-
-
-
-
-
-
-
-<Item
-
-titulo="DEC estimado"
-
-valor={ocorrencia.impacto.decEstimado}
-
-/>
-
-
-
-
-
-
-
 
 
 
@@ -450,9 +678,96 @@ valor={ocorrencia.impacto.decEstimado}
 
 sx={{
 
-bgcolor:"#2b3b52",
+my:2,
 
-my:2
+bgcolor:"#475569"
+
+}}
+
+/>
+
+
+
+
+
+
+<Typography
+
+fontWeight="bold"
+
+>
+
+Sequência recomendada
+
+</Typography>
+
+
+
+
+
+
+{
+
+recomendacao.sequencia?.map(
+
+(item,index)=>(
+
+
+<Typography
+
+key={index}
+
+sx={{mt:1}}
+
+>
+
+{index+1}
+
+{" - "}
+
+{item}
+
+</Typography>
+
+
+
+)
+
+)
+
+}
+
+
+
+</>
+
+
+
+)
+
+
+
+:
+
+(
+
+
+
+<>
+
+
+
+<Chip
+
+label="NÃO RECOMENDADA"
+
+color="error"
+
+sx={{
+
+mb:2,
+
+fontWeight:"bold"
 
 }}
 
@@ -464,26 +779,17 @@ my:2
 
 
 
-
-
-
-
-
 <Typography
-
-variant="subtitle2"
 
 sx={{
 
-color:"#38bdf8",
-
-mb:1
+whiteSpace:"pre-line"
 
 }}
 
 >
 
-ANÁLISE DE MANOBRA
+{recomendacao.motivo}
 
 </Typography>
 
@@ -495,19 +801,13 @@ ANÁLISE DE MANOBRA
 
 
 
+{
 
-
-<ManobraForm
-
-ocorrencia={ocorrencia}
-
-/>
+recomendacao.restricoes?.length > 0 && (
 
 
 
-
-
-
+<>
 
 
 
@@ -515,15 +815,13 @@ ocorrencia={ocorrencia}
 
 sx={{
 
-bgcolor:"#2b3b52",
+my:2,
 
-my:2
+bgcolor:"#475569"
 
 }}
 
- />
-
-
+/>
 
 
 
@@ -531,19 +829,11 @@ my:2
 
 <Typography
 
-variant="subtitle2"
-
-sx={{
-
-color:"#38bdf8",
-
-mb:1
-
-}}
+fontWeight="bold"
 
 >
 
-CAMPO
+🚧 Restrições encontradas
 
 </Typography>
 
@@ -552,144 +842,92 @@ CAMPO
 
 
 
+{
 
+recomendacao.restricoes.map(
 
-
-
-<Item
-
-titulo="Equipe"
-
-valor={ocorrencia.equipeCampo.equipe}
-
-/>
-
-
-
-
-
-
-
-
-<Item
-
-titulo="Status"
-
-valor={ocorrencia.equipeCampo.status}
-
-/>
-
-
-
-
-
-
-
-
-<Item
-
-titulo="Chegada estimada"
-
-valor={ocorrencia.equipeCampo.tempoChegada}
-
-/>
-
-
-
-
-
-
-
-
-</Box>
-
-
-
-
-
-
-
-
-
-
+(item,index)=>(
 
 
 <Box
 
+key={index}
+
 sx={{
 
-display:"flex",
+mt:2,
 
-gap:1,
+p:2,
 
-pt:2,
+borderRadius:2,
 
-flexShrink:0
-
-}}
-
->
-
-
-
-
-
-
-
-
-
-
-<Button
-
-variant="contained"
-
-startIcon={<LocationOnIcon/>}
-
-fullWidth
-
-onClick={()=>{
-
-
-if(onLocalizar){
-
-
-const coordenada = ocorrencia.coordenadas
-
-?
-
-ocorrencia.coordenadas
-
-:
-
-[
-
-ocorrencia.localizacao.latitude,
-
-ocorrencia.localizacao.longitude
-
-];
-
-
-
-onLocalizar(coordenada);
-
-
-}
-
+bgcolor:"#450a0a"
 
 }}
 
 >
 
-Localizar
-
-</Button>
 
 
+<Typography>
+
+<b>Trecho:</b>{" "}
+
+{item.trecho}
+
+</Typography>
 
 
 
+<Typography>
 
+<b>Cabo:</b>{" "}
+
+{item.cabo}
+
+</Typography>
+
+
+
+<Typography>
+
+<b>Capacidade:</b>{" "}
+
+{item.capacidade} A
+
+</Typography>
+
+
+
+<Typography>
+
+<b>Corrente simulada:</b>{" "}
+
+{item.correnteSimulada} A
+
+</Typography>
+
+
+
+<Typography>
+
+<b>Carregamento:</b>{" "}
+
+{item.carregamento}%
+
+</Typography>
+
+
+
+<Typography
+
+sx={{mt:1}}
+
+>
+
+❌ {item.mensagem}
+
+</Typography>
 
 
 
@@ -697,22 +935,54 @@ Localizar
 
 
 
+)
 
+)
 
-
-
-
-
-</Paper>
-
-
-);
 
 
 }
 
 
 
+</>
+
+
+
+)
+
+}
+
+
+
+
+</>
+
+)
+
+
+
+}
+
+
+
+</Box>
+
+
+)
+
+}
+
+
+
+
+
+    </Paper>
+
+  );
+
+
+}
 
 
 export default OccurrencePanel;

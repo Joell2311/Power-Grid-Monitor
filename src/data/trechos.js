@@ -1,155 +1,433 @@
 export const trechos = [
 
+  // =====================================================
+  // ALIMENTADOR CMG-01C4
+  // =====================================================
+
   {
-    id: "T001",
 
-    alimentador: "CMG-01C3",
+    id:"T001",
 
-    origem: "P123460",
+    alimentador:"CMG-01C4",
 
-    destino: "P123461",
+    origem:"SE-CMG",
 
-    cabo: "150 mm²",
+    destino:"P123456",
 
-    capacidade: 350,
+    trechoAnterior:null,
 
-    comprimento: 420,
+    cabo:"240 mm²",
 
-    correnteAtual: 120,
+    capacidade:500,
 
-    clientes: 820,
+    comprimento:250,
 
-    hospitais: 0,
+    correnteAtual:180,
 
-    escolas: 1,
+    clientes:3567,
 
-    grupoA: 1,
+    consumidoresPrioritarios:{
+      hospitais:0,
+      escolas:0,
+      grupoA:0,
+      saneamento:0,
+      telecom:0,
+      bombeiros:0
+    },
 
-    telecomandado: true,
+    telecomandado:true,
 
-    status: "Energizado",
+    status:"Energizado",
 
-    proximoTrecho: "T002",
+    estado:"Normal",
 
-    trechoAnterior: null,
+    coordenadas:[
+      [-8.0225,-34.9770],
+      [-8.0250,-34.9800]
+    ],
 
-    interligacao: false
+    conectadoCom:["T002"],
+
+    interligacao:false
+
   },
 
+
+
   {
-    id: "T002",
 
-    alimentador: "CMG-01C3",
+    id:"T002",
 
-    origem: "P123461",
+    alimentador:"CMG-01C4",
 
-    destino: "P123462",
+    origem:"P123456",
 
-    cabo: "70 mm²",
+    destino:"P123457",
 
-    capacidade: 150,
+    trechoAnterior:"T001",
 
-    comprimento: 310,
+    cabo:"150 mm²",
 
-    correnteAtual: 95,
+    capacidade:350,
 
-    clientes: 650,
+    comprimento:420,
 
-    hospitais: 1,
+    correnteAtual:180,
 
-    escolas: 0,
+    clientes:2200,
 
-    grupoA: 0,
+    consumidoresPrioritarios:{
+      hospitais:1,
+      escolas:0,
+      grupoA:1,
+      saneamento:0,
+      telecom:0,
+      bombeiros:0
+    },
 
-    telecomandado: false,
+    telecomandado:true,
 
-    status: "Energizado",
+    status:"Energizado",
 
-    trechoAnterior: "T001",
+    estado:"Normal",
 
-    proximoTrecho: "T003",
+    coordenadas:[
+      [-8.0250,-34.9800],
+      [-8.0270,-34.9830]
+    ],
 
-    interligacao: true,
+    conectadoCom:[
+      "T001",
+      "T003",
+      "T008"
+    ],
 
-    equipamentoInterligacao: "A5577",
+    interligacao:true,
 
-    alimentadorDestino: "CMG-01C4"
+    equipamentoInterligacao:"A5577",
+
+    alimentadorDestino:"CMG-01C3"
+
   },
 
+
+
   {
-    id: "T003",
 
-    alimentador: "CMG-01C3",
+    id:"T003",
 
-    origem: "P123462",
+    alimentador:"CMG-01C4",
 
-    destino: "P123463",
+    origem:"P123457",
 
-    cabo: "35 mm²",
+    destino:"P123458",
 
-    capacidade: 100,
+    trechoAnterior:"T002",
 
-    comprimento: 180,
+    cabo:"95 mm²",
 
-    correnteAtual: 70,
+    capacidade:250,
 
-    clientes: 210,
+    comprimento:310,
 
-    hospitais: 0,
+    correnteAtual:170,
 
-    escolas: 0,
+    clientes:980,
 
-    grupoA: 0,
+    consumidoresPrioritarios:{
+      hospitais:0,
+      escolas:2,
+      grupoA:0,
+      saneamento:0,
+      telecom:0,
+      bombeiros:0
+    },
 
-    telecomandado: false,
+    telecomandado:false,
 
-    status: "Energizado",
+    status:"Energizado",
 
-    trechoAnterior: "T002",
+    estado:"Normal",
 
-    proximoTrecho: null,
+    coordenadas:[
+      [-8.0270,-34.9830],
+      [-8.0290,-34.9860]
+    ],
 
-    interligacao: false
+    conectadoCom:[
+      "T002",
+      "T004"
+    ],
+
+    interligacao:false
+
   },
 
+
+
   {
-    id: "T004",
 
-    alimentador: "CMG-01C4",
+    id:"T004",
 
-    origem: "P123456",
+    alimentador:"CMG-01C4",
 
-    destino: "P123457",
+    origem:"P123458",
 
-    cabo: "150 mm²",
+    destino:"P123470",
 
-    capacidade: 350,
+    trechoAnterior:"T003",
 
-    comprimento: 500,
+    cabo:"70 mm²",
 
-    correnteAtual: 180,
+    capacidade:150,
 
-    clientes: 3567,
+    comprimento:260,
 
-    hospitais: 1,
+    correnteAtual:120,
 
-    escolas: 2,
+    clientes:387,
 
-    grupoA: 2,
+    consumidoresPrioritarios:{
+      hospitais:0,
+      escolas:0,
+      grupoA:1,
+      saneamento:0,
+      telecom:1,
+      bombeiros:0
+    },
 
-    telecomandado: true,
+    telecomandado:false,
 
-    status: "Energizado",
+    status:"Energizado",
 
-    trechoAnterior: null,
+    estado:"Normal",
 
-    proximoTrecho: null,
+    coordenadas:[
+      [-8.0290,-34.9860],
+      [-8.0310,-34.9880]
+    ],
 
-    interligacao: true,
+    conectadoCom:[
+      "T003",
+      "T005"
+    ],
 
-    equipamentoInterligacao: "A5577",
+    interligacao:false
 
-    alimentadorDestino: "CMG-01C3"
+  },
+
+
+
+  {
+
+    id:"T005",
+
+    alimentador:"CMG-01C4",
+
+    origem:"P123470",
+
+    destino:"P123471",
+
+    trechoAnterior:"T004",
+
+    cabo:"35 mm²",
+
+    capacidade:100,
+
+    comprimento:180,
+
+    correnteAtual:70,
+
+    clientes:120,
+
+    consumidoresPrioritarios:{
+      hospitais:0,
+      escolas:0,
+      grupoA:0,
+      saneamento:0,
+      telecom:0,
+      bombeiros:0
+    },
+
+    telecomandado:false,
+
+    status:"Energizado",
+
+    estado:"Normal",
+
+    coordenadas:[
+      [-8.0310,-34.9880],
+      [-8.0330,-34.9895]
+    ],
+
+    conectadoCom:[
+      "T004"
+    ],
+
+    interligacao:false
+
+  },
+
+
+  {
+
+    id:"T006",
+
+    alimentador:"CMG-01C4",
+
+    origem:"P123471",
+
+    destino:"P123472",
+
+    trechoAnterior:"T005",
+
+    cabo:"35 mm²",
+
+    capacidade:100,
+
+    comprimento:220,
+
+    correnteAtual:45,
+
+    clientes:80,
+
+    consumidoresPrioritarios:{
+      hospitais:0,
+      escolas:0,
+      grupoA:0,
+      saneamento:0,
+      telecom:0,
+      bombeiros:0
+    },
+
+    telecomandado:false,
+
+    status:"Energizado",
+
+    estado:"Normal",
+
+    coordenadas:[
+      [-8.0330,-34.9895],
+      [-8.0350,-34.9910]
+    ],
+
+    conectadoCom:[
+      "T005"
+    ],
+
+    interligacao:false
+
+  },
+
+
+  {
+
+    id:"T007",
+
+    alimentador:"CMG-01C4",
+
+    origem:"P123457",
+
+    destino:"P223001",
+
+    trechoAnterior:"T002",
+
+    cabo:"120 mm²",
+
+    capacidade:300,
+
+    comprimento:350,
+
+    correnteAtual:90,
+
+    clientes:650,
+
+    consumidoresPrioritarios:{
+      hospitais:0,
+      escolas:0,
+      grupoA:1,
+      saneamento:0,
+      telecom:0,
+      bombeiros:0
+    },
+
+    telecomandado:true,
+
+    status:"Energizado",
+
+    estado:"Normal",
+
+    coordenadas:[
+      [-8.0270,-34.9830],
+      [-8.0285,-34.9785]
+    ],
+
+    conectadoCom:[
+      "T002"
+    ],
+
+    interligacao:false
+
+  },
+
+
+  // =====================================================
+  // INTERLIGAÇÃO CMG-01C4 x CMG-01C3
+  // =====================================================
+
+
+  {
+
+    id:"T008",
+
+    alimentador:"CMG-01C3",
+
+    origem:"P223001",
+
+    destino:"P223002",
+
+    trechoAnterior:null,
+
+    cabo:"150 mm²",
+
+    capacidade:350,
+
+    comprimento:400,
+
+    correnteAtual:100,
+
+    clientes:1500,
+
+    consumidoresPrioritarios:{
+      hospitais:0,
+      escolas:1,
+      grupoA:1,
+      saneamento:0,
+      telecom:0,
+      bombeiros:0
+    },
+
+    telecomandado:true,
+
+    status:"Energizado",
+
+    estado:"Normal",
+
+    coordenadas:[
+      [-8.0285,-34.9785],
+      [-8.0300,-34.9750]
+    ],
+
+    conectadoCom:[
+      "T002"
+    ],
+
+    interligacao:true,
+
+    equipamentoInterligacao:"A5577",
+
+    alimentadorDestino:"CMG-01C4"
+
   }
 
 ];

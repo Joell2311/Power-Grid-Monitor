@@ -21,26 +21,31 @@ import { analisarManobra } from "../services/analiseManobraService";
 
 
 
-function ManobraForm({ ocorrencia }) {
+function ManobraForm({ ocorrencia, setRecomendacao }) {
 
 
 
   const [interligacoes, setInterligacoes] = useState([]);
 
+
   const [equipamentoSelecionado, setEquipamentoSelecionado] =
     useState(null);
+
 
 
   const [correnteDesligado, setCorrenteDesligado] =
     useState("");
 
 
+
   const [correnteDestino, setCorrenteDestino] =
     useState("");
 
 
+
   const [resultado, setResultado] =
     useState(null);
+
 
 
 
@@ -79,15 +84,48 @@ function ManobraForm({ ocorrencia }) {
   function calcular() {
 
 
+
     if (!equipamentoSelecionado) {
 
+
+      setResultado({
+
+        permitido:false,
+
+        motivo:
+        "Selecione o equipamento de interligação."
+
+      });
+
+
       return;
 
     }
 
 
 
-    if (!correnteDesligado || !correnteDestino) {
+
+
+
+
+    if (
+
+      correnteDesligado === "" ||
+
+      correnteDestino === ""
+
+    ) {
+
+
+      setResultado({
+
+        permitido:false,
+
+        motivo:
+        "Informe as correntes dos trechos antes de executar a análise."
+
+      });
+
 
       return;
 
@@ -99,39 +137,226 @@ function ManobraForm({ ocorrencia }) {
 
 
 
-    const analise = analisarManobra({
+
+    const correnteFalta =
+
+      Number(correnteDesligado);
 
 
-      correnteDesligado,
+
+    const correnteAtual =
+
+      Number(correnteDestino);
 
 
-      correnteAtualDestino: correnteDestino,
 
 
-      alimentadorDestino:
+
+
+
+
+
+   const analise = analisarManobra({
+
+    
+
+    correnteDesligado:
+
+        correnteFalta,
+
+
+    correnteAtualDestino:
+
+        correnteAtual,
+
+
+    alimentadorOrigem:
+
+        ocorrencia.alimentador,
+
+
+    alimentadorDestino:
 
         equipamentoSelecionado.alimentadorDestino,
 
 
+    equipamento:
 
-      // ENVIA O EQUIPAMENTO COMPLETO
-      // PARA VALIDAR BLOQUEIO E DISPONIBILIDADE
+        equipamentoSelecionado.plaqueta
 
-      equipamentoInterligacao:
 
-        equipamentoSelecionado
+        
+
+});
+
+if (setRecomendacao) {
+
+    setRecomendacao({
+
+        ...analise,
+
+        recomposicao: {
+
+            equipamento:
+                analise.equipamento?.plaqueta ||
+
+                equipamentoSelecionado.plaqueta,
+
+            trecho:
+                analise.trechoLimitante?.id,
+
+            alimentadorDestino:
+                equipamentoSelecionado.alimentadorDestino,
+
+            carregamento:
+                analise.carregamento
+
+        },
+
+        justificativas:
+            analise.justificativas || [],
+
+        sequencia: [
+
+            `Abrir disjuntor do alimentador ${ocorrencia.alimentador}`,
+
+            `Fechar ${equipamentoSelecionado.plaqueta}`,
+
+            `Transferir carga para ${equipamentoSelecionado.alimentadorDestino}`,
+
+            "Confirmar energização"
+
+        ]
+
+    });
+
+}
+    // ==========================================
+    // ENVIA A SIMULAÇÃO PARA RECOMPOSIÇÃO
+    // INTELIGENTE
+    // ==========================================
+
+
+    if (ocorrencia) {
+
+
+      ocorrencia.manobra = {
+
+
+        executada:true,
+
+
+        correnteDesligado:
+
+          correnteFalta,
+
+
+        correnteDestino:
+
+          correnteAtual,
+
+
+
+        correnteTotal:
+
+          correnteFalta + correnteAtual,
+
+
+
+        equipamento:
+
+          equipamentoSelecionado.plaqueta,
+
+
+
+        equipamentoId:
+
+          equipamentoSelecionado.id,
+
+
+
+        alimentadorDestino:
+
+          equipamentoSelecionado.alimentadorDestino,
+
+
+
+        carregamento:
+
+          analise.carregamento,
+
+
+
+        trechoLimitante:
+
+          analise.trechoLimitante,
+
+
+
+        capacidade:
+
+          analise.trechoLimitante?.capacidade || 0,
+
+
+
+        cabo:
+
+          analise.trechoLimitante?.cabo || "Não informado"
+
+
+
+      };
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+    setResultado({
+
+
+      ...analise,
+
+
+      simulacao:{
+
+
+        correnteDesligado:
+
+          correnteFalta,
+
+
+        correnteDestino:
+
+          correnteAtual,
+
+
+
+        correnteTotal:
+
+          correnteFalta + correnteAtual
+
+
+
+      }
+
 
 
     });
 
 
 
-
-    setResultado(analise);
-
-
-
   }
+
+
+
 
 
 
@@ -150,18 +375,13 @@ function ManobraForm({ ocorrencia }) {
 
       sx={{
 
-
         p:2,
-
 
         bgcolor:"#111d2d",
 
-
         color:"#fff",
 
-
         borderRadius:3
-
 
       }}
 
@@ -208,8 +428,6 @@ function ManobraForm({ ocorrencia }) {
 
 
 
-
-
         <Typography
 
           sx={{
@@ -230,8 +448,6 @@ function ManobraForm({ ocorrencia }) {
 
 
 
-
-
         <TextField
 
 
@@ -244,6 +460,7 @@ function ManobraForm({ ocorrencia }) {
           label="Equipamento"
 
 
+
           value={
 
             equipamentoSelecionado?.id || ""
@@ -253,7 +470,6 @@ function ManobraForm({ ocorrencia }) {
 
 
           onChange={(e)=>{
-
 
 
             const equipamento =
@@ -277,29 +493,23 @@ function ManobraForm({ ocorrencia }) {
           }}
 
 
+
         >
 
 
 
-
-
           {
-
 
             interligacoes.map((item)=>(
 
 
               <MenuItem
 
-
                 key={item.id}
-
 
                 value={item.id}
 
-
               >
-
 
                 {item.plaqueta}
 
@@ -313,24 +523,13 @@ function ManobraForm({ ocorrencia }) {
 
             ))
 
-
           }
-
-
 
 
 
         </TextField>
 
-
-
-
-
-
-
-
-
-        {
+                {
 
 
           equipamentoSelecionado &&
@@ -409,7 +608,7 @@ function ManobraForm({ ocorrencia }) {
 
             <Typography>
 
-              Destino:
+              Alimentador destino:
 
               <strong>
 
@@ -459,8 +658,6 @@ function ManobraForm({ ocorrencia }) {
 
 
 
-
-
           </Box>
 
 
@@ -498,7 +695,6 @@ function ManobraForm({ ocorrencia }) {
 
 
         />
-
 
 
 
@@ -556,6 +752,7 @@ function ManobraForm({ ocorrencia }) {
 
           Analisar Manobra
 
+
         </Button>
 
 
@@ -603,19 +800,15 @@ function ManobraForm({ ocorrencia }) {
 
 
 
-
-
             <Typography
 
               fontWeight="bold"
 
             >
 
-              Resultado
+              Resultado da Simulação
 
             </Typography>
-
-
 
 
 
@@ -678,6 +871,226 @@ function ManobraForm({ ocorrencia }) {
 
 
 
+
+
+            <Box
+
+              sx={{
+
+                p:2,
+
+                mb:2,
+
+                bgcolor:"#162235",
+
+                borderRadius:2
+
+              }}
+
+            >
+
+
+
+
+
+              <Typography>
+
+                📌 Corrente trecho desligado:
+
+                {" "}
+
+                <b>
+
+                {resultado.simulacao?.correnteDesligado ?? 0} A
+
+                </b>
+
+              </Typography>
+
+
+
+
+
+              <Typography>
+
+                📌 Corrente receptor:
+
+                {" "}
+
+                <b>
+
+                {resultado.simulacao?.correnteDestino ?? 0} A
+
+                </b>
+
+              </Typography>
+
+
+
+
+
+
+
+              <Typography>
+
+                ⚡ Corrente após transferência:
+
+                {" "}
+
+                <b>
+
+                {resultado.correnteTotal ?? resultado.simulacao?.correnteTotal ?? 0} A
+
+                </b>
+
+              </Typography>
+
+
+
+
+
+
+
+              <Typography>
+
+                📊 Carregamento:
+
+                {" "}
+
+                <b>
+
+                {resultado.carregamento ?? 0} %
+
+                </b>
+
+              </Typography>
+
+
+
+            </Box>
+
+
+
+
+
+
+
+
+
+            {
+
+            resultado.trechoLimitante &&
+
+
+
+            <Box
+
+              sx={{
+
+                p:2,
+
+                mb:2,
+
+                bgcolor:"#1e293b",
+
+                borderRadius:2
+
+              }}
+
+            >
+
+
+
+
+
+              <Typography
+
+                fontWeight="bold"
+
+              >
+
+                🔎 Trecho limitante identificado
+
+              </Typography>
+
+
+
+
+
+
+
+              <Typography>
+
+                Trecho:
+
+                {" "}
+
+                <b>
+
+                {resultado.trechoLimitante.id}
+
+                </b>
+
+              </Typography>
+
+
+
+
+
+
+
+              <Typography>
+
+                Condutor:
+
+                {" "}
+
+                <b>
+
+                {resultado.trechoLimitante.cabo}
+
+                </b>
+
+              </Typography>
+
+
+
+
+
+
+
+              <Typography>
+
+                Capacidade:
+
+                {" "}
+
+                <b>
+
+                {resultado.trechoLimitante.capacidade} A
+
+                </b>
+
+              </Typography>
+
+
+
+
+
+            </Box>
+
+
+
+            }
+
+
+
+
+
+
+
+
+
             <Typography
 
 
@@ -704,6 +1117,7 @@ function ManobraForm({ ocorrencia }) {
 
 
 
+
           </Box>
 
 
@@ -715,7 +1129,10 @@ function ManobraForm({ ocorrencia }) {
 
 
 
+
       </Stack>
+
+
 
 
 
