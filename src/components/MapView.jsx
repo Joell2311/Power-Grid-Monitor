@@ -1,803 +1,194 @@
-import { useState, useEffect } from "react";
-
-import { Paper, Box } from "@mui/material";
-
+import { useEffect } from "react";
 import {
   MapContainer,
   TileLayer,
   Marker,
   Popup,
   Polyline,
-  useMap,
+  useMap
 } from "react-leaflet";
 
-import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+import SubestacoesRepository from "../core/repositories/subestacoesRepository";
+import TrechosRepository from "../core/repositories/trechosRepository";
+import EquipamentosRepository from "../core/repositories/equipamentosRepository";
+import useCoiStore from "../core/store/coiStore";
+
+import CamadaBDGD from "./mapa/CamadaBDGD";
 
 
-import { subestacoes } from "../data/subestacoes";
-import { alimentadores } from "../data/alimentadores";
-import { equipamentos } from "../data/equipamentos";
-import { trechos } from "../data/trechos";
-
-
-delete L.Icon.Default.prototype._getIconUrl;
-
-
-L.Icon.Default.mergeOptions({
-
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-
-  iconUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-
-  shadowUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-
+const iconeSubestacao = new L.Icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
 });
 
+const iconeEquipamento = new L.DivIcon({
+  html: `
+    <div
+      style="
+        width:14px;
+        height:14px;
+        background:#ff9800;
+        border:2px solid white;
+        border-radius:50%;
+      "
+    ></div>
+  `,
+  className: "",
+  iconSize: [14, 14],
+});
 
+function corTrecho(trecho, estadosStore) {
+  const estadoAtual = estadosStore[trecho.id] || trecho.estadoRede;
 
-function LocalizarMapa({ localizacao }) {
+  if (estadoAtual === "DESLIGADO") return "#f44336"; // Vermelho
+  if (estadoAtual === "MANOBRA") return "#ff1744";     // Laranja
+  if (trecho.interligacao) return "#1976d2";         // Azul
+  return "#4caf50";                                  // Verde (Normal)
+}
 
+function espessuraTrecho(trecho) {
+  const estadoAtual = useCoiStore.getState().trechosEstado[trecho.id];
+  if (estadoAtual === "MANOBRA") return 7;           // <--- LINHA BEM GROSSA PARA DESTACAR
+  if (trecho.interligacao) return 6;
+  if (trecho.telecomandado) return 5;
+  return 3;
+}
+
+// Controlador do mapa com validação estrita de números
+function MapController() {
   const map = useMap();
+  const { coordenadasMapa, zoomMapa } = useCoiStore();
 
+  useEffect(() => {
+    if (coordenadasMapa && Array.isArray(coordenadasMapa) && coordenadasMapa.length >= 2) {
+      const lat = Number(coordenadasMapa[0]);
+      const lng = Number(coordenadasMapa[1]);
 
-  useEffect(()=>{
-
-    if(!localizacao) return;
-
-
-    map.flyTo(localizacao,18,{
-      animate:true,
-      duration:1.5
-    });
-
-
-  },[localizacao,map]);
-
+      if (!isNaN(lat) && !isNaN(lng) && isFinite(lat) && isFinite(lng)) {
+        map.setView([lat, lng], zoomMapa, {
+          animate: true,
+          duration: 1.0
+        });
+      }
+    }
+  }, [coordenadasMapa, zoomMapa, map]);
 
   return null;
-
 }
 
+function MapView() {
 
+    const subestacoes =
+        SubestacoesRepository.listar();
 
+    const trechos =
+        TrechosRepository.listar();
 
-function MapView({ ocorrencia, localizacaoMapa }) {
+    const equipamentos =
+        EquipamentosRepository.listar();
 
+    const se = subestacoes[0];
 
-const [trechoSelecionado,setTrechoSelecionado]=useState(null);
+    const { trechosEstado } = useCoiStore();     
+       
+// LOG DE INSPEÇÃO
+   console.log(
+        "🗺️ Renderizando mapa.",
+        "Subestações:",
+        subestacoes,
+        "Trechos:",
+        trechos,
+        "Equipamentos:",
+        equipamentos,
+        "Estado dos trechos:",
+        trechosEstado
+    );
+  if (!se) return null;
 
+  const centroInicial = [se.localizacao.latitude, se.localizacao.longitude];
 
+  return (
+    <MapContainer
+      center={centroInicial}
+      zoom={15}
+      style={{
+        width: "100%",
+        height: "100%",
+      }}
+    >
+      <MapController />
 
-const subestacao =
-subestacoes.length > 0
-?
-subestacoes[0]
-:
-{
- nome:"Subestação",
- coordenadas:[
- -8.0238,
- -34.9781
- ],
- status:"Normal",
- tensao:"13.8 kV"
-};
+      <TileLayer
+        attribution="© OpenStreetMap"
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
 
+      {/* SUBESTAÇÃO */}
+      <Marker position={centroInicial} icon={iconeSubestacao}>
+        <Popup>
+          <strong>{se.nome}</strong>
+          <br />
+          {se.sigla}
+          <br />
+          {se.tensao.secundaria} {se.tensao.unidade}
+        </Popup>
+      </Marker>
 
+{/* TRECHOS */}
+      {trechos.map((trecho) => {
+        const estadoAtual = trechosEstado[trecho.id] || trecho.estadoRede;
 
+        return (
+          <Polyline
+            key={`${trecho.id}-${estadoAtual}`} // <--- FORÇA O RE-RENDER DO LEAFLET QUANDO O ESTADO MUDA
+            positions={trecho.coordenadas}
+            pathOptions={{
+              color: corTrecho(trecho, trechosEstado),
+              weight: espessuraTrecho(trecho),
+            }}
+          >
+            <Popup>
+              <strong>{trecho.id}</strong>
+              <br />
+              Alimentador: {trecho.alimentador}
+              <br />
+              Clientes: {trecho.clientes}
+              <br />
+              Estado: {estadoAtual}
+            </Popup>
+          </Polyline>
+        );
+      })}
+      
+      
+      {/* EQUIPAMENTOS */}
+      {equipamentos.map((equipamento) => {
+        if (!equipamento.localizacao?.latitude || !equipamento.localizacao?.longitude) {
+          return null;
+        }
 
-
-function corTrecho(trecho){
-
-
-const carregamento =
-(trecho.correnteAtual / trecho.capacidade) * 100;
-
-
-
-if(
-ocorrencia?.alimentador === trecho.alimentador
-)
-
-return "#ff0000";
-
-
-
-if(
-carregamento >= 80
-)
-
-return "#ff9800";
-
-
-
-return "#00c853";
-
-
+        return (
+          <Marker
+            key={equipamento.id}
+            position={[equipamento.localizacao.latitude, equipamento.localizacao.longitude]}
+            icon={iconeEquipamento}
+          >
+            <Popup>
+              <strong>{equipamento.plaqueta}</strong>
+              <br />
+              {equipamento.nome}
+            </Popup>
+          </Marker>
+        );
+      })}
+      <CamadaBDGD />
+    </MapContainer>
+  );
 }
-
-
-
-
-
-
-return (
-
-<Paper
-
-elevation={3}
-
-sx={{
-
-height:"100%",
-
-width:"100%",
-
-overflow:"hidden",
-
-borderRadius:3,
-
-bgcolor:"#111d2d"
-
-}}
-
->
-
-
-<Box
-
-sx={{
-
-height:"100%",
-
-width:"100%"
-
-}}
-
->
-
-
-
-<MapContainer
-
-center={subestacao.coordenadas}
-
-zoom={14}
-
-style={{
-
-height:"100%",
-
-width:"100%"
-
-}}
-
->
-
-
-
-<LocalizarMapa
-
-localizacao={localizacaoMapa}
-
-/>
-
-
-
-<TileLayer
-
-attribution="&copy; OpenStreetMap contributors"
-
-url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-
-/>
-
-
-
-
-
-{/* SUBESTAÇÃO */}
-
-
-<Marker position={subestacao.coordenadas}>
-
-
-<Popup>
-
-<h3>
-{subestacao.nome}
-</h3>
-
-
-<p>
-Status: {subestacao.status}
-</p>
-
-
-<p>
-Tensão: {subestacao.tensao}
-</p>
-
-
-</Popup>
-
-
-</Marker>
-
-
-
-
-
-
-{/* OCORRÊNCIA */}
-
-
-
-{ocorrencia?.localizacao &&
-
-<Marker
-
-position={[
-
-ocorrencia.localizacao.latitude,
-
-ocorrencia.localizacao.longitude
-
-]}
-
->
-
-
-<Popup>
-
-<h3>
-🚨 Ocorrência Ativa
-</h3>
-
-
-<p>
-
-<strong>
-Alimentador:
-</strong>
-
-{" "}
-
-{ocorrencia.alimentador}
-
-</p>
-
-
-
-<p>
-
-<strong>
-Equipamento:
-</strong>
-
-{" "}
-
-{ocorrencia.equipamento}
-
-</p>
-
-
-
-<p>
-
-<strong>
-Clientes:
-</strong>
-
-{" "}
-
-{ocorrencia.impacto.clientesAfetados}
-
-</p>
-
-
-
-<p>
-
-<strong>
-Causa:
-</strong>
-
-{" "}
-
-{ocorrencia.causa}
-
-</p>
-
-
-</Popup>
-
-
-</Marker>
-
-}
-
-
-
-
-
-
-
-{/* TRECHOS DA REDE */}
-
-
-
-{trechos.map((trecho)=>(
-
-
-<Polyline
-
-
-key={trecho.id}
-
-
-positions={trecho.coordenadas}
-
-
-color={corTrecho(trecho)}
-
-
-weight={
-
-trechoSelecionado?.id === trecho.id
-
-?
-
-9
-
-:
-
-5
-
-}
-
-
-opacity={0.9}
-
-
-
-eventHandlers={{
-
-
-click:()=>{
-
-setTrechoSelecionado(trecho)
-
-}
-
-
-}}
-
-
-
->
-
-
-
-<Popup>
-
-
-<h3>
-
-Trecho {trecho.id}
-
-</h3>
-
-
-<p>
-
-<strong>
-Alimentador:
-</strong>
-
-{" "}
-
-{trecho.alimentador}
-
-</p>
-
-
-<p>
-
-<strong>
-Origem:
-</strong>
-
-{" "}
-
-{trecho.origem}
-
-</p>
-
-
-
-<p>
-
-<strong>
-Destino:
-</strong>
-
-{" "}
-
-{trecho.destino}
-
-</p>
-
-
-
-<hr/>
-
-
-<p>
-
-<strong>
-Cabo:
-</strong>
-
-{" "}
-
-{trecho.cabo}
-
-</p>
-
-
-
-<p>
-
-<strong>
-Capacidade:
-</strong>
-
-{" "}
-
-{trecho.capacidade} A
-
-</p>
-
-
-
-<p>
-
-<strong>
-Corrente:
-</strong>
-
-{" "}
-
-{trecho.correnteAtual} A
-
-</p>
-
-
-
-<p>
-
-
-<strong>
-Carregamento:
-</strong>
-
-
-{" "}
-
-{
-
-(
-
-trecho.correnteAtual /
-
-trecho.capacidade
-
-)
-
-*
-
-100
-
-}
-
-%
-
-</p>
-
-
-
-<p>
-
-<strong>
-Clientes:
-</strong>
-
-{" "}
-
-{trecho.clientes}
-
-</p>
-
-
-
-
-
-<hr/>
-
-
-<strong>
-Consumidores prioritários:
-</strong>
-
-
-
-<ul>
-
-<li>
-Hospitais: {trecho.consumidoresPrioritarios.hospitais}
-</li>
-
-
-<li>
-Grupo A: {trecho.consumidoresPrioritarios.grupoA}
-</li>
-
-
-<li>
-Escolas: {trecho.consumidoresPrioritarios.escolas}
-</li>
-
-
-<li>
-Saneamento: {trecho.consumidoresPrioritarios.saneamento}
-</li>
-
-
-</ul>
-
-
-
-
-{
-
-trecho.interligacao &&
-
-<>
-
-<hr/>
-
-<p>
-
-<strong>
-Interligação:
-</strong>
-
-</p>
-
-
-<p>
-
-Equipamento:
-
-{" "}
-
-{trecho.equipamentoInterligacao}
-
-</p>
-
-
-<p>
-
-Destino:
-
-{" "}
-
-{trecho.alimentadorDestino}
-
-</p>
-
-
-</>
-
-}
-
-
-
-
-</Popup>
-
-
-</Polyline>
-
-
-))}
-
-
-
-
-
-
-
-
-{/* EQUIPAMENTOS */}
-
-
-
-{equipamentos.map((equipamento)=>(
-
-
-<Marker
-
-key={equipamento.id}
-
-position={equipamento.coordenadas}
-
->
-
-
-<Popup>
-
-
-<h3>
-
-{equipamento.nome}
-
-</h3>
-
-
-
-<p>
-
-<strong>
-Tipo:
-</strong>
-
-{" "}
-
-{equipamento.tipo}
-
-</p>
-
-
-
-
-{equipamento.plaqueta &&
-
-<p>
-
-<strong>
-Plaqueta:
-</strong>
-
-{" "}
-
-{equipamento.plaqueta}
-
-</p>
-
-}
-
-
-
-
-{equipamento.pt &&
-
-<p>
-
-<strong>
-PT:
-</strong>
-
-{" "}
-
-{equipamento.pt}
-
-</p>
-
-}
-
-
-
-
-<p>
-
-<strong>
-Alimentador:
-</strong>
-
-{" "}
-
-{equipamento.alimentador}
-
-</p>
-
-
-
-<p>
-
-<strong>
-Status:
-</strong>
-
-{" "}
-
-{equipamento.status}
-
-</p>
-
-
-
-{
-
-equipamento.interligacao &&
-
-<>
-
-<hr/>
-
-
-<p>
-
-<strong>
-Interligação
-</strong>
-
-</p>
-
-
-<p>
-
-{equipamento.alimentador}
-
-</p>
-
-
-↓
-
-<p>
-
-{equipamento.alimentadorDestino}
-
-</p>
-
-
-</>
-
-}
-
-
-
-
-</Popup>
-
-
-</Marker>
-
-
-))}
-
-
-
-
-</MapContainer>
-
-
-
-</Box>
-
-
-</Paper>
-
-
-);
-
-}
-
-
 
 export default MapView;

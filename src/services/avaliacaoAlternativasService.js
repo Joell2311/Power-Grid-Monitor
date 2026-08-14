@@ -194,7 +194,7 @@ if(
 
       `❌ Restrição encontrada no trecho ${restricao.trecho}.
       
-Cabo: ${restricao.cabo}
+bitola: ${restricao.bitola}
 
 Capacidade: ${restricao.capacidade}A
 

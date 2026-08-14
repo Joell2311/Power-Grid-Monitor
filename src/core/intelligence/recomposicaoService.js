@@ -1,4 +1,4 @@
-import { executarMotorCOI } from "./motorCOIService";
+import { executarMotorCOI } from "./motorCOI.js";
 
 export function sugerirRecomposicao(ocorrencia) {
 

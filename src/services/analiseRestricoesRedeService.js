@@ -81,7 +81,7 @@ origem:trecho.origem,
 destino:trecho.destino,
 
 
-cabo:trecho.cabo,
+bitola:trecho.bitola,
 
 
 capacidade:trecho.capacidade,

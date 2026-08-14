@@ -10,16 +10,20 @@ import OccurrencePanel from "../components/OccurrencePanel";
 import EventPanel from "../components/EventPanel";
 import OccurrenceSelector from "../components/OccurrenceSelector";
 
-import ocorrencias from "../data/ocorrencias";
+import { ocorrencias } from "../core/database/ocorrencias";
 
 import { sugerirRecomposicao }
-from "../services/recomposicaoService";
+from "../core/intelligence/recomposicaoService";
 
 import { calcularImpactoOperacional }
-from "../services/impactoOperacionalService";
+from "../core/intelligence/impactoOperacionalService";
+
+import useCoiStore from "../core/store/coiStore";
 
 function MainLayout() {
 
+
+  
   const [ocorrenciaSelecionada, setOcorrenciaSelecionada] =
     useState(ocorrencias[0]);
 
@@ -108,7 +112,9 @@ function MainLayout() {
           flexShrink: 0,
         }}
       >
-        <AlarmBar />
+       
+    
+        
       </Box>
 
       <Box
@@ -222,6 +228,7 @@ function MainLayout() {
                 resultadoSimulacao={resultadoSimulacao}
                 setResultadoSimulacao={setResultadoSimulacao}
               />
+
 
             </Box>
 

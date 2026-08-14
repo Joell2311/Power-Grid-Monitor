@@ -1,0 +1,6931 @@
+INFO: Open of `C:\Users\vitor\Documents\coi-monitor\tools\bdgd\..\..\public\data\bdgd\CMG01C4.geojson'
+      using driver `GeoJSON' successful.
+
+Layer name: SSDMT
+Geometry: Multi Line String
+Feature Count: 255
+Extent: (-34.983486, -8.015612) - (-34.973369, -7.993703)
+Layer SRS WKT:
+GEOGCRS["WGS 84",
+    DATUM["World Geodetic System 1984",
+        ELLIPSOID["WGS 84",6378137,298.257223563,
+            LENGTHUNIT["metre",1]]],
+    PRIMEM["Greenwich",0,
+        ANGLEUNIT["degree",0.0174532925199433]],
+    CS[ellipsoidal,2],
+        AXIS["geodetic latitude (Lat)",north,
+            ORDER[1],
+            ANGLEUNIT["degree",0.0174532925199433]],
+        AXIS["geodetic longitude (Lon)",east,
+            ORDER[2],
+            ANGLEUNIT["degree",0.0174532925199433]],
+    ID["EPSG",4326]]
+Data axis to CRS axis mapping: 2,1
+COD_ID: String (0.0)
+PN_CON_1: String (0.0)
+PN_CON_2: String (0.0)
+CTMT: String (0.0)
+CT_COD_OP: String (0.0)
+UNI_TR_AT: String (0.0)
+SUB: String (0.0)
+CONJ: Integer (0.0)
+ARE_LOC: String (0.0)
+DIST: Integer (0.0)
+PAC_1: String (0.0)
+PAC_2: String (0.0)
+FAS_CON: String (0.0)
+TIP_INST: String (0.0)
+TIP_CND: String (0.0)
+POS: String (0.0)
+ODI: String (0.0)
+TI: String (0.0)
+CM: String (0.0)
+SITCONT: String (0.0)
+COMP: Real (0.0)
+DESCR: String (0.0)
+Shape_Length: Real (0.0)
+OGRFeature(SSDMT):0
+  COD_ID (String) = 941527
+  PN_CON_1 (String) = 1140323
+  PN_CON_2 (String) = 1140324
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1140323M-154
+  PAC_2 (String) = 1140324M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 16_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 35.66226713
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000310591557728295
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):1
+  COD_ID (String) = 914546
+  PN_CON_1 (String) = 1091135
+  PN_CON_2 (String) = 1091136
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091135M-154
+  PAC_2 (String) = 1091136M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 27.3171909
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000237566294525605
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):2
+  COD_ID (String) = 914693
+  PN_CON_1 (String) = 1090059
+  PN_CON_2 (String) = 1090060
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090059M-154
+  PAC_2 (String) = 1090060M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 76_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 40.47829933
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000352566092651945
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):3
+  COD_ID (String) = 914700
+  PN_CON_1 (String) = 1090522
+  PN_CON_2 (String) = 1090524
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090522M-154
+  PAC_2 (String) = 1090524M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 49.07894969
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000427334658782266
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):4
+  COD_ID (String) = 914508
+  PN_CON_1 (String) = 1090977
+  PN_CON_2 (String) = 1090978
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090977M-154
+  PAC_2 (String) = 1090978M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 25.47491197
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000221528639278618
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):5
+  COD_ID (String) = 914689
+  PN_CON_1 (String) = 1090036
+  PN_CON_2 (String) = 1090037
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090036M-154S
+  PAC_2 (String) = 1090037M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 31.40609929
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000273426432180396
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):6
+  COD_ID (String) = 3035361
+  PN_CON_1 (String) = 5994388
+  PN_CON_2 (String) = 5994389
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 5994388M-154
+  PAC_2 (String) = 5994389M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 63_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 24.56767422
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000213758343656577
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):7
+  COD_ID (String) = 914597
+  PN_CON_1 (String) = 1090896
+  PN_CON_2 (String) = 1090057
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090896M-154
+  PAC_2 (String) = 1090057M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 33.20672042
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000289001968687886
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):8
+  COD_ID (String) = 914589
+  PN_CON_1 (String) = 1090871
+  PN_CON_2 (String) = 1090872
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090871M-154
+  PAC_2 (String) = 1090872M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 26.88120601
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000233393328143548
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):9
+  COD_ID (String) = 10111883
+  PN_CON_1 (String) = 1090638
+  PN_CON_2 (String) = 10095150
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090638M-154
+  PAC_2 (String) = 10095150M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 62_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 11.78274507
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000102366988909432
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):10
+  COD_ID (String) = 914542
+  PN_CON_1 (String) = 1091111
+  PN_CON_2 (String) = 1091121
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091111M-154
+  PAC_2 (String) = 1091121M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 28.10200755
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000244664653315612
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):11
+  COD_ID (String) = 914532
+  PN_CON_1 (String) = 1091070
+  PN_CON_2 (String) = 1091071
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091070M-154
+  PAC_2 (String) = 1091071M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 42.86223407
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000373240061967115
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):12
+  COD_ID (String) = 914563
+  PN_CON_1 (String) = 1090749
+  PN_CON_2 (String) = 1090750
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090749M-154
+  PAC_2 (String) = 1090750M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 39.0948666
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000339491277432776
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):13
+  COD_ID (String) = 914579
+  PN_CON_1 (String) = 1090792
+  PN_CON_2 (String) = 1090793
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090792M-154
+  PAC_2 (String) = 1090793M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 24.60496048
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000213642106159482
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):14
+  COD_ID (String) = 914574
+  PN_CON_1 (String) = 1090758
+  PN_CON_2 (String) = 1090768
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090758M-154
+  PAC_2 (String) = 1090768M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 36.76668727
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00032000265139845
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):15
+  COD_ID (String) = 914518
+  PN_CON_1 (String) = 1091009
+  PN_CON_2 (String) = 1089809
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091009M-154S
+  PAC_2 (String) = 1089809M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 19.16753362
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000166432522766086
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):16
+  COD_ID (String) = 914512
+  PN_CON_1 (String) = 1090989
+  PN_CON_2 (String) = 1090990
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090989M-154
+  PAC_2 (String) = 1090990M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 21.97623779
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000191240452400892
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):17
+  COD_ID (String) = 914698
+  PN_CON_1 (String) = 1090520
+  PN_CON_2 (String) = 10083917
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090520M-154
+  PAC_2 (String) = 10083917M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 48_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 11.52387797
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000100171676166697
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):18
+  COD_ID (String) = 995822
+  PN_CON_1 (String) = 1090088
+  PN_CON_2 (String) = 1090525
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090088M-154S
+  PAC_2 (String) = 1090525M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 31.82878064
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000277075236940725
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):19
+  COD_ID (String) = 10399843
+  PN_CON_1 (String) = 10301775
+  PN_CON_2 (String) = 10301776
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 10301775M-154
+  PAC_2 (String) = 10301776M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 62_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 5.53065989
+  DESCR (String) =  
+  Shape_Length (Real) = 4.8122378376728e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):20
+  COD_ID (String) = 914541
+  PN_CON_1 (String) = 1091110
+  PN_CON_2 (String) = 1091111
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091110M-154
+  PAC_2 (String) = 1091111M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 45.44002407
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00039512353640993
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):21
+  COD_ID (String) = 914483
+  PN_CON_1 (String) = 1091406
+  PN_CON_2 (String) = 1091383
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091406M-154
+  PAC_2 (String) = 1091383M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 24.81492653
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000216131842280099
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):22
+  COD_ID (String) = 914538
+  PN_CON_1 (String) = 1091107
+  PN_CON_2 (String) = 1091108
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091107M-154S
+  PAC_2 (String) = 1091108M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 38.01692857
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000330516606974246
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):23
+  COD_ID (String) = 914714
+  PN_CON_1 (String) = 1090571
+  PN_CON_2 (String) = 1090572
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090571M-154
+  PAC_2 (String) = 1090572M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 45.40068587
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00039471717598702
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):24
+  COD_ID (String) = 914684
+  PN_CON_1 (String) = 1090030
+  PN_CON_2 (String) = 1089792
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090030M-154
+  PAC_2 (String) = 1089792M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 41.11635785
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000358093447022151
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):25
+  COD_ID (String) = 914702
+  PN_CON_1 (String) = 1090524
+  PN_CON_2 (String) = 1090526
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090524M-154
+  PAC_2 (String) = 1090526M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 44_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 25.95978566
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000225625183241657
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):26
+  COD_ID (String) = 914740
+  PN_CON_1 (String) = 1090663
+  PN_CON_2 (String) = 1089796
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090663M-154
+  PAC_2 (String) = 1089796M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 7.57904624
+  DESCR (String) =  
+  Shape_Length (Real) = 6.58191131579337e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):27
+  COD_ID (String) = 914562
+  PN_CON_1 (String) = 1090745
+  PN_CON_2 (String) = 1090749
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090745M-154
+  PAC_2 (String) = 1090749M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 32.92687293
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000285900385612771
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):28
+  COD_ID (String) = 2941590
+  PN_CON_1 (String) = 1091350
+  PN_CON_2 (String) = 1090005
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091350M-154
+  PAC_2 (String) = 1090005M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 63_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 29.41409592
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000255894201991972
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):29
+  COD_ID (String) = 914524
+  PN_CON_1 (String) = 1091015
+  PN_CON_2 (String) = 1091069
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091015M-154
+  PAC_2 (String) = 1091069M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 41.97901398
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000365563481502726
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):30
+  COD_ID (String) = 914543
+  PN_CON_1 (String) = 1091121
+  PN_CON_2 (String) = 1091123
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091121M-154
+  PAC_2 (String) = 1091123M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 48.65419227
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000423790916956694
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):31
+  COD_ID (String) = 914685
+  PN_CON_1 (String) = 1090031
+  PN_CON_2 (String) = 1090032
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090031M-154
+  PAC_2 (String) = 1090032M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 41.07703747
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00035674810545513
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):32
+  COD_ID (String) = 914742
+  PN_CON_1 (String) = 1090668
+  PN_CON_2 (String) = 1090669
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090668M-154
+  PAC_2 (String) = 1090669M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 50.03092739
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000434683132741741
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):33
+  COD_ID (String) = 10139741
+  PN_CON_1 (String) = 10117021
+  PN_CON_2 (String) = 1090754
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 10117021M-154
+  PAC_2 (String) = 1090754M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 30.13549102
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000261650075793689
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):34
+  COD_ID (String) = 10096322
+  PN_CON_1 (String) = 1090519
+  PN_CON_2 (String) = 1090520
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090519M-154
+  PAC_2 (String) = 1090520M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 34.37391547
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000299159192175524
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):35
+  COD_ID (String) = 941536
+  PN_CON_1 (String) = 1089773
+  PN_CON_2 (String) = 1140322
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089773M-154S
+  PAC_2 (String) = 1140322M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 16_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 7.711288
+  DESCR (String) =  
+  Shape_Length (Real) = 6.71282633505324e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):36
+  COD_ID (String) = 10111887
+  PN_CON_1 (String) = 1090636
+  PN_CON_2 (String) = 1090637
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090636M-154
+  PAC_2 (String) = 1090637M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 27.41228168
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000238483131198205
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):37
+  COD_ID (String) = 914577
+  PN_CON_1 (String) = 1090790
+  PN_CON_2 (String) = 1090791
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090790M-154
+  PAC_2 (String) = 1090791M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 46.02182509
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00039958291256057
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):38
+  COD_ID (String) = 914552
+  PN_CON_1 (String) = 1090712
+  PN_CON_2 (String) = 1090714
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090712M-154
+  PAC_2 (String) = 1090714M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 32.76670767
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000284494949079184
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):39
+  COD_ID (String) = 939086
+  PN_CON_1 (String) = 1133437
+  PN_CON_2 (String) = 1091384
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1133437M-154
+  PAC_2 (String) = 1091384M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 24.30493792
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000211050348460605
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):40
+  COD_ID (String) = 914488
+  PN_CON_1 (String) = 1089805
+  PN_CON_2 (String) = 1090916
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089805M-154
+  PAC_2 (String) = 1090916M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 30.14565878
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000262542772635338
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):41
+  COD_ID (String) = 914736
+  PN_CON_1 (String) = 1090660
+  PN_CON_2 (String) = 1090661
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090660M-154
+  PAC_2 (String) = 1090661M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 47.19363605
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000409861895720547
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):42
+  COD_ID (String) = 914539
+  PN_CON_1 (String) = 1091108
+  PN_CON_2 (String) = 1091109
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091108M-154
+  PAC_2 (String) = 1091109M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 34.28767469
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00029822182335995
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):43
+  COD_ID (String) = 914503
+  PN_CON_1 (String) = 1090962
+  PN_CON_2 (String) = 1089793
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090962M-154
+  PAC_2 (String) = 1089793M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 12.07983527
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000105187079013246
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):44
+  COD_ID (String) = 914506
+  PN_CON_1 (String) = 1090972
+  PN_CON_2 (String) = 1090973
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090972M-154
+  PAC_2 (String) = 1090973M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 34.28791961
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000298179759627683
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):45
+  COD_ID (String) = 914591
+  PN_CON_1 (String) = 1090872
+  PN_CON_2 (String) = 1089791
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090872M-154
+  PAC_2 (String) = 1089791M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 7.22598028
+  DESCR (String) =  
+  Shape_Length (Real) = 6.29344721776987e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):46
+  COD_ID (String) = 914571
+  PN_CON_1 (String) = 1090756
+  PN_CON_2 (String) = 1090757
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090756M-154S
+  PAC_2 (String) = 1090757M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 34.2716317
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000298282795729908
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):47
+  COD_ID (String) = 2941585
+  PN_CON_1 (String) = 1091071
+  PN_CON_2 (String) = 1090012
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091071M-154
+  PAC_2 (String) = 1090012M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 63_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 39.2343315
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000341582219719262
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):48
+  COD_ID (String) = 2941588
+  PN_CON_1 (String) = 1090009
+  PN_CON_2 (String) = 1090006
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090009M-154
+  PAC_2 (String) = 1090006M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 63_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 24.83381733
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000216139456027963
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):49
+  COD_ID (String) = 914487
+  PN_CON_1 (String) = 1089805
+  PN_CON_2 (String) = 1090915
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089805M-154
+  PAC_2 (String) = 1090915M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 7.73273601
+  DESCR (String) =  
+  Shape_Length (Real) = 6.71493978339465e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):50
+  COD_ID (String) = 914581
+  PN_CON_1 (String) = 1090794
+  PN_CON_2 (String) = 1090804
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090794M-154
+  PAC_2 (String) = 1090804M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 27.27009045
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000236770385651011
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):51
+  COD_ID (String) = 914713
+  PN_CON_1 (String) = 1090570
+  PN_CON_2 (String) = 1090571
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090570M-154
+  PAC_2 (String) = 1090571M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 45.07713906
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000391811912662899
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):52
+  COD_ID (String) = 914600
+  PN_CON_1 (String) = 1090898
+  PN_CON_2 (String) = 1090899
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090898M-154
+  PAC_2 (String) = 1090899M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 39.32924291
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000341624882389058
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):53
+  COD_ID (String) = 914540
+  PN_CON_1 (String) = 1091109
+  PN_CON_2 (String) = 1091110
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091109M-154
+  PAC_2 (String) = 1091110M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 39.21059224
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000341027364114816
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):54
+  COD_ID (String) = 914491
+  PN_CON_1 (String) = 1089809
+  PN_CON_2 (String) = 1091011
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089809M-154
+  PAC_2 (String) = 1091011M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 23.027977
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000200541816210683
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):55
+  COD_ID (String) = 941532
+  PN_CON_1 (String) = 1140328
+  PN_CON_2 (String) = 1089344
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1140328M-154
+  PAC_2 (String) = 1089344M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 66_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 38.38960092
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00033417263813749
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):56
+  COD_ID (String) = 914482
+  PN_CON_1 (String) = 1091383
+  PN_CON_2 (String) = 1133437
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091383M-154
+  PAC_2 (String) = 1133437M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 28.7825428
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000249940568371829
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):57
+  COD_ID (String) = 914570
+  PN_CON_1 (String) = 1090755
+  PN_CON_2 (String) = 1090756
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090755M-154
+  PAC_2 (String) = 1090756M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 27.35382488
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000237527855842806
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):58
+  COD_ID (String) = 914728
+  PN_CON_1 (String) = 1090629
+  PN_CON_2 (String) = 1090634
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090629M-154
+  PAC_2 (String) = 1090634M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 29.46408819
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000256156772481288
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):59
+  COD_ID (String) = 914492
+  PN_CON_1 (String) = 1089809
+  PN_CON_2 (String) = 1091012
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089809M-154
+  PAC_2 (String) = 1091012M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 15.79668392
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000137187234611653
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):60
+  COD_ID (String) = 914501
+  PN_CON_1 (String) = 1090961
+  PN_CON_2 (String) = 1090962
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090961M-154
+  PAC_2 (String) = 1090962M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 14.97361124
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000130128319946469
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):61
+  COD_ID (String) = 2941586
+  PN_CON_1 (String) = 1090012
+  PN_CON_2 (String) = 1090011
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090012M-154
+  PAC_2 (String) = 1090011M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 63_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 39.08608334
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000340266138946841
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):62
+  COD_ID (String) = 914544
+  PN_CON_1 (String) = 1091123
+  PN_CON_2 (String) = 1091124
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091123M-154
+  PAC_2 (String) = 1091124M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 39.2064737
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000341491363908673
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):63
+  COD_ID (String) = 914741
+  PN_CON_1 (String) = 1090667
+  PN_CON_2 (String) = 1090668
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090667M-154
+  PAC_2 (String) = 1090668M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 30.42916596
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000264366054436418
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):64
+  COD_ID (String) = 914523
+  PN_CON_1 (String) = 1091015
+  PN_CON_2 (String) = 1091016
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091015M-154
+  PAC_2 (String) = 1091016M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 20_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 42.63444317
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000370254346096128
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):65
+  COD_ID (String) = 914535
+  PN_CON_1 (String) = 1091076
+  PN_CON_2 (String) = 1091077
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091076M-154
+  PAC_2 (String) = 1091077M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 39.58314021
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00034435131921718
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):66
+  COD_ID (String) = 914511
+  PN_CON_1 (String) = 1090988
+  PN_CON_2 (String) = 1090989
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090988M-154
+  PAC_2 (String) = 1090989M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 29.38123027
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000255849609928454
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):67
+  COD_ID (String) = 914515
+  PN_CON_1 (String) = 1090991
+  PN_CON_2 (String) = 1090992
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090991M-154
+  PAC_2 (String) = 1090992M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 40.69234409
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000354099309849812
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):68
+  COD_ID (String) = 914554
+  PN_CON_1 (String) = 1090723
+  PN_CON_2 (String) = 1090724
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090723M-154
+  PAC_2 (String) = 1090724M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 41.27021636
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000358334180711959
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):69
+  COD_ID (String) = 914731
+  PN_CON_1 (String) = 1090636
+  PN_CON_2 (String) = 1089802
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090636M-154
+  PAC_2 (String) = 1089802M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 25.60510958
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000222584848125404
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):70
+  COD_ID (String) = 914606
+  PN_CON_1 (String) = 1090078
+  PN_CON_2 (String) = 1090080
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090078M-154
+  PAC_2 (String) = 1090080M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 27.2525659
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000237336824539186
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):71
+  COD_ID (String) = 914602
+  PN_CON_1 (String) = 1090694
+  PN_CON_2 (String) = 1090695
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090694M-154
+  PAC_2 (String) = 1090695M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 33.67240686
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000292358728568066
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):72
+  COD_ID (String) = 914688
+  PN_CON_1 (String) = 1090035
+  PN_CON_2 (String) = 1090036
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090035M-154
+  PAC_2 (String) = 1090036M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 42.49663378
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000369070312625891
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):73
+  COD_ID (String) = 914516
+  PN_CON_1 (String) = 1090992
+  PN_CON_2 (String) = 1090993
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090992M-154
+  PAC_2 (String) = 1090993M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 40.07989291
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000348696864289746
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):74
+  COD_ID (String) = 914719
+  PN_CON_1 (String) = 1090575
+  PN_CON_2 (String) = 1090585
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090575M-154
+  PAC_2 (String) = 1090585M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 38.48177049
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000334311364222441
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):75
+  COD_ID (String) = 914531
+  PN_CON_1 (String) = 1091069
+  PN_CON_2 (String) = 1091070
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091069M-154
+  PAC_2 (String) = 1091070M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 20_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 28.91169782
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000251635280751426
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):76
+  COD_ID (String) = 914520
+  PN_CON_1 (String) = 1091012
+  PN_CON_2 (String) = 1091013
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091012M-154
+  PAC_2 (String) = 1091013M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 33.70200399
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000292667725634983
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):77
+  COD_ID (String) = 10214876
+  PN_CON_1 (String) = 1140324
+  PN_CON_2 (String) = 10172237
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1140324M-154
+  PAC_2 (String) = 10172237M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 18.68867273
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00016236887938172
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):78
+  COD_ID (String) = 914498
+  PN_CON_1 (String) = 1090959
+  PN_CON_2 (String) = 1090960
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090959M-154
+  PAC_2 (String) = 1090960M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 29.25232293
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000254409345155572
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):79
+  COD_ID (String) = 914485
+  PN_CON_1 (String) = 1089802
+  PN_CON_2 (String) = 1090655
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089802M-154
+  PAC_2 (String) = 1090655M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 48_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 13.61450285
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000118423844519319
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):80
+  COD_ID (String) = 914481
+  PN_CON_1 (String) = 1091377
+  PN_CON_2 (String) = 1091406
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091377M-154
+  PAC_2 (String) = 1091406M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 30.959617
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000269660947955552
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):81
+  COD_ID (String) = 941533
+  PN_CON_1 (String) = 1089344
+  PN_CON_2 (String) = 1140331
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089344M-154
+  PAC_2 (String) = 1140331M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 9_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 9.78121494
+  DESCR (String) =  
+  Shape_Length (Real) = 8.49404816294062e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):82
+  COD_ID (String) = 914527
+  PN_CON_1 (String) = 1091018
+  PN_CON_2 (String) = 1091019
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091018M-154
+  PAC_2 (String) = 1091019M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 40.99638867
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000356070098555167
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):83
+  COD_ID (String) = 11283446
+  PN_CON_1 (String) = 10947473
+  PN_CON_2 (String) = 10947474
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 10947473M-154S
+  PAC_2 (String) = 10947474M-154S
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 81_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 7.41505358
+  DESCR (String) =  
+  Shape_Length (Real) = 6.44306566211399e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):84
+  COD_ID (String) = 914721
+  PN_CON_1 (String) = 1090592
+  PN_CON_2 (String) = 1090593
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090592M-154
+  PAC_2 (String) = 1090593M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 34.98677055
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000303784675851203
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):85
+  COD_ID (String) = 914716
+  PN_CON_1 (String) = 1090573
+  PN_CON_2 (String) = 1090574
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090573M-154S
+  PAC_2 (String) = 1090574M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 26.37454781
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000229050823035031
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):86
+  COD_ID (String) = 10158215
+  PN_CON_1 (String) = 1090622
+  PN_CON_2 (String) = 10130900
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090622M-154
+  PAC_2 (String) = 10130900M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 37.72062307
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000328079856374101
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):87
+  COD_ID (String) = 914494
+  PN_CON_1 (String) = 1091137
+  PN_CON_2 (String) = 1091140
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091137M-154
+  PAC_2 (String) = 1091140M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 38.09627237
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000331679487511567
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):88
+  COD_ID (String) = 914738
+  PN_CON_1 (String) = 1090662
+  PN_CON_2 (String) = 1090663
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090662M-154
+  PAC_2 (String) = 1090663M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 27.00669907
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000234532820517114
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):89
+  COD_ID (String) = 914706
+  PN_CON_1 (String) = 1090539
+  PN_CON_2 (String) = 10301774
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090539M-154
+  PAC_2 (String) = 10301774M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 44_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 26.21277644
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000227909622169221
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):90
+  COD_ID (String) = 914590
+  PN_CON_1 (String) = 1090872
+  PN_CON_2 (String) = 1090873
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090872M-154
+  PAC_2 (String) = 1090873M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 23.04232871
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000200064880733674
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):91
+  COD_ID (String) = 2941592
+  PN_CON_1 (String) = 1090004
+  PN_CON_2 (String) = 1090003
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090004M-154
+  PAC_2 (String) = 1090003M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 63_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 21.98828023
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000191242548418177
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):92
+  COD_ID (String) = 914709
+  PN_CON_1 (String) = 1090542
+  PN_CON_2 (String) = 1090543
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090542M-154
+  PAC_2 (String) = 1090543M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 19.07287764
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000165793171870961
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):93
+  COD_ID (String) = 2851126
+  PN_CON_1 (String) = 1090866
+  PN_CON_2 (String) = 1090859
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090866M-154
+  PAC_2 (String) = 1090859M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 63_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 27.87079083
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000241984652303447
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):94
+  COD_ID (String) = 914509
+  PN_CON_1 (String) = 1090978
+  PN_CON_2 (String) = 1090983
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090978M-154
+  PAC_2 (String) = 1090983M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 59.56062927
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000518327046868811
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):95
+  COD_ID (String) = 914513
+  PN_CON_1 (String) = 1090989
+  PN_CON_2 (String) = 1091009
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090989M-154
+  PAC_2 (String) = 1091009M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 35.01340316
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000304817625372374
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):96
+  COD_ID (String) = 11326157
+  PN_CON_1 (String) = 10982413
+  PN_CON_2 (String) = 1089341
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 10982413M-154
+  PAC_2 (String) = 1089341M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 16_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 12.63846214
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000110035883546289
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):97
+  COD_ID (String) = 914712
+  PN_CON_1 (String) = 1090544
+  PN_CON_2 (String) = 1090569
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090544M-154
+  PAC_2 (String) = 1090569M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 19.82196516
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000172451730894743
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):98
+  COD_ID (String) = 941523
+  PN_CON_1 (String) = 1089341
+  PN_CON_2 (String) = 1089342
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089341M-154
+  PAC_2 (String) = 1089342M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 16_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 34.08318494
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000296868732693667
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):99
+  COD_ID (String) = 914578
+  PN_CON_1 (String) = 1090791
+  PN_CON_2 (String) = 1090792
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090791M-154
+  PAC_2 (String) = 1090792M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 45.91325608
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000398647969016795
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):100
+  COD_ID (String) = 914730
+  PN_CON_1 (String) = 1090635
+  PN_CON_2 (String) = 1090636
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090635M-154
+  PAC_2 (String) = 1090636M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 40.0476533
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000348151185671215
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):101
+  COD_ID (String) = 995906
+  PN_CON_1 (String) = 1090532
+  PN_CON_2 (String) = 1090088
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090532M-154
+  PAC_2 (String) = 1090088M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 16_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 36.91132017
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000321385181771568
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):102
+  COD_ID (String) = 914510
+  PN_CON_1 (String) = 1090983
+  PN_CON_2 (String) = 1090988
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090983M-154
+  PAC_2 (String) = 1090988M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 35.43068134
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000308559916965499
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):103
+  COD_ID (String) = 2851127
+  PN_CON_1 (String) = 1090859
+  PN_CON_2 (String) = 1090858
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090859M-154
+  PAC_2 (String) = 1090858M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 63_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 21.30224668
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000184965335292308
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):104
+  COD_ID (String) = 941534
+  PN_CON_1 (String) = 1140329
+  PN_CON_2 (String) = 1089773
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1140329M-154
+  PAC_2 (String) = 1089773M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 16_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 15.67813615
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000136128717948404
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):105
+  COD_ID (String) = 914499
+  PN_CON_1 (String) = 1090960
+  PN_CON_2 (String) = 1090961
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090960M-154S
+  PAC_2 (String) = 1090961M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 38.74516042
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000336767644337572
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):106
+  COD_ID (String) = 914583
+  PN_CON_1 (String) = 1090805
+  PN_CON_2 (String) = 1090806
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090805M-154
+  PAC_2 (String) = 1090806M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 42.64999513
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000370305475002965
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):107
+  COD_ID (String) = 10139740
+  PN_CON_1 (String) = 10117020
+  PN_CON_2 (String) = 10117021
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 10117020M-154
+  PAC_2 (String) = 10117021M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 10.26873969
+  DESCR (String) =  
+  Shape_Length (Real) = 8.93748609857128e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):108
+  COD_ID (String) = 914724
+  PN_CON_1 (String) = 1090621
+  PN_CON_2 (String) = 1090622
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090621M-154
+  PAC_2 (String) = 1090622M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 33.74620445
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000293182739855092
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):109
+  COD_ID (String) = 914441
+  PN_CON_1 (String) = 1091140
+  PN_CON_2 (String) = 1091146
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091140M-154
+  PAC_2 (String) = 1091146M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 28.23759824
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00024594184597087
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):110
+  COD_ID (String) = 10067442
+  PN_CON_1 (String) = 1090918
+  PN_CON_2 (String) = 1090919
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090918M-154
+  PAC_2 (String) = 1090919M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 63_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 34.68036784
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000302010586495128
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):111
+  COD_ID (String) = 914745
+  PN_CON_1 (String) = 1090670
+  PN_CON_2 (String) = 1090684
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090670M-154
+  PAC_2 (String) = 1090684M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 55.01981354
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000477814163156651
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):112
+  COD_ID (String) = 914599
+  PN_CON_1 (String) = 1090897
+  PN_CON_2 (String) = 1090898
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090897M-154
+  PAC_2 (String) = 1090898M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 14.0846875
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000122382354072085
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):113
+  COD_ID (String) = 914692
+  PN_CON_1 (String) = 1090058
+  PN_CON_2 (String) = 1090059
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090058M-154
+  PAC_2 (String) = 1090059M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 76_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 37.78078965
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000329048626985883
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):114
+  COD_ID (String) = 914588
+  PN_CON_1 (String) = 1090818
+  PN_CON_2 (String) = 1090866
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090818M-154
+  PAC_2 (String) = 1090866M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 36.11466831
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00031356227836198
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):115
+  COD_ID (String) = 914548
+  PN_CON_1 (String) = 1090916
+  PN_CON_2 (String) = 1090917
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090916M-154
+  PAC_2 (String) = 1090917M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 35.37775205
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000308087684515375
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):116
+  COD_ID (String) = 914717
+  PN_CON_1 (String) = 1090573
+  PN_CON_2 (String) = 1090621
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090573M-154
+  PAC_2 (String) = 1090621M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 42.42085392
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000368496143081514
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):117
+  COD_ID (String) = 914547
+  PN_CON_1 (String) = 1091136
+  PN_CON_2 (String) = 1091137
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091136M-154
+  PAC_2 (String) = 1091137M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 30.13860746
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000262278257322687
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):118
+  COD_ID (String) = 914594
+  PN_CON_1 (String) = 1090888
+  PN_CON_2 (String) = 1090889
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090888M-154
+  PAC_2 (String) = 1090889M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 24.46209826
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000212968126637088
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):119
+  COD_ID (String) = 995795
+  PN_CON_1 (String) = 1088716
+  PN_CON_2 (String) = 1215184
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1088716M-154
+  PAC_2 (String) = 1215184M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 16_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 26.57360505
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000231359178478845
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):120
+  COD_ID (String) = 10100636
+  PN_CON_1 (String) = 10083917
+  PN_CON_2 (String) = 1091107
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 10083917M-154
+  PAC_2 (String) = 1091107M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 48_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 17.30439404
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000150377342696995
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):121
+  COD_ID (String) = 995821
+  PN_CON_1 (String) = 1215184
+  PN_CON_2 (String) = 1090532
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1215184M-154S
+  PAC_2 (String) = 1090532M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 16_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 47.80230237
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000415887652611312
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):122
+  COD_ID (String) = 914739
+  PN_CON_1 (String) = 1090662
+  PN_CON_2 (String) = 1089795
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090662M-154
+  PAC_2 (String) = 1089795M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 11.61893746
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000101190597886043
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):123
+  COD_ID (String) = 914604
+  PN_CON_1 (String) = 1090061
+  PN_CON_2 (String) = 1089805
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090061M-154
+  PAC_2 (String) = 1089805M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 22.03323603
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000191379507286952
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):124
+  COD_ID (String) = 914555
+  PN_CON_1 (String) = 1090724
+  PN_CON_2 (String) = 1090725
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090724M-154
+  PAC_2 (String) = 1090725M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 27.55497017
+  DESCR (String) =  
+  Shape_Length (Real) = 0.0002392692192403
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):125
+  COD_ID (String) = 941526
+  PN_CON_1 (String) = 1089343
+  PN_CON_2 (String) = 1140323
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089343M-154
+  PAC_2 (String) = 1140323M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 16_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 28.83464368
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000251157791626178
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):126
+  COD_ID (String) = 10067440
+  PN_CON_1 (String) = 1090061
+  PN_CON_2 (String) = 10060794
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090061M-154
+  PAC_2 (String) = 10060794M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 36.69950025
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000319603921172002
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):127
+  COD_ID (String) = 11325391
+  PN_CON_1 (String) = 10869058
+  PN_CON_2 (String) = 10947473
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 10869058M-154
+  PAC_2 (String) = 10947473M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 6.71800455
+  DESCR (String) =  
+  Shape_Length (Real) = 5.84842407960852e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):128
+  COD_ID (String) = 10139739
+  PN_CON_1 (String) = 10117019
+  PN_CON_2 (String) = 10117020
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 10117019M-154
+  PAC_2 (String) = 10117020M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 5.49680631
+  DESCR (String) =  
+  Shape_Length (Real) = 4.78719314666345e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):129
+  COD_ID (String) = 941535
+  PN_CON_1 (String) = 1140330
+  PN_CON_2 (String) = 1140321
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1140330M-154
+  PAC_2 (String) = 1140321M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 24_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 11.50246329
+  DESCR (String) =  
+  Shape_Length (Real) = 9.98687581186514e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):130
+  COD_ID (String) = 11277424
+  PN_CON_1 (String) = 1090519
+  PN_CON_2 (String) = 1090512
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090519M-154
+  PAC_2 (String) = 1090512M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 76_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 36.68625332
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000318877625397006
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):131
+  COD_ID (String) = 914565
+  PN_CON_1 (String) = 1090751
+  PN_CON_2 (String) = 1090752
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090751M-154
+  PAC_2 (String) = 1090752M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 44.99325694
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000391898856856697
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):132
+  COD_ID (String) = 941522
+  PN_CON_1 (String) = 1140322
+  PN_CON_2 (String) = 10869058
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1140322M-154
+  PAC_2 (String) = 10869058M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 16_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 10.82024003
+  DESCR (String) =  
+  Shape_Length (Real) = 9.42494482184229e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):133
+  COD_ID (String) = 914533
+  PN_CON_1 (String) = 10817376
+  PN_CON_2 (String) = 1091073
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 10817376M-154
+  PAC_2 (String) = 1091073M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 36.07403931
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00031414626944512
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):134
+  COD_ID (String) = 914534
+  PN_CON_1 (String) = 1091073
+  PN_CON_2 (String) = 1091076
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091073M-154
+  PAC_2 (String) = 1091076M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 27.14949665
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000236445107997664
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):135
+  COD_ID (String) = 914536
+  PN_CON_1 (String) = 1091077
+  PN_CON_2 (String) = 1091078
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091077M-154
+  PAC_2 (String) = 1091078M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 51.38158879
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000446917050594253
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):136
+  COD_ID (String) = 914585
+  PN_CON_1 (String) = 1090807
+  PN_CON_2 (String) = 1090808
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090807M-154
+  PAC_2 (String) = 1090808M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 40.12228328
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000348357315146347
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):137
+  COD_ID (String) = 914707
+  PN_CON_1 (String) = 1090540
+  PN_CON_2 (String) = 1090541
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090540M-154
+  PAC_2 (String) = 1090541M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 44_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 36.34354864
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000316188925428774
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):138
+  COD_ID (String) = 3035359
+  PN_CON_1 (String) = 5994388
+  PN_CON_2 (String) = 1090660
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 5994388M-154S
+  PAC_2 (String) = 1090660M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 35.58725399
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000309152802840741
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):139
+  COD_ID (String) = 914560
+  PN_CON_1 (String) = 1090735
+  PN_CON_2 (String) = 1090741
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090735M-154
+  PAC_2 (String) = 1090741M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 32.56367696
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00028275928153119
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):140
+  COD_ID (String) = 914496
+  PN_CON_1 (String) = 1090957
+  PN_CON_2 (String) = 1090958
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090957M-154
+  PAC_2 (String) = 1090958M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 22.36338705
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000194772694699565
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):141
+  COD_ID (String) = 914703
+  PN_CON_1 (String) = 1090526
+  PN_CON_2 (String) = 1090527
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090526M-154
+  PAC_2 (String) = 1090527M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 44_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 38.18655966
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000331956408449775
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):142
+  COD_ID (String) = 10412835
+  PN_CON_1 (String) = 1090742
+  PN_CON_2 (String) = 1090745
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090742M-154
+  PAC_2 (String) = 1090745M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 35.80732423
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000310898042107255
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):143
+  COD_ID (String) = 914705
+  PN_CON_1 (String) = 1090538
+  PN_CON_2 (String) = 1090539
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090538M-154
+  PAC_2 (String) = 1090539M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 44_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 31.37647545
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000272570234845907
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):144
+  COD_ID (String) = 914727
+  PN_CON_1 (String) = 1090629
+  PN_CON_2 (String) = 1090624
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090629M-154
+  PAC_2 (String) = 1090624M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 46.31329468
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000402364622210901
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):145
+  COD_ID (String) = 914521
+  PN_CON_1 (String) = 1091013
+  PN_CON_2 (String) = 1091014
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091013M-154
+  PAC_2 (String) = 1091014M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 20_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 33.30715568
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000289200431621624
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):146
+  COD_ID (String) = 914737
+  PN_CON_1 (String) = 1090661
+  PN_CON_2 (String) = 1090662
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090661M-154
+  PAC_2 (String) = 1090662M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 29.36021737
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000254948093936289
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):147
+  COD_ID (String) = 10399841
+  PN_CON_1 (String) = 10301774
+  PN_CON_2 (String) = 10301776
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 10301774M-154
+  PAC_2 (String) = 10301776M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 38.01561048
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000330620561996638
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):148
+  COD_ID (String) = 3035362
+  PN_CON_1 (String) = 5994389
+  PN_CON_2 (String) = 5994390
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 5994389M-154
+  PAC_2 (String) = 5994390M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 20_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 14.76238204
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000128385486484626
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):149
+  COD_ID (String) = 914687
+  PN_CON_1 (String) = 1090034
+  PN_CON_2 (String) = 1090035
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090034M-154
+  PAC_2 (String) = 1090035M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 32.87464376
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000285496024774905
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):150
+  COD_ID (String) = 914744
+  PN_CON_1 (String) = 1090670
+  PN_CON_2 (String) = 1090671
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090670M-154
+  PAC_2 (String) = 1090671M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 10.63227349
+  DESCR (String) =  
+  Shape_Length (Real) = 9.2578574656073e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):151
+  COD_ID (String) = 914550
+  PN_CON_1 (String) = 1090697
+  PN_CON_2 (String) = 1090711
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090697M-154
+  PAC_2 (String) = 1090711M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 43.30377456
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000375989545311957
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):152
+  COD_ID (String) = 914586
+  PN_CON_1 (String) = 1090808
+  PN_CON_2 (String) = 1090810
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090808M-154
+  PAC_2 (String) = 1090810M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 33.29904834
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000290041861778248
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):153
+  COD_ID (String) = 914528
+  PN_CON_1 (String) = 1091019
+  PN_CON_2 (String) = 1091020
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091019M-154
+  PAC_2 (String) = 1091020M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 32.84453634
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000285255233654002
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):154
+  COD_ID (String) = 914598
+  PN_CON_1 (String) = 1090896
+  PN_CON_2 (String) = 1090897
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090896M-154S
+  PAC_2 (String) = 1090897M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 20.53839606
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000178325483773744
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):155
+  COD_ID (String) = 914522
+  PN_CON_1 (String) = 1091014
+  PN_CON_2 (String) = 1091015
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091014M-154
+  PAC_2 (String) = 1091015M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 20_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 29.29059168
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000255109497221592
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):156
+  COD_ID (String) = 914478
+  PN_CON_1 (String) = 1091371
+  PN_CON_2 (String) = 1091372
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091371M-154
+  PAC_2 (String) = 1091372M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 50.25708511
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000436789809622777
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):157
+  COD_ID (String) = 914480
+  PN_CON_1 (String) = 1091373
+  PN_CON_2 (String) = 1091377
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091373M-154
+  PAC_2 (String) = 1091377M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 40.69140507
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000354418873506414
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):158
+  COD_ID (String) = 914584
+  PN_CON_1 (String) = 1090806
+  PN_CON_2 (String) = 1090807
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090806M-154
+  PAC_2 (String) = 1090807M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 38.31479239
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000332668842492056
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):159
+  COD_ID (String) = 914530
+  PN_CON_1 (String) = 1091021
+  PN_CON_2 (String) = 1091022
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091021M-154
+  PAC_2 (String) = 1091022M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 32.21517599
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000279801342180094
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):160
+  COD_ID (String) = 914529
+  PN_CON_1 (String) = 1091020
+  PN_CON_2 (String) = 1091021
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091020M-154
+  PAC_2 (String) = 1091021M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 29.02084136
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000252059768677349
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):161
+  COD_ID (String) = 941524
+  PN_CON_1 (String) = 1089341
+  PN_CON_2 (String) = 1140330
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089341M-154
+  PAC_2 (String) = 1140330M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 24_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 11.43396828
+  DESCR (String) =  
+  Shape_Length (Real) = 9.94801848431233e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):162
+  COD_ID (String) = 914564
+  PN_CON_1 (String) = 1090750
+  PN_CON_2 (String) = 1090751
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090750M-154
+  PAC_2 (String) = 1090751M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 23.17195528
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000201189304490758
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):163
+  COD_ID (String) = 914569
+  PN_CON_1 (String) = 1090754
+  PN_CON_2 (String) = 1090755
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090754M-154
+  PAC_2 (String) = 1090755M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 62.81886812
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000545422305826478
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):164
+  COD_ID (String) = 914525
+  PN_CON_1 (String) = 1091016
+  PN_CON_2 (String) = 1091017
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091016M-154
+  PAC_2 (String) = 1091017M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 42.59361237
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000370611533050145
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):165
+  COD_ID (String) = 914726
+  PN_CON_1 (String) = 1090624
+  PN_CON_2 (String) = 1090623
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090624M-154
+  PAC_2 (String) = 1090623M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 34.01916596
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000295628294082042
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):166
+  COD_ID (String) = 914718
+  PN_CON_1 (String) = 1090574
+  PN_CON_2 (String) = 1090575
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090574M-154
+  PAC_2 (String) = 1090575M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 29.06011212
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000252348697889556
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):167
+  COD_ID (String) = 914507
+  PN_CON_1 (String) = 1090973
+  PN_CON_2 (String) = 1090977
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090973M-154
+  PAC_2 (String) = 1090977M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 34.96659734
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000304085247354626
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):168
+  COD_ID (String) = 914582
+  PN_CON_1 (String) = 1090804
+  PN_CON_2 (String) = 1090805
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090804M-154
+  PAC_2 (String) = 1090805M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 31.34659509
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000272166126140378
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):169
+  COD_ID (String) = 914720
+  PN_CON_1 (String) = 1090585
+  PN_CON_2 (String) = 1090592
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090585M-154
+  PAC_2 (String) = 1090592M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 30.44296281
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000264745377361158
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):170
+  COD_ID (String) = 914490
+  PN_CON_1 (String) = 1089809
+  PN_CON_2 (String) = 1091010
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089809M-154
+  PAC_2 (String) = 1091010M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 5.99583747
+  DESCR (String) =  
+  Shape_Length (Real) = 5.22107871819769e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):171
+  COD_ID (String) = 914559
+  PN_CON_1 (String) = 1090734
+  PN_CON_2 (String) = 1090735
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090734M-154
+  PAC_2 (String) = 1090735M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 34.34255368
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000298185376306524
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):172
+  COD_ID (String) = 914537
+  PN_CON_1 (String) = 1091078
+  PN_CON_2 (String) = 1091079
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091078M-154
+  PAC_2 (String) = 1091079M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 44.14079782
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000383639586170014
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):173
+  COD_ID (String) = 914497
+  PN_CON_1 (String) = 1090958
+  PN_CON_2 (String) = 1090959
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090958M-154
+  PAC_2 (String) = 1090959M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 24.61098175
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000214317484252488
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):174
+  COD_ID (String) = 941528
+  PN_CON_1 (String) = 1140324
+  PN_CON_2 (String) = 1140325
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1140324M-154
+  PAC_2 (String) = 1140325M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 66_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 49.60040374
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000431865147531254
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):175
+  COD_ID (String) = 914593
+  PN_CON_1 (String) = 1090883
+  PN_CON_2 (String) = 1090888
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090883M-154
+  PAC_2 (String) = 1090888M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 27.90397695
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000242937345883772
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):176
+  COD_ID (String) = 914477
+  PN_CON_1 (String) = 1091370
+  PN_CON_2 (String) = 1091371
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091370M-154
+  PAC_2 (String) = 1091371M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 32.63155329
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000283567970437269
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):177
+  COD_ID (String) = 914686
+  PN_CON_1 (String) = 1090032
+  PN_CON_2 (String) = 1090034
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090032M-154
+  PAC_2 (String) = 1090034M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 26.91196374
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000233786934766744
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):178
+  COD_ID (String) = 914479
+  PN_CON_1 (String) = 1091372
+  PN_CON_2 (String) = 1091373
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091372M-154
+  PAC_2 (String) = 1091373M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 40.44943673
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000352312853225711
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):179
+  COD_ID (String) = 914729
+  PN_CON_1 (String) = 1090634
+  PN_CON_2 (String) = 1090635
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090634M-154
+  PAC_2 (String) = 1090635M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 24.78451353
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000215541134447834
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):180
+  COD_ID (String) = 914500
+  PN_CON_1 (String) = 1090960
+  PN_CON_2 (String) = 1090966
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090960M-154
+  PAC_2 (String) = 1090966M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 29.95166343
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000260539073889768
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):181
+  COD_ID (String) = 914572
+  PN_CON_1 (String) = 1090756
+  PN_CON_2 (String) = 1091354
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090756M-154
+  PAC_2 (String) = 1091354M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 21.67753088
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000188215274039349
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):182
+  COD_ID (String) = 914708
+  PN_CON_1 (String) = 1090541
+  PN_CON_2 (String) = 1090542
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090541M-154
+  PAC_2 (String) = 1090542M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 44_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 45.83292027
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000398377540734113
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):183
+  COD_ID (String) = 914723
+  PN_CON_1 (String) = 1090598
+  PN_CON_2 (String) = 1090604
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090598M-154
+  PAC_2 (String) = 1090604M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 55_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 27.04574533
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000238404836316253
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):184
+  COD_ID (String) = 914476
+  PN_CON_1 (String) = 1091354
+  PN_CON_2 (String) = 1090871
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091354M-154
+  PAC_2 (String) = 1090871M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 35.57910458
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000308912356666594
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):185
+  COD_ID (String) = 2941589
+  PN_CON_1 (String) = 1090006
+  PN_CON_2 (String) = 1091350
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090006M-154
+  PAC_2 (String) = 1091350M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 63_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 28.45700546
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000247696343528864
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):186
+  COD_ID (String) = 914601
+  PN_CON_1 (String) = 1090899
+  PN_CON_2 (String) = 1090030
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090899M-154
+  PAC_2 (String) = 1090030M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 31.99721208
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000277851685705619
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):187
+  COD_ID (String) = 914704
+  PN_CON_1 (String) = 1090527
+  PN_CON_2 (String) = 1090538
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090527M-154
+  PAC_2 (String) = 1090538M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 44_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 35.38376958
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000307556505353259
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):188
+  COD_ID (String) = 914732
+  PN_CON_1 (String) = 1090655
+  PN_CON_2 (String) = 1090658
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090655M-154
+  PAC_2 (String) = 1090658M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 48_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 49.42518778
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000429355185106584
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):189
+  COD_ID (String) = 941529
+  PN_CON_1 (String) = 1140325
+  PN_CON_2 (String) = 1140326
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1140325M-154
+  PAC_2 (String) = 1140326M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 66_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 48.36846864
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000421097211394622
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):190
+  COD_ID (String) = 10067441
+  PN_CON_1 (String) = 1090919
+  PN_CON_2 (String) = 1090939
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090919M-154
+  PAC_2 (String) = 1090939M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 63_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 20.08410216
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000174885208450034
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):191
+  COD_ID (String) = 914710
+  PN_CON_1 (String) = 1090542
+  PN_CON_2 (String) = 1090570
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090542M-154
+  PAC_2 (String) = 1090570M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 44.46445897
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000386564117505599
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):192
+  COD_ID (String) = 914746
+  PN_CON_1 (String) = 1090684
+  PN_CON_2 (String) = 1090694
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090684M-154
+  PAC_2 (String) = 1090694M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 56.52803602
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000490810303734616
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):193
+  COD_ID (String) = 914699
+  PN_CON_1 (String) = 1090521
+  PN_CON_2 (String) = 1090522
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090521M-154
+  PAC_2 (String) = 1090522M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 26.28546872
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000228298213783616
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):194
+  COD_ID (String) = 914603
+  PN_CON_1 (String) = 1090060
+  PN_CON_2 (String) = 1090061
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090060M-154
+  PAC_2 (String) = 1090061M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 76_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 45.5992191
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000397170039101243
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):195
+  COD_ID (String) = 10111884
+  PN_CON_1 (String) = 1090638
+  PN_CON_2 (String) = 1090637
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090638M-154
+  PAC_2 (String) = 1090637M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 35.29257674
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000306680987487218
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):196
+  COD_ID (String) = 11194676
+  PN_CON_1 (String) = 10869058
+  PN_CON_2 (String) = 10982413
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 10869058M-154S
+  PAC_2 (String) = 10982413M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 16_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 6.45175175
+  DESCR (String) =  
+  Shape_Length (Real) = 5.61019362276136e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):197
+  COD_ID (String) = 914505
+  PN_CON_1 (String) = 1090967
+  PN_CON_2 (String) = 1090972
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090967M-154
+  PAC_2 (String) = 1090972M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 25.03486758
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000217726841124093
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):198
+  COD_ID (String) = 914605
+  PN_CON_1 (String) = 1090077
+  PN_CON_2 (String) = 1090078
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090077M-154
+  PAC_2 (String) = 1090078M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 26.69337761
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000232465851014274
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):199
+  COD_ID (String) = 914514
+  PN_CON_1 (String) = 1090990
+  PN_CON_2 (String) = 1090991
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090990M-154
+  PAC_2 (String) = 1090991M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 22.73931009
+  DESCR (String) =  
+  Shape_Length (Real) = 0.0001978606514935
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):200
+  COD_ID (String) = 10158214
+  PN_CON_1 (String) = 10130900
+  PN_CON_2 (String) = 10130899
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 10130900M-154
+  PAC_2 (String) = 10130899M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 62_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 5.71390143
+  DESCR (String) =  
+  Shape_Length (Real) = 4.96703350469336e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):201
+  COD_ID (String) = 914596
+  PN_CON_1 (String) = 1090895
+  PN_CON_2 (String) = 1090896
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090895M-154
+  PAC_2 (String) = 1090896M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 42.44455908
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000369495354579646
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):202
+  COD_ID (String) = 914557
+  PN_CON_1 (String) = 1090729
+  PN_CON_2 (String) = 1090733
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090729M-154
+  PAC_2 (String) = 1090733M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 29.20332483
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000253563220983524
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):203
+  COD_ID (String) = 914683
+  PN_CON_1 (String) = 1090030
+  PN_CON_2 (String) = 1090031
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090030M-154
+  PAC_2 (String) = 1090031M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 13.64354843
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000118458572823287
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):204
+  COD_ID (String) = 941530
+  PN_CON_1 (String) = 1140326
+  PN_CON_2 (String) = 1140327
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1140326M-154
+  PAC_2 (String) = 1140327M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 66_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 41.45378737
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000360910258232524
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):205
+  COD_ID (String) = 995595
+  PN_CON_1 (String) = 1213637
+  PN_CON_2 (String) = 1140329
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = CMG01C4
+  PAC_2 (String) = 1140329M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 16_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 14.62953295
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000127018808639365
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):206
+  COD_ID (String) = 914715
+  PN_CON_1 (String) = 1090572
+  PN_CON_2 (String) = 1090573
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090572M-154
+  PAC_2 (String) = 1090573M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 35.99854555
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000312890146533657
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):207
+  COD_ID (String) = 914725
+  PN_CON_1 (String) = 1090622
+  PN_CON_2 (String) = 1090623
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090622M-154
+  PAC_2 (String) = 1090623M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 25.3587097
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000220248382098591
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):208
+  COD_ID (String) = 914691
+  PN_CON_1 (String) = 1090057
+  PN_CON_2 (String) = 1090058
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090057M-154
+  PAC_2 (String) = 1090058M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 37.96990783
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00033063629401777
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):209
+  COD_ID (String) = 914722
+  PN_CON_1 (String) = 1090593
+  PN_CON_2 (String) = 1090598
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090593M-154
+  PAC_2 (String) = 1090598M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 55_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 23.68282775
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000209231969892027
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):210
+  COD_ID (String) = 2941591
+  PN_CON_1 (String) = 1090005
+  PN_CON_2 (String) = 1090004
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090005M-154
+  PAC_2 (String) = 1090004M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 63_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 46.5770171
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000405680032734007
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):211
+  COD_ID (String) = 914553
+  PN_CON_1 (String) = 1090714
+  PN_CON_2 (String) = 1090723
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090714M-154
+  PAC_2 (String) = 1090723M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 39.02809777
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000338857214300788
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):212
+  COD_ID (String) = 10399842
+  PN_CON_1 (String) = 10301774
+  PN_CON_2 (String) = 1090540
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 10301774M-154
+  PAC_2 (String) = 1090540M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 44_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 15.150664
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000131712320617578
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):213
+  COD_ID (String) = 914595
+  PN_CON_1 (String) = 1090889
+  PN_CON_2 (String) = 1090895
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090889M-154
+  PAC_2 (String) = 1090895M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 33.3576886
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000290434118918744
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):214
+  COD_ID (String) = 10408749
+  PN_CON_1 (String) = 1090539
+  PN_CON_2 (String) = 10307408
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090539M-154
+  PAC_2 (String) = 10307408M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 10.40408129
+  DESCR (String) =  
+  Shape_Length (Real) = 9.05437901011707e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):215
+  COD_ID (String) = 995823
+  PN_CON_1 (String) = 1140323
+  PN_CON_2 (String) = 1088716
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1140323M-154
+  PAC_2 (String) = 1088716M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 16_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 28.04490043
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000243757638527249
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):216
+  COD_ID (String) = 10412836
+  PN_CON_1 (String) = 1090741
+  PN_CON_2 (String) = 1090742
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090741M-154
+  PAC_2 (String) = 1090742M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 19.18323044
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000167054550631179
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):217
+  COD_ID (String) = 914592
+  PN_CON_1 (String) = 1090873
+  PN_CON_2 (String) = 1090883
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090873M-154S
+  PAC_2 (String) = 1090883M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 27.41684966
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000238051006266466
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):218
+  COD_ID (String) = 914489
+  PN_CON_1 (String) = 1089805
+  PN_CON_2 (String) = 1090957
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089805M-154
+  PAC_2 (String) = 1090957M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 19.5264356
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000170063485588909
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):219
+  COD_ID (String) = 914697
+  PN_CON_1 (String) = 1090520
+  PN_CON_2 (String) = 1090521
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090520M-154
+  PAC_2 (String) = 1090521M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 20.0572306
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000174186965396245
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):220
+  COD_ID (String) = 914743
+  PN_CON_1 (String) = 1090669
+  PN_CON_2 (String) = 1090670
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090669M-154
+  PAC_2 (String) = 1090670M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 33.70537745
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000292843736415815
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):221
+  COD_ID (String) = 10146681
+  PN_CON_1 (String) = 1090510
+  PN_CON_2 (String) = 1090519
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090510M-154
+  PAC_2 (String) = 1090519M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 24_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 60.56587843
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000526700239033689
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):222
+  COD_ID (String) = 914580
+  PN_CON_1 (String) = 1090793
+  PN_CON_2 (String) = 1090794
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090793M-154
+  PAC_2 (String) = 1090794M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 43.14525827
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000374643694946934
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):223
+  COD_ID (String) = 914711
+  PN_CON_1 (String) = 1090543
+  PN_CON_2 (String) = 1090544
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090543M-154
+  PAC_2 (String) = 1090544M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 8.89828209
+  DESCR (String) =  
+  Shape_Length (Real) = 7.73848071962052e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):224
+  COD_ID (String) = 914566
+  PN_CON_1 (String) = 1090751
+  PN_CON_2 (String) = 10817376
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090751M-154
+  PAC_2 (String) = 10817376M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 49.94898314
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000435064792646022
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):225
+  COD_ID (String) = 914567
+  PN_CON_1 (String) = 1090752
+  PN_CON_2 (String) = 10790816
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090752M-154
+  PAC_2 (String) = 10790816M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 39.15523202
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000341044850348403
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):226
+  COD_ID (String) = 914568
+  PN_CON_1 (String) = 10790816
+  PN_CON_2 (String) = 10117021
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 10790816M-154
+  PAC_2 (String) = 10117021M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 11.71867785
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000101758665431158
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):227
+  COD_ID (String) = 914575
+  PN_CON_1 (String) = 1090768
+  PN_CON_2 (String) = 1090789
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090768M-154
+  PAC_2 (String) = 1090789M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 38.50093348
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000334336712949599
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):228
+  COD_ID (String) = 914576
+  PN_CON_1 (String) = 1090789
+  PN_CON_2 (String) = 1090790
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090789M-154
+  PAC_2 (String) = 1090790M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 21.9759478
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000190814015456601
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):229
+  COD_ID (String) = 914526
+  PN_CON_1 (String) = 1091017
+  PN_CON_2 (String) = 1091018
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091017M-154
+  PAC_2 (String) = 1091018M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 56.76234476
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000492959231157721
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):230
+  COD_ID (String) = 914735
+  PN_CON_1 (String) = 1090659
+  PN_CON_2 (String) = 1089794
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090659M-154
+  PAC_2 (String) = 1089794M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 48_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 8.19089523
+  DESCR (String) =  
+  Shape_Length (Real) = 7.12395865069826e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):231
+  COD_ID (String) = 3035360
+  PN_CON_1 (String) = 1090659
+  PN_CON_2 (String) = 5994388
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090659M-154
+  PAC_2 (String) = 5994388M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 6.73201589
+  DESCR (String) =  
+  Shape_Length (Real) = 5.84501282314439e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):232
+  COD_ID (String) = 11356645
+  PN_CON_1 (String) = 11006722
+  PN_CON_2 (String) = 11006723
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 11006722M-154
+  PAC_2 (String) = 11006723M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 78_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 5.0999577
+  DESCR (String) =  
+  Shape_Length (Real) = 4.52249098074455e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):233
+  COD_ID (String) = 11356644
+  PN_CON_1 (String) = 11006722
+  PN_CON_2 (String) = 1090659
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 11006722M-154
+  PAC_2 (String) = 1090659M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 48_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 8.27748857
+  DESCR (String) =  
+  Shape_Length (Real) = 7.34435299012305e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):234
+  COD_ID (String) = 941525
+  PN_CON_1 (String) = 1089342
+  PN_CON_2 (String) = 1089343
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089342M-154
+  PAC_2 (String) = 1089343M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 16_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 30.07414909
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000261947384816172
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):235
+  COD_ID (String) = 914551
+  PN_CON_1 (String) = 1090711
+  PN_CON_2 (String) = 1090712
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090711M-154
+  PAC_2 (String) = 1090712M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 36.1590932
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000313973355492476
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):236
+  COD_ID (String) = 914558
+  PN_CON_1 (String) = 1090733
+  PN_CON_2 (String) = 1090734
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090733M-154
+  PAC_2 (String) = 1090734M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 39.93112465
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000346698106868551
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):237
+  COD_ID (String) = 914486
+  PN_CON_1 (String) = 1089802
+  PN_CON_2 (String) = 1090667
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089802M-154
+  PAC_2 (String) = 1090667M-154S
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 23.28310172
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000202263671865932
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):238
+  COD_ID (String) = 914549
+  PN_CON_1 (String) = 1090695
+  PN_CON_2 (String) = 1090697
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090695M-154
+  PAC_2 (String) = 1090697M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 35.7343186
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00031026549675848
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):239
+  COD_ID (String) = 941531
+  PN_CON_1 (String) = 1140327
+  PN_CON_2 (String) = 1140328
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1140327M-154
+  PAC_2 (String) = 1140328M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 66_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 58.36592025
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000508114875062521
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):240
+  COD_ID (String) = 914701
+  PN_CON_1 (String) = 1090524
+  PN_CON_2 (String) = 1090525
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090524M-154
+  PAC_2 (String) = 1090525M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 46.10948491
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000401594186650831
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):241
+  COD_ID (String) = 914519
+  PN_CON_1 (String) = 1091011
+  PN_CON_2 (String) = 1090077
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091011M-154
+  PAC_2 (String) = 1090077M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 30.36334339
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000264429071700727
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):242
+  COD_ID (String) = 914587
+  PN_CON_1 (String) = 1090810
+  PN_CON_2 (String) = 1090818
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090810M-154
+  PAC_2 (String) = 1090818M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 45.50272193
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000395072194713513
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):243
+  COD_ID (String) = 2941587
+  PN_CON_1 (String) = 1090011
+  PN_CON_2 (String) = 1090009
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090011M-154
+  PAC_2 (String) = 1090009M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 63_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 28.38244412
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00024704735165159
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):244
+  COD_ID (String) = 914504
+  PN_CON_1 (String) = 1090966
+  PN_CON_2 (String) = 1090967
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090966M-154
+  PAC_2 (String) = 1090967M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 35.28638585
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000306774603304603
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):245
+  COD_ID (String) = 914502
+  PN_CON_1 (String) = 1090962
+  PN_CON_2 (String) = 1091370
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090962M-154
+  PAC_2 (String) = 1091370M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 30.41126182
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000264215042566746
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):246
+  COD_ID (String) = 914556
+  PN_CON_1 (String) = 1090725
+  PN_CON_2 (String) = 1090729
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090725M-154
+  PAC_2 (String) = 1090729M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 46_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 36.62344036
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000317979897566948
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):247
+  COD_ID (String) = 10964292
+  PN_CON_1 (String) = 1089344
+  PN_CON_2 (String) = 6118696
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089344M-154
+  PAC_2 (String) = 6118696M-154S
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 66_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 8.60948366
+  DESCR (String) =  
+  Shape_Length (Real) = 7.47524309364266e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):248
+  COD_ID (String) = 914495
+  PN_CON_1 (String) = 1090917
+  PN_CON_2 (String) = 1090918
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090917M-154
+  PAC_2 (String) = 1090918M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 29.76284153
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000259183739548227
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):249
+  COD_ID (String) = 914517
+  PN_CON_1 (String) = 1090993
+  PN_CON_2 (String) = 1090994
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = NU
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090993M-154
+  PAC_2 (String) = 1090994M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 34.09818478
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000296144841108588
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):250
+  COD_ID (String) = 914484
+  PN_CON_1 (String) = 1089802
+  PN_CON_2 (String) = 1090654
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1089802M-154
+  PAC_2 (String) = 1090654M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 54_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 11.01342926
+  DESCR (String) =  
+  Shape_Length (Real) = 9.57198906535437e-05
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):251
+  COD_ID (String) = 914573
+  PN_CON_1 (String) = 1090757
+  PN_CON_2 (String) = 1090758
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090757M-154
+  PAC_2 (String) = 1090758M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 43_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 48.92323907
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000425928433370599
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):252
+  COD_ID (String) = 914690
+  PN_CON_1 (String) = 1090037
+  PN_CON_2 (String) = 1090038
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090037M-154
+  PAC_2 (String) = 1090038M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 32.13135756
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000279744261922164
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):253
+  COD_ID (String) = 914545
+  PN_CON_1 (String) = 1091124
+  PN_CON_2 (String) = 1091135
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1091124M-154
+  PAC_2 (String) = 1091135M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 84_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 38.23435031
+  DESCR (String) =  
+  Shape_Length (Real) = 0.000332584924041892
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+
+OGRFeature(SSDMT):254
+  COD_ID (String) = 914733
+  PN_CON_1 (String) = 1090658
+  PN_CON_2 (String) = 11006722
+  CTMT (String) = 154
+  CT_COD_OP (String) = CMG01C4
+  UNI_TR_AT (String) = CMG02T11
+  SUB (String) = CMG
+  CONJ (Integer) = 14142
+  ARE_LOC (String) = UB
+  DIST (Integer) = 43
+  PAC_1 (String) = 1090658M-154
+  PAC_2 (String) = 11006722M-154
+  FAS_CON (String) = ABC
+  TIP_INST (String) = RD_AER_URB
+  TIP_CND (String) = 48_M_3_1
+  POS (String) = PD
+  ODI (String) = 3RDAURB0
+  TI (String) = 40
+  CM (String) = 999
+  SITCONT (String) = AT1
+  COMP (Real) = 32.62594445
+  DESCR (String) =  
+  Shape_Length (Real) = 0.00021036273132055
+  MULTILINESTRING : 1 geometries:
+LINESTRING : 2 points
+

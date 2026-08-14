@@ -56,23 +56,29 @@ function Sidebar() {
           flexDirection: "column",
           height: "100%",
         }}
-      >
-        {/* Logo */}
-        <Typography
-          variant="h5"
-          align="center"
-          sx={{
-            color: "#4fc3f7",
-            fontWeight: "bold",
-            py: 2,
-          }}
-        >
-          ⚡ COI
-          <p>
-          <span style={{fontSize:"14px"}}>Centro Operacional</span>
-          </p>
-        </Typography>
-
+      >{/* Logo */}
+<Box sx={{ textAlign: "center", py: 2 }}>
+  <Typography
+    variant="h5"
+    sx={{
+      color: "#4fc3f7",
+      fontWeight: "bold",
+      lineHeight: 1.2,
+    }}
+  >
+    ⚡ COI
+  </Typography>
+  <Typography
+    variant="caption"
+    sx={{
+      color: "#8aa4bf",
+      fontSize: "13px",
+      letterSpacing: "0.5px",
+    }}
+  >
+    Centro Operacional
+  </Typography>
+</Box>
         {/* Menu */}
         <List sx={{ flex: 1 }}>
           {menuItems.map((item) => (

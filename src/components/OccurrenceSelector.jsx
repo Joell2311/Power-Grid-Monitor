@@ -1,255 +1,237 @@
+import useCoiStore from "../core/store/coiStore";
+
 import {
   Paper,
   Typography,
-  Stack,
   Chip,
   Box,
+  Stack,
 } from "@mui/material";
-
 
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
-
+import { calcularImpactoOperacional } from "../core/intelligence/impactoOperacionalService";
 
 function OccurrenceSelector({
 
-  ocorrencias,
-
-  selecionada,
-
-  onSelect
+  ocorrencias = []
 
 }) {
 
+  const iniciarOcorrencia =
+    useCoiStore(
+      state => state.iniciarOcorrencia
+    );
 
+  const ocorrenciaAtiva =
+    useCoiStore(
+      state => state.ocorrenciaAtiva
+    );
 
   function corPrioridade(prioridade){
-
 
     if(prioridade === "CRÍTICA"){
       return "error";
     }
 
-
     if(prioridade === "ALTA"){
       return "warning";
     }
-
 
     return "info";
 
   }
 
+  return (
 
+    <Paper
 
+      elevation={3}
 
-return (
+      sx={{
 
-<Paper
+        p:2,
 
-elevation={3}
+        bgcolor:"#111d2d",
 
-sx={{
+        color:"#fff",
 
-p:2,
+        borderRadius:3,
 
-bgcolor:"#111d2d",
+        height:"100%"
 
-color:"#fff",
+      }}
 
-borderRadius:3,
+    >
 
-height:"100%"
+      <Typography
 
-}}
+        variant="h6"
 
->
+        fontWeight="bold"
 
+        sx={{
 
-<Typography
+          mb:2
 
-variant="h6"
+        }}
 
-fontWeight="bold"
+      >
 
-sx={{
+        🚨 Ocorrências Ativas
 
-mb:2
+      </Typography>
 
-}}
+      <Stack
 
->
+        spacing={1.5}
 
-🚨 Ocorrências Ativas
+      >
 
-</Typography>
+      {
 
+        ocorrencias.map((item) => {
 
+          // Calcula dinamicamente o impacto e os clientes do alimentador
+          const impactoCalculado = calcularImpactoOperacional(item);
+          const totalClientes = impactoCalculado?.dados?.clientes ?? 0;
+          const classificacao = impactoCalculado?.classificacao ?? "NORMAL";
 
+          return (
 
+            <Box
 
-<Stack
+              key={item.id}
 
-spacing={1.5}
+              onClick={()=>{
 
->
+                iniciarOcorrencia(item)
 
+              }}
 
-{
+              sx={{
 
-ocorrencias.map((item)=>(
+                cursor:"pointer",
 
+                p:1.5,
 
-<Box
+                borderRadius:2,
 
-key={item.id}
+                backgroundColor:
 
-onClick={()=>onSelect(item)}
+                  ocorrenciaAtiva?.id === item.id
 
-sx={{
+                  ?
 
-cursor:"pointer",
+                  "#1e3a5f"
 
-p:1.5,
+                  :
 
-borderRadius:2,
+                  "#0f1b2a",
 
+                border:
 
-backgroundColor:
+                  ocorrenciaAtiva?.id === item.id
 
-selecionada?.id === item.id
+                  ?
 
-?
+                  "1px solid #38bdf8"
 
-"#1e3a5f"
+                  :
 
-:
+                  "1px solid transparent",
 
-"#0f1b2a",
+                "&:hover":{
 
+                  backgroundColor:"#162b43"
 
+                }
 
-border:
+              }}
 
-selecionada?.id === item.id
+            >
 
-?
+              <Box
 
-"1px solid #38bdf8"
+                sx={{
 
-:
+                  display:"flex",
 
-"1px solid transparent",
+                  alignItems:"center",
 
+                  justifyContent:"space-between",
 
+                  gap:1
 
-"&:hover":{
+                }}
 
-backgroundColor:"#162b43"
+              >
+
+                <Box>
+
+                  <Typography
+
+                    fontWeight="bold"
+
+                  >
+
+                    {item.alimentador ?? "Sem alimentador"}
+
+                  </Typography>
+
+                  <Typography
+
+                    variant="body2"
+
+                    sx={{
+
+                      color:"#94a3b8"
+
+                    }}
+
+                  >
+
+                  {
+
+                    totalClientes
+                    .toLocaleString("pt-BR")
+
+                  }
+
+                  {" "}clientes afetados
+
+                  </Typography>
+
+                </Box>
+
+                <Chip
+
+                  icon={<WarningAmberIcon/>}
+
+                  label={classificacao}
+
+                  size="small"
+
+                  color={corPrioridade(classificacao)}
+
+                />
+
+              </Box>
+
+            </Box>
+
+          );
+
+        })
+
+      }
+
+      </Stack>
+
+    </Paper>
+
+  );
 
 }
-
-
-}}
-
->
-
-
-
-<Stack
-
-direction="row"
-
-justifyContent="space-between"
-
-alignItems="center"
-
-spacing={1}
-
->
-
-
-<Box>
-
-
-<Typography
-
-fontWeight="bold"
-
->
-
-{item.alimentador}
-
-</Typography>
-
-
-
-<Typography
-
-variant="body2"
-
-sx={{
-
-color:"#94a3b8"
-
-}}
-
->
-
-{item.impacto.clientesAfetados.toLocaleString("pt-BR")}
-
-{" "}clientes afetados
-
-</Typography>
-
-
-</Box>
-
-
-
-
-
-<Chip
-
-icon={<WarningAmberIcon/>}
-
-label={item.prioridade}
-
-size="small"
-
-color={corPrioridade(item.prioridade)}
-
-/>
-
-
-
-</Stack>
-
-
-
-
-</Box>
-
-
-))
-
-
-}
-
-
-
-</Stack>
-
-
-
-</Paper>
-
-
-);
-
-
-}
-
-
 
 export default OccurrenceSelector;

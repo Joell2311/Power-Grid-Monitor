@@ -1,4 +1,4 @@
-import { equipamentos } from "../data/equipamentos";
+import  EquipamentosRepository  from "../core/repositories/equipamentosRepository";
 
 
 
