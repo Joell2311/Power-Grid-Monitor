@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
-import AlarmBar from "../components/AlarmBar";
 import DashboardCards from "../components/DashboardCards";
 import MapView from "../components/MapView";
 import OccurrencePanel from "../components/OccurrencePanel";
@@ -18,12 +17,8 @@ from "../core/intelligence/recomposicaoService";
 import { calcularImpactoOperacional }
 from "../core/intelligence/impactoOperacionalService";
 
-import useCoiStore from "../core/store/coiStore";
-
 function MainLayout() {
 
-
-  
   const [ocorrenciaSelecionada, setOcorrenciaSelecionada] =
     useState(ocorrencias[0]);
 
@@ -35,12 +30,6 @@ function MainLayout() {
 
   const [impactoOperacional, setImpactoOperacional] =
     useState(null);
-
-  /*
-  =====================================
-  NOVO ESTADO GLOBAL DA SIMULAÇÃO
-  =====================================
-  */
 
   const [correnteDesligado, setCorrenteDesligado] =
     useState("");
@@ -56,39 +45,52 @@ function MainLayout() {
 
   /*
   =====================================
-  LOCALIZA OCORRÊNCIA NO MAPA
+  CONTROLE DA ANÁLISE
+  =====================================
+  */
+
+  const [analiseAberta, setAnaliseAberta] =
+    useState(false);
+
+  /*
+  =====================================
+  LOCALIZAR OCORRÊNCIA
   =====================================
   */
 
   function localizarOcorrencia(coordenada) {
-
     setLocalizacaoMapa(coordenada);
-
   }
 
   /*
   =====================================
-  MOTOR DE INTELIGÊNCIA OPERACIONAL
+  INTELIGÊNCIA OPERACIONAL
   =====================================
   */
 
   useEffect(() => {
 
-    if (ocorrenciaSelecionada) {
-
-      const resultadoRecomposicao =
-        sugerirRecomposicao(ocorrenciaSelecionada);
-
-      setRecomendacao(resultadoRecomposicao);
-
-      const resultadoImpacto =
-        calcularImpactoOperacional(
-          ocorrenciaSelecionada
-        );
-
-      setImpactoOperacional(resultadoImpacto);
-
+    if (!ocorrenciaSelecionada) {
+      return;
     }
+
+    const resultadoRecomposicao =
+      sugerirRecomposicao(
+        ocorrenciaSelecionada
+      );
+
+    setRecomendacao(
+      resultadoRecomposicao
+    );
+
+    const resultadoImpacto =
+      calcularImpactoOperacional(
+        ocorrenciaSelecionada
+      );
+
+    setImpactoOperacional(
+      resultadoImpacto
+    );
 
   }, [ocorrenciaSelecionada]);
 
@@ -96,83 +98,131 @@ function MainLayout() {
 
     <Box
       sx={{
+        width: "100vw",
+        height: "100vh",
+
         display: "flex",
         flexDirection: "column",
-        height: "100vh",
+
         overflow: "hidden",
+
         bgcolor: "#081420",
       }}
     >
 
+      {/* =================================
+          HEADER
+      ================================= */}
+
       <Header />
 
-      <Box
-        sx={{
-          mt: "70px",
-          flexShrink: 0,
-        }}
-      >
-       
-    
-        
-      </Box>
+      {/* =================================
+          ÁREA PRINCIPAL
+      ================================= */}
 
       <Box
         sx={{
           display: "flex",
+
           flex: 1,
+
           minHeight: 0,
+
           overflow: "hidden",
         }}
       >
 
+        {/* =================================
+            SIDEBAR
+        ================================= */}
+
         <Box
           sx={{
             flexShrink: 0,
+
+            height: "100%",
+
+            overflow: "hidden",
           }}
         >
+
           <Sidebar />
+
         </Box>
+
+
+        {/* =================================
+            CONTEÚDO
+        ================================= */}
 
         <Box
           component="main"
           sx={{
             flex: 1,
+
             minWidth: 0,
+            minHeight: 0,
+
             display: "flex",
             flexDirection: "column",
-            gap: 2,
-            p: 2,
+
+            gap: 1.5,
+
+            p: 1.5,
+
             overflow: "hidden",
           }}
         >
+
+          {/* =================================
+              DASHBOARD
+          ================================= */}
 
           <Box
             sx={{
               flexShrink: 0,
             }}
           >
+
             <DashboardCards />
+
           </Box>
+
+
+          {/* =================================
+              ÁREA MAPA + OCORRÊNCIAS
+          ================================= */}
 
           <Box
             sx={{
               display: "flex",
+
               flex: 1,
+
               minHeight: 0,
-              gap: 2,
+              minWidth: 0,
+
+              gap: 1.5,
+
               overflow: "hidden",
             }}
           >
 
-            {/* MAPA */}
+            {/* ===============================
+                MAPA
+            =============================== */}
 
             <Box
               sx={{
                 flex: 1,
+
                 minWidth: 0,
                 minHeight: 0,
-                borderRadius: 3,
+
+                position: "relative",
+
+                borderRadius: 2,
+
                 overflow: "hidden",
               }}
             >
@@ -184,17 +234,32 @@ function MainLayout() {
 
             </Box>
 
-            {/* PAINEL DIREITO */}
+
+            {/* ===============================
+                PAINEL DIREITO
+            =============================== */}
 
             <Box
               sx={{
-                width: 380,
-                minWidth: 320,
-                maxWidth: 420,
+                width: {
+                  xs: 300,
+                  md: 330,
+                  lg: 360,
+                },
+
+                minWidth: 280,
+
+                maxWidth: 380,
+
+                flexShrink: 0,
+
+                minHeight: 0,
+
                 display: "flex",
                 flexDirection: "column",
-                gap: 2,
-                flexShrink: 0,
+
+                gap: 1.5,
+
                 overflow: "auto",
               }}
             >
@@ -202,6 +267,7 @@ function MainLayout() {
               <OccurrenceSelector
                 ocorrencias={ocorrencias}
                 selecionada={ocorrenciaSelecionada}
+
                 onSelect={(item) => {
                   setOcorrenciaSelecionada(item);
                 }}
@@ -209,40 +275,78 @@ function MainLayout() {
 
               <OccurrencePanel
                 ocorrencia={ocorrenciaSelecionada}
+
                 onLocalizar={localizarOcorrencia}
 
                 recomendacao={recomendacao}
-                 setRecomendacao={setRecomendacao}
-                 
+                setRecomendacao={setRecomendacao}
+
                 impacto={impactoOperacional}
 
                 correnteDesligado={correnteDesligado}
-                setCorrenteDesligado={setCorrenteDesligado}
+                setCorrenteDesligado={
+                  setCorrenteDesligado
+                }
 
                 correnteDestino={correnteDestino}
-                setCorrenteDestino={setCorrenteDestino}
+                setCorrenteDestino={
+                  setCorrenteDestino
+                }
 
-                equipamentoSelecionado={equipamentoSelecionado}
-                setEquipamentoSelecionado={setEquipamentoSelecionado}
+                equipamentoSelecionado={
+                  equipamentoSelecionado
+                }
 
-                resultadoSimulacao={resultadoSimulacao}
-                setResultadoSimulacao={setResultadoSimulacao}
+                setEquipamentoSelecionado={
+                  setEquipamentoSelecionado
+                }
+
+                resultadoSimulacao={
+                  resultadoSimulacao
+                }
+
+                setResultadoSimulacao={
+                  setResultadoSimulacao
+                }
               />
-
 
             </Box>
 
           </Box>
 
+
+          {/* =================================
+              ANÁLISE DA OCORRÊNCIA
+          ================================= */}
+
           <Box
             sx={{
-              height: 220,
-              minHeight: 180,
               flexShrink: 0,
-              overflow: "auto",
+
+              minHeight: 0,
+
+              height: analiseAberta
+                ? 220
+                : 42,
+
+              transition:
+                "height 0.25s ease",
+
+              overflow: "hidden",
+
+              borderRadius: 2,
             }}
           >
-            <EventPanel />
+
+            <EventPanel
+              aberta={analiseAberta}
+              onToggle={() =>
+                setAnaliseAberta(
+                  (valor) => !valor
+                )
+              }
+            />
+
           </Box>
 
         </Box>
@@ -250,9 +354,7 @@ function MainLayout() {
       </Box>
 
     </Box>
-
   );
-
 }
 
 export default MainLayout;
