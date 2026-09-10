@@ -1,0 +1,259 @@
+{
+  "projeto": "Power Grid Monitor",
+  "subestacao": "CMG",
+  "alimentadores": [
+    {
+      "subestacao": "CMG",
+      "alimentador": "CMG01C1",
+      "ctmt": "151",
+      "ctmts": [
+        "151"
+      ],
+      "trechos": 675,
+      "pontos": 579,
+      "pontosTopologia": 579,
+      "unsemt": 82,
+      "eqse": 217,
+      "chaves_lamina": 15,
+      "chaves_fusiveis": 40,
+      "chaves_seccionadoras": 9,
+      "religadores": 10,
+      "outrosEquipamentos": 8,
+      "transformadores": 163,
+      "subestacaoFeatures": 1,
+      "metodoPontos": "coordenadas_extremos_ssdmt",
+      "camposReferenciaPontos": [
+        "PAC_1",
+        "PAC_2"
+      ],
+      "arquivos": [
+        "CMG01C1_trechos.geojson",
+        "CMG01C1_pontos.geojson",
+        "CMG01C1_equipamentos.geojson",
+        "CMG01C1_eqse.json",
+        "CMG01C1_chaves_lamina.geojson",
+        "CMG01C1_chaves_fusiveis.geojson",
+        "CMG01C1_chaves_seccionadoras.geojson",
+        "CMG01C1_religadores.geojson",
+        "CMG01C1_transformadores.geojson",
+        "CMG01C1_equipamentos_completos.geojson",
+        "CMG01C1_subestacao.geojson"
+      ],
+      "encontrado": true
+    },
+    {
+      "subestacao": "CMG",
+      "alimentador": "CMG01C2",
+      "ctmt": "152",
+      "ctmts": [
+        "152"
+      ],
+      "trechos": 417,
+      "pontos": 310,
+      "pontosTopologia": 310,
+      "unsemt": 50,
+      "eqse": 136,
+      "chaves_lamina": 7,
+      "chaves_fusiveis": 15,
+      "chaves_seccionadoras": 2,
+      "religadores": 25,
+      "outrosEquipamentos": 1,
+      "transformadores": 96,
+      "subestacaoFeatures": 1,
+      "metodoPontos": "coordenadas_extremos_ssdmt",
+      "camposReferenciaPontos": [
+        "PAC_1",
+        "PAC_2"
+      ],
+      "arquivos": [
+        "CMG01C2_trechos.geojson",
+        "CMG01C2_pontos.geojson",
+        "CMG01C2_equipamentos.geojson",
+        "CMG01C2_eqse.json",
+        "CMG01C2_chaves_lamina.geojson",
+        "CMG01C2_chaves_fusiveis.geojson",
+        "CMG01C2_chaves_seccionadoras.geojson",
+        "CMG01C2_religadores.geojson",
+        "CMG01C2_transformadores.geojson",
+        "CMG01C2_equipamentos_completos.geojson",
+        "CMG01C2_subestacao.geojson"
+      ],
+      "encontrado": true
+    },
+    {
+      "subestacao": "CMG",
+      "alimentador": "CMG01C3",
+      "ctmt": "153",
+      "ctmts": [
+        "153"
+      ],
+      "trechos": 557,
+      "pontos": 497,
+      "pontosTopologia": 497,
+      "unsemt": 39,
+      "eqse": 109,
+      "chaves_lamina": 10,
+      "chaves_fusiveis": 14,
+      "chaves_seccionadoras": 2,
+      "religadores": 13,
+      "outrosEquipamentos": 0,
+      "transformadores": 87,
+      "subestacaoFeatures": 1,
+      "metodoPontos": "coordenadas_extremos_ssdmt",
+      "camposReferenciaPontos": [
+        "PAC_1",
+        "PAC_2"
+      ],
+      "arquivos": [
+        "CMG01C3_trechos.geojson",
+        "CMG01C3_pontos.geojson",
+        "CMG01C3_equipamentos.geojson",
+        "CMG01C3_eqse.json",
+        "CMG01C3_chaves_lamina.geojson",
+        "CMG01C3_chaves_fusiveis.geojson",
+        "CMG01C3_chaves_seccionadoras.geojson",
+        "CMG01C3_religadores.geojson",
+        "CMG01C3_transformadores.geojson",
+        "CMG01C3_equipamentos_completos.geojson",
+        "CMG01C3_subestacao.geojson"
+      ],
+      "encontrado": true
+    },
+    {
+      "subestacao": "CMG",
+      "alimentador": "CMG01C4",
+      "ctmt": "154",
+      "ctmts": [
+        "154"
+      ],
+      "trechos": 257,
+      "pontos": 246,
+      "pontosTopologia": 246,
+      "unsemt": 27,
+      "eqse": 75,
+      "chaves_lamina": 6,
+      "chaves_fusiveis": 10,
+      "chaves_seccionadoras": 2,
+      "religadores": 9,
+      "outrosEquipamentos": 0,
+      "transformadores": 46,
+      "subestacaoFeatures": 1,
+      "metodoPontos": "coordenadas_extremos_ssdmt",
+      "camposReferenciaPontos": [
+        "PAC_1",
+        "PAC_2"
+      ],
+      "arquivos": [
+        "CMG01C4_trechos.geojson",
+        "CMG01C4_pontos.geojson",
+        "CMG01C4_equipamentos.geojson",
+        "CMG01C4_eqse.json",
+        "CMG01C4_chaves_lamina.geojson",
+        "CMG01C4_chaves_fusiveis.geojson",
+        "CMG01C4_chaves_seccionadoras.geojson",
+        "CMG01C4_religadores.geojson",
+        "CMG01C4_transformadores.geojson",
+        "CMG01C4_equipamentos_completos.geojson",
+        "CMG01C4_subestacao.geojson"
+      ],
+      "encontrado": true
+    },
+    {
+      "subestacao": "CMG",
+      "alimentador": "CMG01C5",
+      "ctmt": "155",
+      "ctmts": [
+        "155"
+      ],
+      "trechos": 454,
+      "pontos": 415,
+      "pontosTopologia": 415,
+      "unsemt": 61,
+      "eqse": 167,
+      "chaves_lamina": 15,
+      "chaves_fusiveis": 14,
+      "chaves_seccionadoras": 2,
+      "religadores": 29,
+      "outrosEquipamentos": 1,
+      "transformadores": 74,
+      "subestacaoFeatures": 1,
+      "metodoPontos": "coordenadas_extremos_ssdmt",
+      "camposReferenciaPontos": [
+        "PAC_1",
+        "PAC_2"
+      ],
+      "arquivos": [
+        "CMG01C5_trechos.geojson",
+        "CMG01C5_pontos.geojson",
+        "CMG01C5_equipamentos.geojson",
+        "CMG01C5_eqse.json",
+        "CMG01C5_chaves_lamina.geojson",
+        "CMG01C5_chaves_fusiveis.geojson",
+        "CMG01C5_chaves_seccionadoras.geojson",
+        "CMG01C5_religadores.geojson",
+        "CMG01C5_transformadores.geojson",
+        "CMG01C5_equipamentos_completos.geojson",
+        "CMG01C5_subestacao.geojson"
+      ],
+      "encontrado": true
+    },
+    {
+      "subestacao": "CMG",
+      "alimentador": "CMG01C6",
+      "ctmt": "156",
+      "ctmts": [
+        "156"
+      ],
+      "trechos": 478,
+      "pontos": 453,
+      "pontosTopologia": 453,
+      "unsemt": 47,
+      "eqse": 129,
+      "chaves_lamina": 10,
+      "chaves_fusiveis": 18,
+      "chaves_seccionadoras": 2,
+      "religadores": 17,
+      "outrosEquipamentos": 0,
+      "transformadores": 91,
+      "subestacaoFeatures": 1,
+      "metodoPontos": "coordenadas_extremos_ssdmt",
+      "camposReferenciaPontos": [
+        "PAC_1",
+        "PAC_2"
+      ],
+      "arquivos": [
+        "CMG01C6_trechos.geojson",
+        "CMG01C6_pontos.geojson",
+        "CMG01C6_equipamentos.geojson",
+        "CMG01C6_eqse.json",
+        "CMG01C6_chaves_lamina.geojson",
+        "CMG01C6_chaves_fusiveis.geojson",
+        "CMG01C6_chaves_seccionadoras.geojson",
+        "CMG01C6_religadores.geojson",
+        "CMG01C6_transformadores.geojson",
+        "CMG01C6_equipamentos_completos.geojson",
+        "CMG01C6_subestacao.geojson"
+      ],
+      "encontrado": true
+    }
+  ],
+  "origem": "C:\\Users\\jaelc\\Documents\\Neoenergia_Pernambuco_43_2025-12-31_V11_20260825-0915.gdb",
+  "camadasUtilizadas": [
+    "SSDMT",
+    "PONNOT",
+    "UNSEMT",
+    "EQSE",
+    "UNTRMT",
+    "SUB"
+  ],
+  "classificacaoUNSEMT": {
+    "19": "CHAVE_LAMINA",
+    "22": "CHAVE_FUSIVEL",
+    "32": "RELIGADOR",
+    "34": "CHAVE_SECCIONADORA"
+  },
+  "transformador": {
+    "layer": "UNTRMT",
+    "TIP_UNID": "38"
+  }
+}

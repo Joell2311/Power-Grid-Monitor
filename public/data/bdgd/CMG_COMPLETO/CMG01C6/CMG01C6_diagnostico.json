@@ -1,0 +1,38 @@
+{
+  "subestacao": "CMG",
+  "alimentador": "CMG01C6",
+  "ctmt": "156",
+  "ctmts": [
+    "156"
+  ],
+  "trechos": 478,
+  "pontos": 453,
+  "pontosTopologia": 453,
+  "unsemt": 47,
+  "eqse": 129,
+  "chaves_lamina": 10,
+  "chaves_fusiveis": 18,
+  "chaves_seccionadoras": 2,
+  "religadores": 17,
+  "outrosEquipamentos": 0,
+  "transformadores": 91,
+  "subestacaoFeatures": 1,
+  "metodoPontos": "coordenadas_extremos_ssdmt",
+  "camposReferenciaPontos": [
+    "PAC_1",
+    "PAC_2"
+  ],
+  "arquivos": [
+    "CMG01C6_trechos.geojson",
+    "CMG01C6_pontos.geojson",
+    "CMG01C6_equipamentos.geojson",
+    "CMG01C6_eqse.json",
+    "CMG01C6_chaves_lamina.geojson",
+    "CMG01C6_chaves_fusiveis.geojson",
+    "CMG01C6_chaves_seccionadoras.geojson",
+    "CMG01C6_religadores.geojson",
+    "CMG01C6_transformadores.geojson",
+    "CMG01C6_equipamentos_completos.geojson",
+    "CMG01C6_subestacao.geojson"
+  ]
+}

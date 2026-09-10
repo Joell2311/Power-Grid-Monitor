@@ -1,0 +1,9 @@
+Alimentador: CMG01C4 
+Data: 12/08/2026  1:04:54,72 
+ 
+Arquivo SSDMT: 
+C:\Users\vitor\Documents\coi-monitor\tools\bdgd\..\..\public\data\bdgd\CMG01C4.geojson 
+ 
+Arquivo pontos: 
+C:\Users\vitor\Documents\coi-monitor\tools\bdgd\..\..\public\data\bdgd\CMG01C4_pontos.geojson 
+ 
