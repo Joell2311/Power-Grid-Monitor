@@ -26,7 +26,6 @@ import {
   buscarRedeConectada as buscarRedeConectadaModelo,
   obterFichaCompletaEquipamento,
   consultarEstadoEquipamento,
-  atualizarEstadoEquipamento,
   executarManobraEquipamento,
 } from "../../core/modelo/modeloRede";
 
@@ -286,7 +285,18 @@ function obterItensColecao(
 }
 
 // ==========================================================
-// CLASSIFICAÇÃO
+// CLASSIFICAÇÃO OFICIAL
+// ==========================================================
+//
+// TIP_UNID é a autoridade.
+//
+// 19 -> CHAVE_LAMINA
+// 22 -> CHAVE_FUSIVEL
+// 32 -> RELIGADOR
+// 34 -> CHAVE_SECCIONADORA
+// 38 -> TRANSFORMADOR
+//
+// EQSE/texto não pode sobrescrever TIP_UNID.
 // ==========================================================
 
 function obterTipoEquipamento(
@@ -296,184 +306,21 @@ function obterTipoEquipamento(
     return "OUTRO";
   }
 
-  const tipoDireto =
-    normalizarTexto(
-      obterValorEquipamento(
-        equipamento,
-        "tipoEquipamento",
-        "TIPO_EQUIPAMENTO",
-        "tipo"
-      )
-    );
-
-  if (tipoDireto) {
-    if (
-      tipoDireto.includes(
-        "RELIGADOR"
-      ) ||
-      tipoDireto.includes(
-        "RECLOSER"
-      )
-    ) {
-      return "RELIGADOR";
-    }
-
-    if (
-      tipoDireto.includes(
-        "FUSIVEL"
-      ) ||
-      tipoDireto.includes(
-        "FUSÍVEL"
-      )
-    ) {
-      return "CHAVE_FUSIVEL";
-    }
-
-    if (
-      tipoDireto.includes(
-        "LAMINA"
-      ) ||
-      tipoDireto.includes(
-        "LÂMINA"
-      ) ||
-      tipoDireto.includes(
-        "FACA"
-      )
-    ) {
-      return "CHAVE_LAMINA";
-    }
-
-    if (
-      tipoDireto.includes(
-        "SECCIONADORA"
-      ) ||
-      tipoDireto.includes(
-        "SECCIONAD"
-      )
-    ) {
-      return "CHAVE_SECCIONADORA";
-    }
-
-    if (
-      tipoDireto.includes(
-        "REGULADOR"
-      )
-    ) {
-      return "REGULADOR";
-    }
-
-    if (
-      tipoDireto.includes(
-        "CAPACITOR"
-      )
-    ) {
-      return "CAPACITOR";
-    }
-
-    if (
-      tipoDireto.includes(
-        "TRANSFORMADOR"
-      ) ||
-      tipoDireto.includes(
-        "TRAFO"
-      )
-    ) {
-      return "TRANSFORMADOR";
-    }
-  }
-
-  const tipoPrincipal =
-    normalizarTexto(
-      obterValorEquipamento(
-        equipamento,
-        "equipamentoPrincipal",
-        "EQUIPAMENTO_PRINCIPAL"
-      )
-    );
-
-  if (tipoPrincipal) {
-    if (
-      tipoPrincipal.includes(
-        "RELIGADOR"
-      ) ||
-      tipoPrincipal.includes(
-        "RECLOSER"
-      )
-    ) {
-      return "RELIGADOR";
-    }
-
-    if (
-      tipoPrincipal.includes(
-        "FUSIVEL"
-      ) ||
-      tipoPrincipal.includes(
-        "FUSÍVEL"
-      )
-    ) {
-      return "CHAVE_FUSIVEL";
-    }
-
-    if (
-      tipoPrincipal.includes(
-        "LAMINA"
-      ) ||
-      tipoPrincipal.includes(
-        "LÂMINA"
-      ) ||
-      tipoPrincipal.includes(
-        "FACA"
-      )
-    ) {
-      return "CHAVE_LAMINA";
-    }
-
-    if (
-      tipoPrincipal.includes(
-        "SECCIONADORA"
-      )
-    ) {
-      return "CHAVE_SECCIONADORA";
-    }
-
-    if (
-      tipoPrincipal.includes(
-        "REGULADOR"
-      )
-    ) {
-      return "REGULADOR";
-    }
-
-    if (
-      tipoPrincipal.includes(
-        "CAPACITOR"
-      )
-    ) {
-      return "CAPACITOR";
-    }
-
-    if (
-      tipoPrincipal.includes(
-        "TRANSFORMADOR"
-      ) ||
-      tipoPrincipal.includes(
-        "TRAFO"
-      )
-    ) {
-      return "TRANSFORMADOR";
-    }
-  }
+  const propriedades =
+    equipamento?.properties ||
+    equipamento?.propriedades ||
+    equipamento;
 
   const tipoUnidade =
     normalizarTexto(
-      obterValorEquipamento(
-        equipamento,
-        "tipoUnidade",
-        "TIP_UNID"
-      )
+      equipamento?.tipoUnidade ??
+      propriedades?.tipoUnidade ??
+      propriedades?.TIP_UNID
     );
 
-  switch (tipoUnidade) {
+  switch (
+    tipoUnidade
+  ) {
     case "19":
       return "CHAVE_LAMINA";
 
@@ -493,15 +340,49 @@ function obterTipoEquipamento(
       break;
   }
 
+  const tipoModelo =
+    normalizarTexto(
+      equipamento?.tipoEquipamento
+    );
+
+  const tiposConhecidos = [
+    "RELIGADOR",
+    "CHAVE_FUSIVEL",
+    "CHAVE_LAMINA",
+    "CHAVE_SECCIONADORA",
+    "TRANSFORMADOR",
+    "REGULADOR",
+    "CAPACITOR",
+  ];
+
+  if (
+    tiposConhecidos.includes(
+      tipoModelo
+    )
+  ) {
+    return tipoModelo;
+  }
+
+  const tipoPrincipal =
+    normalizarTexto(
+      equipamento?.equipamentoPrincipal ??
+      propriedades?.equipamentoPrincipal
+    );
+
+  if (
+    tiposConhecidos.includes(
+      tipoPrincipal
+    )
+  ) {
+    return tipoPrincipal;
+  }
+
   const descricao =
     normalizarTexto(
-      obterValorEquipamento(
-        equipamento,
-        "DESCR",
-        "DESCRICAO",
-        "descricao",
-        "TIP_INST"
-      )
+      equipamento?.descricao ??
+      propriedades?.DESCR ??
+      propriedades?.DESCRICAO ??
+      propriedades?.TIP_INST
     );
 
   if (
@@ -550,6 +431,17 @@ function obterTipoEquipamento(
 
   if (
     descricao.includes(
+      "TRANSFORMADOR"
+    ) ||
+    descricao.includes(
+      "TRAFO"
+    )
+  ) {
+    return "TRANSFORMADOR";
+  }
+
+  if (
+    descricao.includes(
       "REGULADOR"
     )
   ) {
@@ -564,22 +456,11 @@ function obterTipoEquipamento(
     return "CAPACITOR";
   }
 
-  if (
-    descricao.includes(
-      "TRANSFORMADOR"
-    ) ||
-    descricao.includes(
-      "TRAFO"
-    )
-  ) {
-    return "TRANSFORMADOR";
-  }
-
   return "OUTRO";
 }
 
 // ==========================================================
-// VISIBILIDADE POR ZOOM
+// VISIBILIDADE
 // ==========================================================
 
 function obterNivelVisualPorZoom(
@@ -853,7 +734,7 @@ function obterEstiloEstadoOperacional(
 }
 
 // ==========================================================
-// ÍCONE DO EQUIPAMENTO
+// ÍCONE
 // ==========================================================
 
 function criarIconeEquipamento(
@@ -1077,7 +958,9 @@ async function carregarColecaoCMG(
         );
 
       geojson.features.forEach(
-        (feature) => {
+        (
+          feature
+        ) => {
           const propriedades =
             feature?.properties ||
             {};
@@ -1410,13 +1293,15 @@ export default function CamadaBDGD({
           );
 
           if (
-            resultado.erros
-              .length > 0
+            resultado.erros.length >
+            0
           ) {
             setErroSsdmt(
               resultado.erros
                 .map(
-                  (item) =>
+                  (
+                    item
+                  ) =>
                     `${item.alimentador}: ${item.mensagem}`
                 )
                 .join("\n")
@@ -1486,13 +1371,15 @@ export default function CamadaBDGD({
           );
 
           if (
-            resultado.erros
-              .length > 0
+            resultado.erros.length >
+            0
           ) {
             setErroPonnot(
               resultado.erros
                 .map(
-                  (item) =>
+                  (
+                    item
+                  ) =>
                     `${item.alimentador}: ${item.mensagem}`
                 )
                 .join("\n")
@@ -1562,13 +1449,15 @@ export default function CamadaBDGD({
           );
 
           if (
-            resultado.erros
-              .length > 0
+            resultado.erros.length >
+            0
           ) {
             setErroEquipamentos(
               resultado.erros
                 .map(
-                  (item) =>
+                  (
+                    item
+                  ) =>
                     `${item.alimentador}: ${item.mensagem}`
                 )
                 .join("\n")
@@ -1610,7 +1499,7 @@ export default function CamadaBDGD({
   }, []);
 
   // ========================================================
-  // EQSE
+  // EQSE DERIVADO
   // ========================================================
 
   const eqseDerivado =
@@ -1621,10 +1510,13 @@ export default function CamadaBDGD({
         return null;
       }
 
-      const features = [];
+      const features =
+        [];
 
       equipamentosGeoJSON.features.forEach(
-        (feature) => {
+        (
+          feature
+        ) => {
           const propriedades =
             feature?.properties ||
             {};
@@ -1637,7 +1529,9 @@ export default function CamadaBDGD({
               : [];
 
           lista.forEach(
-            (eqse) => {
+            (
+              eqse
+            ) => {
               if (!eqse) {
                 return;
               }
@@ -1776,12 +1670,16 @@ export default function CamadaBDGD({
             : []
         )
           .map(
-            (item) =>
+            (
+              item
+            ) =>
               normalizarTexto(
                 item
               )
           )
-          .filter(Boolean)
+          .filter(
+            Boolean
+          )
       );
     }, [
       alimentadoresSelecionados,
@@ -1962,7 +1860,8 @@ export default function CamadaBDGD({
 
   const idsPontosPermitidos =
     useMemo(() => {
-      const ids = new Set();
+      const ids =
+        new Set();
 
       for (
         const feature of
@@ -1981,14 +1880,18 @@ export default function CamadaBDGD({
           p.PN_CON_1A,
           p.PN_CON_2A,
         ].forEach(
-          (valor) => {
+          (
+            valor
+          ) => {
             const id =
               normalizarId(
                 valor
               );
 
             if (id) {
-              ids.add(id);
+              ids.add(
+                id
+              );
             }
           }
         );
@@ -2015,7 +1918,9 @@ export default function CamadaBDGD({
           );
 
         if (id) {
-          ids.add(id);
+          ids.add(
+            id
+          );
         }
       }
 
@@ -2041,7 +1946,9 @@ export default function CamadaBDGD({
             ponnot.features ||
             []
           ).filter(
-            (feature) => {
+            (
+              feature
+            ) => {
               if (
                 itemPertenceAoAlimentador(
                   feature
@@ -2074,7 +1981,7 @@ export default function CamadaBDGD({
     ]);
 
   // ========================================================
-  // EQUIPAMENTO
+  // IDENTIFICAÇÃO DO EQUIPAMENTO NA CAMADA
   // ========================================================
 
   function obterIdEquipamentoFeature(
@@ -2086,10 +1993,834 @@ export default function CamadaBDGD({
 
     return normalizarId(
       p.unsemtId ??
+        p.unsemt_id ??
+        p.COD_ID_UNSEMT ??
+        p.codIdUNSEMT ??
         p.untrmtId ??
-        p.COD_ID
+        p.untrmt_id ??
+        p.COD_ID_UNTRMT ??
+        p.codIdUNTRMT ??
+        p.COD_ID ??
+        p.codId ??
+        p.ID
     );
   }
+
+  // ========================================================
+  // BUSCAR EQUIPAMENTO NA TOPOLOGIA
+  // ========================================================
+
+  function buscarEquipamentoTopologia(
+    id
+  ) {
+    const idNormalizado =
+      normalizarId(id);
+
+    if (
+      !idNormalizado ||
+      !topologia
+    ) {
+      return null;
+    }
+
+    // ------------------------------------------------------
+    // 1. EQUIPAMENTOS TOTAIS
+    // ------------------------------------------------------
+
+    const equipamento =
+      topologia?.equipamentos?.[
+        idNormalizado
+      ];
+
+    if (
+      equipamento
+    ) {
+      return equipamento;
+    }
+
+    // ------------------------------------------------------
+    // 2. UNSEMT
+    // ------------------------------------------------------
+
+    const unidade =
+      topologia?.unidadesSeccionadoras?.[
+        idNormalizado
+      ];
+
+    if (
+      unidade
+    ) {
+      return unidade;
+    }
+
+    // ------------------------------------------------------
+    // 3. TRANSFORMADOR
+    // ------------------------------------------------------
+
+    const transformador =
+      topologia?.transformadores?.[
+        idNormalizado
+      ];
+
+    if (
+      transformador
+    ) {
+      return transformador;
+    }
+
+    // ------------------------------------------------------
+    // 4. BUSCA POR ID INTERNO
+    // ------------------------------------------------------
+
+    const equipamentos =
+      obterItensColecao(
+        topologia?.equipamentos
+      );
+
+    const encontradoEquipamento =
+      equipamentos.find(
+        (item) =>
+          normalizarId(
+            item?.id
+          ) === idNormalizado ||
+          normalizarId(
+            item?.COD_ID
+          ) === idNormalizado ||
+          normalizarId(
+            item?.codId
+          ) === idNormalizado ||
+          normalizarId(
+            item?.eqseId
+          ) === idNormalizado ||
+          normalizarId(
+            item?.idEQSE
+          ) === idNormalizado ||
+          normalizarId(
+            item?.unsemtId
+          ) === idNormalizado ||
+          normalizarId(
+            item?.codIdUNSEMT
+          ) === idNormalizado ||
+          normalizarId(
+            item?.plaqueta
+          ) === idNormalizado
+      );
+
+    if (
+      encontradoEquipamento
+    ) {
+      return encontradoEquipamento;
+    }
+
+    // ------------------------------------------------------
+    // 5. BUSCA NAS UNIDADES
+    // ------------------------------------------------------
+
+    const unidades =
+      obterItensColecao(
+        topologia?.unidadesSeccionadoras
+      );
+
+    const unidadeEncontrada =
+      unidades.find(
+        (item) => {
+          if (
+            normalizarId(
+              item?.id
+            ) === idNormalizado
+          ) {
+            return true;
+          }
+
+          if (
+            normalizarId(
+              item?.plaqueta
+            ) === idNormalizado
+          ) {
+            return true;
+          }
+
+          if (
+            normalizarId(
+              item?.unsemtId
+            ) === idNormalizado
+          ) {
+            return true;
+          }
+
+          const filhos =
+            Array.isArray(
+              item?.equipamentos
+            )
+              ? item.equipamentos
+              : [];
+
+          return filhos.some(
+            (filho) =>
+              normalizarId(
+                filho?.id
+              ) === idNormalizado ||
+              normalizarId(
+                filho?.COD_ID
+              ) === idNormalizado ||
+              normalizarId(
+                filho?.codId
+              ) === idNormalizado ||
+              normalizarId(
+                filho?.eqseId
+              ) === idNormalizado ||
+              normalizarId(
+                filho?.plaqueta
+              ) === idNormalizado ||
+              normalizarId(
+                filho?.unsemtId
+              ) === idNormalizado
+          );
+        }
+      );
+
+    if (
+      unidadeEncontrada
+    ) {
+      return unidadeEncontrada;
+    }
+
+    // ------------------------------------------------------
+    // 6. TRANSFORMADORES
+    // ------------------------------------------------------
+
+    const transformadores =
+      obterItensColecao(
+        topologia?.transformadores
+      );
+
+    const transformadorEncontrado =
+      transformadores.find(
+        (item) =>
+          normalizarId(
+            item?.id
+          ) === idNormalizado ||
+          normalizarId(
+            item?.plaqueta
+          ) === idNormalizado ||
+          normalizarId(
+            item?.COD_ID
+          ) === idNormalizado ||
+          normalizarId(
+            item?.untrmtId
+          ) === idNormalizado ||
+          normalizarId(
+            item?.codIdUNTRMT
+          ) === idNormalizado
+      );
+
+    if (
+      transformadorEncontrado
+    ) {
+      return transformadorEncontrado;
+    }
+
+    return null;
+  }
+
+  // ========================================================
+  // IDENTIDADE OPERACIONAL
+  // ========================================================
+  //
+  // CHAVES / RELIGADORES:
+  //   plaqueta = UNSEMT.COD_ID
+  //
+  // TRANSFORMADOR:
+  //   plaqueta = UNTRMT.COD_ID
+  //
+  // EQSE:
+  //   referência patrimonial complementar
+  // ========================================================
+
+  function obterIdentidadeOperacional(
+    equipamento,
+    feature = null
+  ) {
+    const p =
+      feature?.properties ||
+      {};
+
+    const modelo =
+      equipamento ||
+      {};
+
+    const propriedades =
+      modelo?.propriedades ||
+      modelo?.properties ||
+      {};
+
+    const tipo =
+      obterTipoEquipamento(
+        modelo
+      );
+
+    const unidade =
+      modelo?.unidadeSeccionadora ||
+      modelo?.unidade ||
+      null;
+
+    const transformadorModelo =
+      modelo?.transformador ||
+      null;
+
+    const unsemtId =
+      normalizarId(
+        modelo?.unsemtId ??
+          modelo?.codIdUNSEMT ??
+          modelo?.COD_ID_UNSEMT ??
+          propriedades?.unsemtId ??
+          propriedades?.codIdUNSEMT ??
+          propriedades?.COD_ID_UNSEMT ??
+          p?.unsemtId ??
+          p?.codIdUNSEMT ??
+          p?.COD_ID_UNSEMT ??
+          unidade?.unsemtId ??
+          unidade?.id ??
+          modelo?.unidadeId ??
+          modelo?.codIdUnidade
+      );
+
+    const untrmtId =
+      normalizarId(
+        modelo?.untrmtId ??
+          modelo?.codIdUNTRMT ??
+          modelo?.COD_ID_UNTRMT ??
+          propriedades?.untrmtId ??
+          propriedades?.codIdUNTRMT ??
+          propriedades?.COD_ID_UNTRMT ??
+          p?.untrmtId ??
+          p?.codIdUNTRMT ??
+          p?.COD_ID_UNTRMT ??
+          transformadorModelo?.untrmtId ??
+          transformadorModelo?.id
+      );
+
+    const idModelo =
+      normalizarId(
+        modelo?.id
+      );
+
+    const idFeature =
+      normalizarId(
+        p?.COD_ID ??
+          p?.codId ??
+          p?.ID
+      );
+
+    const idPatrimonial =
+      normalizarId(
+        modelo?.idPatrimonial ??
+          modelo?.eqseId ??
+          modelo?.idEQSE ??
+          modelo?.codIdEQSE ??
+          modelo?.COD_ID_EQSE ??
+          propriedades?.eqseId ??
+          propriedades?.idEQSE ??
+          propriedades?.codIdEQSE ??
+          p?.eqseId ??
+          p?.idEQSE ??
+          p?.COD_ID_EQSE
+      );
+
+    let plaqueta = null;
+
+    if (
+      tipo ===
+      "TRANSFORMADOR"
+    ) {
+      plaqueta =
+        untrmtId ||
+        normalizarId(
+          modelo?.plaqueta
+        ) ||
+        normalizarId(
+          modelo?.idOperacional
+        ) ||
+        normalizarId(
+          modelo?.codIdUNTRMT
+        ) ||
+        idModelo ||
+        idFeature;
+    } else {
+      plaqueta =
+        unsemtId ||
+        normalizarId(
+          modelo?.plaqueta
+        ) ||
+        normalizarId(
+          modelo?.idOperacional
+        ) ||
+        normalizarId(
+          modelo?.codIdUNSEMT
+        ) ||
+        idModelo ||
+        idFeature;
+    }
+
+    return {
+      plaqueta,
+      idOperacional:
+        plaqueta,
+
+      unsemtId:
+        unsemtId ||
+        null,
+
+      untrmtId:
+        untrmtId ||
+        null,
+
+      idPatrimonial:
+        idPatrimonial ||
+        null,
+
+      idModelo:
+        idModelo ||
+        null,
+
+      idFeature:
+        idFeature ||
+        null,
+    };
+  }
+
+  // ========================================================
+  // NORMALIZAR EQUIPAMENTO DA CAMADA
+  // ========================================================
+
+  function obterEquipamentoCamada(
+    feature
+  ) {
+    if (!feature) {
+      return null;
+    }
+
+    const idFeature =
+      obterIdEquipamentoFeature(
+        feature
+      );
+
+    const equipamentoModelo =
+      buscarEquipamentoTopologia(
+        idFeature
+      );
+
+    const propriedadesFeature =
+      feature?.properties ||
+      {};
+
+    if (
+      !equipamentoModelo
+    ) {
+      const equipamentoFallback = {
+        ...feature,
+
+        id:
+          idFeature,
+
+        propriedades:
+          propriedadesFeature,
+
+        properties:
+          propriedadesFeature,
+
+        tipoEquipamento:
+          obterTipoEquipamento(
+            feature
+          ),
+
+        featureOriginal:
+          feature,
+      };
+
+      const identidade =
+        obterIdentidadeOperacional(
+          equipamentoFallback,
+          feature
+        );
+
+      return {
+        ...equipamentoFallback,
+
+        plaqueta:
+          identidade.plaqueta,
+
+        idOperacional:
+          identidade.idOperacional,
+
+        unsemtId:
+          identidade.unsemtId,
+
+        untrmtId:
+          identidade.untrmtId,
+
+        idPatrimonial:
+          identidade.idPatrimonial,
+
+        idFeature:
+          identidade.idFeature,
+      };
+    }
+
+    const equipamento = {
+      ...equipamentoModelo,
+
+      propriedades: {
+        ...propriedadesFeature,
+
+        ...(equipamentoModelo.propriedades ||
+          {}),
+      },
+
+      properties: {
+        ...propriedadesFeature,
+
+        ...(equipamentoModelo.properties ||
+          {}),
+
+        ...(equipamentoModelo.propriedades ||
+          {}),
+      },
+
+      featureOriginal:
+        feature,
+
+      // ----------------------------------------------------
+      // PAC
+      // ----------------------------------------------------
+
+      pac1Original:
+        equipamentoModelo.pac1Original ??
+        equipamentoModelo.PAC_1 ??
+        propriedadesFeature.PAC_1 ??
+        null,
+
+      pac2Original:
+        equipamentoModelo.pac2Original ??
+        equipamentoModelo.PAC_2 ??
+        propriedadesFeature.PAC_2 ??
+        null,
+
+      pac1:
+        equipamentoModelo.pac1 ??
+        equipamentoModelo.PAC_1 ??
+        null,
+
+      pac2:
+        equipamentoModelo.pac2 ??
+        equipamentoModelo.PAC_2 ??
+        null,
+
+      // ----------------------------------------------------
+      // PONNOT
+      // ----------------------------------------------------
+
+      ponto1:
+        equipamentoModelo.ponto1 ??
+        null,
+
+      ponto2:
+        equipamentoModelo.ponto2 ??
+        null,
+
+      pontoAssociado:
+        equipamentoModelo.pontoAssociado ??
+        null,
+
+      // ----------------------------------------------------
+      // COORDENADAS
+      // ----------------------------------------------------
+
+      latitude:
+        equipamentoModelo.latitude ??
+        null,
+
+      longitude:
+        equipamentoModelo.longitude ??
+        null,
+
+      coordenadas:
+        equipamentoModelo.coordenadas ??
+        null,
+
+      // ----------------------------------------------------
+      // REDE
+      // ----------------------------------------------------
+
+      alimentador:
+        equipamentoModelo.alimentador ??
+        propriedadesFeature.alimentador ??
+        propriedadesFeature.CT_COD_OP ??
+        propriedadesFeature.CT_COD_OPER ??
+        null,
+
+      circuito:
+        equipamentoModelo.circuito ??
+        propriedadesFeature.CTMT ??
+        null,
+
+      // ----------------------------------------------------
+      // TIPO
+      // ----------------------------------------------------
+
+      tipoEquipamento:
+        equipamentoModelo.tipoEquipamento ??
+        equipamentoModelo.tipoVisual ??
+        obterTipoEquipamento(
+          equipamentoModelo
+        ),
+    };
+
+    const identidade =
+      obterIdentidadeOperacional(
+        equipamento,
+        feature
+      );
+
+    return {
+      ...equipamento,
+
+      // ----------------------------------------------------
+      // IDENTIDADE OPERACIONAL
+      // ----------------------------------------------------
+
+      plaqueta:
+        identidade.plaqueta,
+
+      idOperacional:
+        identidade.idOperacional,
+
+      unsemtId:
+        identidade.unsemtId,
+
+      untrmtId:
+        identidade.untrmtId,
+
+      idPatrimonial:
+        identidade.idPatrimonial,
+
+      idFeature:
+        identidade.idFeature,
+
+      idModelo:
+        identidade.idModelo,
+
+      // ----------------------------------------------------
+      // ID CENTRAL DO OBJETO
+      // ----------------------------------------------------
+
+      id:
+        identidade.idOperacional ||
+        identidade.idModelo ||
+        identidade.idFeature ||
+        idFeature,
+    };
+  }
+
+  // ========================================================
+  // COORDENADAS DO EQUIPAMENTO
+  // ========================================================
+
+  function obterCoordenadasEquipamentoCamada(
+    equipamento,
+    feature
+  ) {
+    if (
+      !equipamento &&
+      !feature
+    ) {
+      return null;
+    }
+
+    // ------------------------------------------------------
+    // 1. COORDENADAS DA TOPOLOGIA
+    // ------------------------------------------------------
+
+    const latitudeModelo =
+      Number(
+        equipamento?.coordenadas
+          ?.latitude ??
+        equipamento?.latitude
+      );
+
+    const longitudeModelo =
+      Number(
+        equipamento?.coordenadas
+          ?.longitude ??
+        equipamento?.longitude
+      );
+
+    if (
+      Number.isFinite(
+        latitudeModelo
+      ) &&
+      Number.isFinite(
+        longitudeModelo
+      )
+    ) {
+      return [
+        latitudeModelo,
+        longitudeModelo,
+      ];
+    }
+
+    // ------------------------------------------------------
+    // 2. PONTO ASSOCIADO
+    // ------------------------------------------------------
+
+    const pontoAssociado =
+      equipamento?.pontoAssociado;
+
+    if (
+      pontoAssociado &&
+      topologia
+    ) {
+      const ponto =
+        buscarPonto(
+          topologia,
+          pontoAssociado
+        );
+
+      if (
+        ponto
+      ) {
+        const latitude =
+          Number(
+            ponto.latitude
+          );
+
+        const longitude =
+          Number(
+            ponto.longitude
+          );
+
+        if (
+          Number.isFinite(
+            latitude
+          ) &&
+          Number.isFinite(
+            longitude
+          )
+        ) {
+          return [
+            latitude,
+            longitude,
+          ];
+        }
+      }
+    }
+
+    // ------------------------------------------------------
+    // 3. PONTO 1
+    // ------------------------------------------------------
+
+    const latitudePonto1 =
+      Number(
+        equipamento?.ponto1
+          ?.latitude
+      );
+
+    const longitudePonto1 =
+      Number(
+        equipamento?.ponto1
+          ?.longitude
+      );
+
+    if (
+      Number.isFinite(
+        latitudePonto1
+      ) &&
+      Number.isFinite(
+        longitudePonto1
+      )
+    ) {
+      return [
+        latitudePonto1,
+        longitudePonto1,
+      ];
+    }
+
+    // ------------------------------------------------------
+    // 4. PONTO 2
+    // ------------------------------------------------------
+
+    const latitudePonto2 =
+      Number(
+        equipamento?.ponto2
+          ?.latitude
+      );
+
+    const longitudePonto2 =
+      Number(
+        equipamento?.ponto2
+          ?.longitude
+      );
+
+    if (
+      Number.isFinite(
+        latitudePonto2
+      ) &&
+      Number.isFinite(
+        longitudePonto2
+      )
+    ) {
+      return [
+        latitudePonto2,
+        longitudePonto2,
+      ];
+    }
+
+    // ------------------------------------------------------
+    // 5. GEOMETRIA ORIGINAL
+    // ------------------------------------------------------
+
+    const coordinates =
+      feature
+        ?.geometry
+        ?.coordinates;
+
+    if (
+      Array.isArray(
+        coordinates
+      ) &&
+      coordinates.length >= 2
+    ) {
+      const longitude =
+        Number(
+          coordinates[0]
+        );
+
+      const latitude =
+        Number(
+          coordinates[1]
+        );
+
+      if (
+        Number.isFinite(
+          latitude
+        ) &&
+        Number.isFinite(
+          longitude
+        )
+      ) {
+        return [
+          latitude,
+          longitude,
+        ];
+      }
+    }
+
+    return null;
+  }
+
+  // ========================================================
+  // SELECIONAR EQUIPAMENTO
+  // ========================================================
 
   function selecionarEquipamentoOperacional(
     feature
@@ -2098,26 +2829,49 @@ export default function CamadaBDGD({
       return;
     }
 
-    const p =
-      feature.properties ||
-      {};
-
-    const id =
-      obterIdEquipamentoFeature(
+    const equipamento =
+      obterEquipamentoCamada(
         feature
       );
 
+    if (!equipamento) {
+      return;
+    }
+
+    const identidade =
+      obterIdentidadeOperacional(
+        equipamento,
+        feature
+      );
+
+    const id =
+      identidade.idOperacional;
+
     if (!id) {
+      console.warn(
+        "⚠️ Equipamento sem ID operacional:",
+        {
+          feature,
+          equipamento,
+          identidade,
+        }
+      );
+
       return;
     }
 
     const tipo =
       obterTipoEquipamento(
-        feature
+        equipamento
       );
 
     const estado =
       consultarEstadoEquipamento(
+        id
+      );
+
+    const ficha =
+      obterFichaCompletaEquipamento(
         id
       );
 
@@ -2130,19 +2884,63 @@ export default function CamadaBDGD({
 
       id,
 
+      plaqueta:
+        identidade.plaqueta,
+
+      idOperacional:
+        identidade.idOperacional,
+
+      idPatrimonial:
+        identidade.idPatrimonial,
+
+      unsemtId:
+        identidade.unsemtId,
+
+      untrmtId:
+        identidade.untrmtId,
+
       propriedades:
-        p,
+        equipamento?.propriedades ||
+        feature?.properties ||
+        {},
 
       pqt:
-        p,
+        equipamento,
 
       transformador:
         tipo ===
         "TRANSFORMADOR"
-          ? p
+          ? equipamento
           : undefined,
 
+      equipamento,
+
       feature,
+
+      featureOriginal:
+        feature,
+
+      pac1:
+        equipamento?.pac1 ??
+        equipamento?.pac1Original ??
+        null,
+
+      pac2:
+        equipamento?.pac2 ??
+        equipamento?.pac2Original ??
+        null,
+
+      pontoAssociado:
+        equipamento?.pontoAssociado ??
+        null,
+
+      latitude:
+        equipamento?.latitude ??
+        null,
+
+      longitude:
+        equipamento?.longitude ??
+        null,
     });
 
     setEstadoSelecionado(
@@ -2159,9 +2957,7 @@ export default function CamadaBDGD({
     );
 
     setFichaOperacional(
-      obterFichaCompletaEquipamento(
-        id
-      )
+      ficha
     );
 
     setRedeJusante(
@@ -2185,52 +2981,147 @@ export default function CamadaBDGD({
     );
 
     const coordenadas =
-      feature?.geometry
-        ?.coordinates;
+      obterCoordenadasEquipamentoCamada(
+        equipamento,
+        feature
+      );
 
     if (
-      Array.isArray(
-        coordenadas
-      ) &&
-      coordenadas.length >= 2
+      coordenadas
     ) {
-      const lng =
-        Number(
-          coordenadas[0]
-        );
+      map.flyTo(
+        coordenadas,
+        Math.max(
+          map.getZoom(),
+          17
+        ),
+        {
+          animate:
+            true,
 
-      const lat =
-        Number(
-          coordenadas[1]
-        );
-
-      if (
-        Number.isFinite(
-          lat
-        ) &&
-        Number.isFinite(
-          lng
-        )
-      ) {
-        map.flyTo(
-          [
-            lat,
-            lng,
-          ],
-          Math.max(
-            map.getZoom(),
-            17
-          ),
-          {
-            animate:
-              true,
-
-            duration:
-              0.7,
-          }
-        );
-      }
+          duration:
+            0.7,
+        }
+      );
     }
+
+    console.log(
+      "=================================================="
+    );
+
+    console.log(
+      "🔎 EQUIPAMENTO SELECIONADO"
+    );
+
+    console.log(
+      "ID OPERACIONAL:",
+      identidade.idOperacional
+    );
+
+    console.log(
+      "PLAQUETA:",
+      identidade.plaqueta
+    );
+
+    console.log(
+      "ID PATRIMONIAL / EQSE:",
+      identidade.idPatrimonial
+    );
+
+    console.log(
+      "UNSEMT:",
+      identidade.unsemtId
+    );
+
+    console.log(
+      "UNTRMT:",
+      identidade.untrmtId
+    );
+
+    console.log(
+      "TIPO:",
+      tipo
+    );
+
+    console.log(
+      "TIP_UNID:",
+      equipamento?.tipoUnidade ??
+      equipamento?.propriedades
+        ?.TIP_UNID ??
+      null
+    );
+
+    console.log(
+      "PAC_1:",
+      equipamento?.pac1 ??
+      equipamento?.pac1Original ??
+      null
+    );
+
+    console.log(
+      "PAC_2:",
+      equipamento?.pac2 ??
+      equipamento?.pac2Original ??
+      null
+    );
+
+    console.log(
+      "Ponto 1:",
+      equipamento?.ponto1 ??
+      null
+    );
+
+    console.log(
+      "Ponto 2:",
+      equipamento?.ponto2 ??
+      null
+    );
+
+    console.log(
+      "Ponto associado:",
+      equipamento?.pontoAssociado ??
+      null
+    );
+
+    console.log(
+      "Latitude:",
+      equipamento?.latitude ??
+      null
+    );
+
+    console.log(
+      "Longitude:",
+      equipamento?.longitude ??
+      null
+    );
+
+    console.log(
+      "Origem coordenada:",
+      equipamento?.coordenadas
+        ?.origem ??
+      null
+    );
+
+    console.log(
+      "Alimentador:",
+      equipamento?.alimentador ??
+      null
+    );
+
+    console.log(
+      "Circuito:",
+      equipamento?.circuito ??
+      null
+    );
+
+    console.log(
+      "Equipamento enriquecido:",
+      equipamento
+    );
+
+    console.log(
+      "=================================================="
+    );
   }
 
   // ========================================================
@@ -2343,7 +3234,9 @@ export default function CamadaBDGD({
     );
 
     setVersaoEstadoOperacional(
-      (valor) =>
+      (
+        valor
+      ) =>
         valor + 1
     );
 
@@ -2386,7 +3279,60 @@ export default function CamadaBDGD({
   }
 
   // ========================================================
-  // TOPOLOGIA
+  // BUSCAR UNIDADE DA TOPOLOGIA
+  // ========================================================
+
+  function buscarUnidadeTopologia(
+    id
+  ) {
+    if (
+      !topologia ||
+      !id
+    ) {
+      return null;
+    }
+
+    const unidades =
+      topologia
+        .unidadesSeccionadoras ||
+      {};
+
+    const idNormalizado =
+      normalizarId(id);
+
+    if (
+      idNormalizado &&
+      unidades[
+        idNormalizado
+      ]
+    ) {
+      return unidades[
+        idNormalizado
+      ];
+    }
+
+    const encontrada =
+      Object.values(
+        unidades
+      ).find(
+        (
+          unidade
+        ) =>
+          normalizarId(
+            unidade?.id ??
+              unidade?.codId ??
+              unidade?.COD_ID ??
+              unidade?.plaqueta
+          ) ===
+          idNormalizado
+      );
+
+    return encontrada ||
+      null;
+  }
+
+  // ========================================================
+  // ITEM TOPOLOGIA PERMITIDO
   // ========================================================
 
   function itemTopologiaPermitido(
@@ -2429,52 +3375,6 @@ export default function CamadaBDGD({
           id
         )
     );
-  }
-
-  function buscarUnidadeTopologia(
-    id
-  ) {
-    if (
-      !topologia ||
-      !id
-    ) {
-      return null;
-    }
-
-    const unidades =
-      topologia
-        .unidadesSeccionadoras ||
-      {};
-
-    const idNormalizado =
-      normalizarId(id);
-
-    if (
-      idNormalizado &&
-      unidades[
-        idNormalizado
-      ]
-    ) {
-      return unidades[
-        idNormalizado
-      ];
-    }
-
-    const encontrada =
-      Object.values(
-        unidades
-      ).find(
-        (unidade) =>
-          normalizarId(
-            unidade?.id ??
-              unidade?.codId ??
-              unidade?.COD_ID
-          ) ===
-          idNormalizado
-      );
-
-    return encontrada ||
-      null;
   }
 
   // ========================================================
@@ -2540,7 +3440,9 @@ export default function CamadaBDGD({
 
       destino =
         ids.find(
-          (id) =>
+          (
+            id
+          ) =>
             id !==
             origem
         );
@@ -2562,7 +3464,9 @@ export default function CamadaBDGD({
         );
       }
     }
-  }, [topologia]);
+  }, [
+    topologia,
+  ]);
 
   // ========================================================
   // PONTO DE ANÁLISE
@@ -2610,6 +3514,12 @@ export default function CamadaBDGD({
           unidade?.pontoAssociado
         ) ||
         normalizarId(
+          unidade?.ponto1
+        ) ||
+        normalizarId(
+          unidade?.pac1
+        ) ||
+        normalizarId(
           unidade?.pontoId
         )
       );
@@ -2622,8 +3532,23 @@ export default function CamadaBDGD({
       return (
         normalizarId(
           elementoSelecionado
+            ?.equipamento
+            ?.pontoAssociado
+        ) ||
+        normalizarId(
+          elementoSelecionado
             ?.transformador
             ?.pontoAssociado
+        ) ||
+        normalizarId(
+          elementoSelecionado
+            ?.equipamento
+            ?.pac1
+        ) ||
+        normalizarId(
+          elementoSelecionado
+            ?.transformador
+            ?.pac1
         ) ||
         normalizarId(
           elementoSelecionado
@@ -2951,7 +3876,9 @@ export default function CamadaBDGD({
 
     layer.on({
       mouseover:
-        (evento) => {
+        (
+          evento
+        ) => {
           evento.target.setStyle(
             estiloSSDMT(
               feature,
@@ -2963,7 +3890,9 @@ export default function CamadaBDGD({
         },
 
       mouseout:
-        (evento) => {
+        (
+          evento
+        ) => {
           evento.target.setStyle(
             estiloSSDMT(
               feature,
@@ -3021,7 +3950,7 @@ export default function CamadaBDGD({
   }
 
   // ========================================================
-  // COORDENADAS
+  // COORDENADAS PONTO
   // ========================================================
 
   function obterCoordenadasPonto(
@@ -3616,18 +4545,14 @@ export default function CamadaBDGD({
 
   // ========================================================
   // RENDER EQUIPAMENTOS
-  //
-  // IMPORTANTE:
-  // Não existe Popup aqui.
-  //
-  // O clique abre somente a ficha operacional.
   // ========================================================
 
   function renderizarEquipamentos() {
     if (
       !mostrarEquipamentos ||
       !visibilidadeZoom.mostrarRede ||
-      !equipamentosGeoJSONFiltrados
+      !equipamentosGeoJSONFiltrados ||
+      !topologia
     ) {
       return null;
     }
@@ -3638,70 +4563,109 @@ export default function CamadaBDGD({
           feature,
           indice
         ) => {
-          const geometry =
-            feature?.geometry;
-
-          const propriedades =
-            feature?.properties ||
-            {};
-
-          if (
-            !geometry ||
-            geometry.type !==
-              "Point"
-          ) {
-            return null;
-          }
-
-          const coordinates =
-            geometry.coordinates;
-
-          if (
-            !Array.isArray(
-              coordinates
-            ) ||
-            coordinates.length <
-              2
-          ) {
-            return null;
-          }
-
-          const longitude =
-            Number(
-              coordinates[0]
-            );
-
-          const latitude =
-            Number(
-              coordinates[1]
-            );
-
-          if (
-            !Number.isFinite(
-              latitude
-            ) ||
-            !Number.isFinite(
-              longitude
-            )
-          ) {
-            return null;
-          }
-
-          if (
-            !equipamentoPermitido(
+          const equipamento =
+            obterEquipamentoCamada(
               feature
-            )
-          ) {
+            );
+
+          if (!equipamento) {
             return null;
           }
+
+          const identidade =
+            obterIdentidadeOperacional(
+              equipamento,
+              feature
+            );
 
           const id =
-            normalizarId(
-              propriedades.unsemtId ??
-                propriedades.untrmtId ??
-                propriedades.COD_ID
-            ) ??
-            `equipamento-${indice}`;
+            identidade.idOperacional ||
+            obterIdEquipamentoFeature(
+              feature
+            );
+
+          if (!id) {
+            return null;
+          }
+
+          const tipo =
+            obterTipoEquipamento(
+              equipamento
+            );
+
+          if (
+            !equipamentoPermitidoPorZoom(
+              tipo,
+              zoomAtual
+            )
+          ) {
+            return null;
+          }
+
+          if (
+            tipo ===
+              "RELIGADOR" &&
+            !mostrarReligadores
+          ) {
+            return null;
+          }
+
+          if (
+            (
+              tipo ===
+                "CHAVE_FUSIVEL" ||
+              tipo ===
+                "CHAVE_LAMINA" ||
+              tipo ===
+                "CHAVE_SECCIONADORA"
+            ) &&
+            !mostrarChaves
+          ) {
+            return null;
+          }
+
+          if (
+            tipo ===
+              "REGULADOR" &&
+            !mostrarReguladores
+          ) {
+            return null;
+          }
+
+          if (
+            tipo ===
+              "CAPACITOR" &&
+            !mostrarCapacitores
+          ) {
+            return null;
+          }
+
+          if (
+            tipo ===
+              "TRANSFORMADOR" &&
+            !mostrarTransformadores
+          ) {
+            return null;
+          }
+
+          const coordenadas =
+            obterCoordenadasEquipamentoCamada(
+              equipamento,
+              feature
+            );
+
+          if (!coordenadas) {
+            console.warn(
+              "⚠️ Equipamento sem coordenada:",
+              {
+                id,
+                tipo,
+                equipamento,
+              }
+            );
+
+            return null;
+          }
 
           const estadoAtual =
             estadoDoEquipamento(
@@ -3709,28 +4673,59 @@ export default function CamadaBDGD({
             )?.estado ||
             "FECHADO";
 
+          const equipamentoVisual =
+            {
+              ...equipamento,
+
+              id,
+
+              plaqueta:
+                identidade.plaqueta,
+
+              idOperacional:
+                identidade.idOperacional,
+
+              idPatrimonial:
+                identidade.idPatrimonial,
+
+              unsemtId:
+                identidade.unsemtId,
+
+              untrmtId:
+                identidade.untrmtId,
+
+              properties:
+                equipamento.properties ||
+                {},
+
+              propriedades:
+                equipamento.propriedades ||
+                {},
+
+              featureOriginal:
+                feature,
+            };
+
           return (
             <Marker
               key={
                 `bdgd-equipamento-${id}-${indice}`
               }
-              position={[
-                latitude,
-                longitude,
-              ]}
+              position={
+                coordenadas
+              }
               icon={
                 criarIconeEquipamento(
-                  feature,
+                  equipamentoVisual,
                   estadoAtual
                 )
               }
               eventHandlers={{
                 click:
-                  () => {
+                  () =>
                     selecionarEquipamentoOperacional(
                       feature
-                    );
-                  },
+                    ),
               }}
             />
           );
@@ -3740,7 +4735,7 @@ export default function CamadaBDGD({
   }
 
   // ========================================================
-  // STATUS DE ZOOM
+  // STATUS ZOOM
   // ========================================================
 
   function obterDescricaoZoom() {
@@ -4090,7 +5085,7 @@ export default function CamadaBDGD({
       )}
 
       {/* ================================================== */}
-      {/* FICHA OPERACIONAL ÚNICA */}
+      {/* FICHA OPERACIONAL */}
       {/* ================================================== */}
 
       {elementoSelecionado && (
@@ -4148,22 +5143,51 @@ export default function CamadaBDGD({
               fichaOperacional ||
               null;
 
+            const equipamentoSelecionado =
+              elementoSelecionado
+                ?.equipamento ||
+              null;
+
             const dadosEquipamento =
               dadosFicha?.equipamento ||
               dadosFicha?.modelo ||
+              equipamentoSelecionado ||
               null;
 
             const dadosUnidade =
               dadosFicha?.unidade ||
+              dadosEquipamento
+                ?.unidadeSeccionadora ||
+              null;
+
+            const equipamentoFonte =
+              dadosEquipamento ||
+              equipamentoSelecionado ||
+              dadosUnidade ||
               null;
 
             const p =
-              dadosEquipamento?.propriedades ||
-              dadosUnidade?.propriedades ||
-              elementoSelecionado.propriedades ||
-              feature?.properties ||
-              elementoSelecionado.transformador ||
-              {};
+              {
+                ...(
+                  feature?.properties ||
+                  {}
+                ),
+
+                ...(
+                  dadosUnidade?.propriedades ||
+                  {}
+                ),
+
+                ...(
+                  dadosEquipamento?.propriedades ||
+                  {}
+                ),
+
+                ...(
+                  equipamentoSelecionado?.propriedades ||
+                  {}
+                ),
+              };
 
             const tipo =
               elementoSelecionado.tipo ===
@@ -4171,9 +5195,11 @@ export default function CamadaBDGD({
                 ? "TRECHO"
                 : (
                     dadosFicha?.tipo ||
-                    dadosFicha?.equipamento?.tipo ||
+                    dadosEquipamento?.tipoEquipamento ||
+                    equipamentoSelecionado?.tipoEquipamento ||
                     obterTipoEquipamento(
-                      feature ||
+                      equipamentoFonte ||
+                        feature ||
                         elementoSelecionado
                     )
                   );
@@ -4195,16 +5221,43 @@ export default function CamadaBDGD({
                     tipo
                   );
 
+            // ------------------------------------------------
+            // IDENTIDADE
+            // ------------------------------------------------
+
+            const identidadeFicha =
+              tipo === "TRECHO"
+                ? null
+                : obterIdentidadeOperacional(
+                    equipamentoFonte,
+                    feature
+                  );
+
             const id =
-              dadosFicha?.id ??
-              elementoSelecionado.id ??
-              p.unsemtId ??
-              p.untrmtId ??
-              p.COD_ID ??
+              tipo === "TRECHO"
+                ? (
+                    elementoSelecionado?.id ||
+                    p?.COD_ID ||
+                    "-"
+                  )
+                : (
+                    identidadeFicha?.plaqueta ??
+                    elementoSelecionado?.plaqueta ??
+                    elementoSelecionado?.idOperacional ??
+                    elementoSelecionado?.id ??
+                    "-"
+                  );
+
+            const idPatrimonial =
+              identidadeFicha?.idPatrimonial ??
+              elementoSelecionado?.idPatrimonial ??
+              equipamentoFonte?.idPatrimonial ??
               "-";
 
             const alimentador =
               dadosFicha?.alimentador ??
+              equipamentoFonte?.alimentador ??
+              dadosUnidade?.alimentador ??
               p.alimentador ??
               p.CT_COD_OP ??
               p.CT_COD_OPER ??
@@ -4215,38 +5268,44 @@ export default function CamadaBDGD({
 
             const circuito =
               dadosFicha?.circuito ??
+              equipamentoFonte?.circuito ??
+              dadosUnidade?.circuito ??
               p.CTMT ??
               p.ctmt ??
               "-";
 
-            const coordenadas =
-              feature?.geometry
-                ?.coordinates;
+            // ------------------------------------------------
+            // COORDENADAS
+            // ------------------------------------------------
+
+            const coordenadasMapa =
+              obterCoordenadasEquipamentoCamada(
+                equipamentoFonte,
+                feature
+              );
 
             const longitude =
-              Array.isArray(
-                coordenadas
-              )
+              coordenadasMapa
                 ? Number(
-                    coordenadas[0]
+                    coordenadasMapa[1]
                   )
                 : Number(
                     dadosFicha?.ponto
                       ?.longitude ??
-                      dadosUnidade?.longitude
+                      dadosUnidade?.longitude ??
+                      equipamentoFonte?.longitude
                   );
 
             const latitude =
-              Array.isArray(
-                coordenadas
-              )
+              coordenadasMapa
                 ? Number(
-                    coordenadas[1]
+                    coordenadasMapa[0]
                   )
                 : Number(
                     dadosFicha?.ponto
                       ?.latitude ??
-                      dadosUnidade?.latitude
+                      dadosUnidade?.latitude ??
+                      equipamentoFonte?.latitude
                   );
 
             const latitudeOk =
@@ -4258,6 +5317,10 @@ export default function CamadaBDGD({
               Number.isFinite(
                 longitude
               );
+
+            // ------------------------------------------------
+            // VALORES
+            // ------------------------------------------------
 
             const valor = (
               ...campos
@@ -4281,76 +5344,81 @@ export default function CamadaBDGD({
                 ) {
                   return valorCampo;
                 }
+
+                const valorEquip =
+                  equipamentoFonte?.[
+                    campo
+                  ];
+
+                if (
+                  valorEquip !==
+                    undefined &&
+                  valorEquip !==
+                    null &&
+                  String(
+                    valorEquip
+                  ).trim() !==
+                    ""
+                ) {
+                  return valorEquip;
+                }
               }
 
               return "-";
             };
 
             const posicao =
+              equipamentoFonte?.posicao ??
               valor(
                 "POS",
-                "posicao",
-                "estado"
+                "posicao"
               );
 
             const fases =
+              equipamentoFonte?.fases ??
               valor(
                 "FAS_CON",
                 "FAS_CON_P",
                 "fases"
               );
 
+            // ------------------------------------------------
+            // PAC
+            // ------------------------------------------------
+
             const pac1 =
-              valor(
-                "PAC_1",
-                "pac1Original",
-                "PAC1"
-              );
+              equipamentoFonte?.pac1Original ??
+              equipamentoFonte?.pac1 ??
+              dadosUnidade?.pac1Original ??
+              dadosUnidade?.pac1 ??
+              p?.PAC_1 ??
+              p?.pac1Original ??
+              p?.PAC1 ??
+              "-";
 
             const pac2 =
-              valor(
-                "PAC_2",
-                "pac2Original",
-                "PAC2"
-              );
+              equipamentoFonte?.pac2Original ??
+              equipamentoFonte?.pac2 ??
+              dadosUnidade?.pac2Original ??
+              dadosUnidade?.pac2 ??
+              p?.PAC_2 ??
+              p?.pac2Original ??
+              p?.PAC2 ??
+              "-";
 
-            const potencia =
-              valor(
-                "POT_NOM",
-                "potNom",
-                "POTENCIA",
-                "potencia",
-                "POT_TRAFO"
-              );
-
-            const tensaoPrimaria =
-              valor(
-                "TEN_LIN_SE",
-                "TEN_PRIM",
-                "TEN_PRI",
-                "TEN_PRI_NOM",
-                "tensaoPrimaria"
-              );
-
-            const tensaoSecundaria =
-              valor(
-                "TEN_SEC",
-                "TEN_SEC_NOM",
-                "tensaoSecundaria",
-                "TEN_LIN_SEC"
-              );
-
-            const telecomandadoModelo =
-              dadosFicha?.telecomandado ??
-              dadosUnidade?.telecomandado ??
-              p.telecomandado ??
-              null;
+            // ------------------------------------------------
+            // PONTO ASSOCIADO
+            // ------------------------------------------------
 
             let pontoAssociado =
               normalizarId(
-                dadosFicha?.pontoAssociado ||
-                  dadosFicha?.pac1 ||
-                  dadosFicha?.pac2
+                equipamentoFonte?.pontoAssociado
+              ) ||
+              normalizarId(
+                dadosUnidade?.pontoAssociado
+              ) ||
+              normalizarId(
+                elementoSelecionado?.pontoAssociado
               );
 
             if (
@@ -4368,7 +5436,10 @@ export default function CamadaBDGD({
                   unidade?.pontoAssociado
                 ) ||
                 normalizarId(
-                  unidade?.pontoId
+                  unidade?.pac1
+                ) ||
+                normalizarId(
+                  unidade?.ponto1
                 );
             }
 
@@ -4379,14 +5450,12 @@ export default function CamadaBDGD({
             ) {
               pontoAssociado =
                 normalizarId(
-                  elementoSelecionado
-                    ?.transformador
+                  equipamentoFonte
                     ?.pontoAssociado
                 ) ||
                 normalizarId(
-                  elementoSelecionado
-                    ?.transformador
-                    ?.pontoId
+                  equipamentoFonte
+                    ?.pac1
                 );
             }
 
@@ -4421,6 +5490,14 @@ export default function CamadaBDGD({
                 );
             }
 
+            const ponto1 =
+              equipamentoFonte?.ponto1 ||
+              null;
+
+            const ponto2 =
+              equipamentoFonte?.ponto2 ||
+              null;
+
             const conexoes =
               Array.isArray(
                 dadosFicha?.conexoes
@@ -4437,7 +5514,7 @@ export default function CamadaBDGD({
               versaoEstadoOperacional >=
               0
                 ? consultarEstadoEquipamento(
-                    elementoSelecionado.id
+                    id
                   )
                 : null;
 
@@ -4467,6 +5544,39 @@ export default function CamadaBDGD({
 
             const correnteAtual =
               dadosFicha?.correnteAtual ??
+              null;
+
+            const potencia =
+              valor(
+                "POT_NOM",
+                "potNom",
+                "POTENCIA",
+                "potencia",
+                "POT_TRAFO"
+              );
+
+            const tensaoPrimaria =
+              valor(
+                "TEN_LIN_SE",
+                "TEN_PRIM",
+                "TEN_PRI",
+                "TEN_PRI_NOM",
+                "tensaoPrimaria"
+              );
+
+            const tensaoSecundaria =
+              valor(
+                "TEN_SEC",
+                "TEN_SEC_NOM",
+                "tensaoSecundaria",
+                "TEN_LIN_SEC"
+              );
+
+            const telecomandadoModelo =
+              dadosFicha?.telecomandado ??
+              equipamentoFonte?.telecomandado ??
+              dadosUnidade?.telecomandado ??
+              p.telecomandado ??
               null;
 
             const corSecao =
@@ -4625,7 +5735,7 @@ export default function CamadaBDGD({
                           11,
                       }}
                     >
-                      ID:{" "}
+                      ID / Plaqueta:{" "}
                       {id}
                     </div>
                   </div>
@@ -4745,6 +5855,33 @@ export default function CamadaBDGD({
                           {id}
                         </div>
                       </div>
+
+                      {tipo !==
+                        "TRECHO" && (
+                        <div
+                          style={
+                            card
+                          }
+                        >
+                          <div
+                            style={
+                              estiloLabel
+                            }
+                          >
+                            ID Patrimonial / EQSE
+                          </div>
+
+                          <div
+                            style={
+                              estiloValor
+                            }
+                          >
+                            {
+                              idPatrimonial
+                            }
+                          </div>
+                        </div>
+                      )}
 
                       <div
                         style={
@@ -5116,6 +6253,116 @@ export default function CamadaBDGD({
                         </div>
                       </div>
                     </div>
+
+                    {/* PONTOS */}
+
+                    {(ponto1 ||
+                      ponto2) && (
+                      <div
+                        style={{
+                          display:
+                            "grid",
+
+                          gridTemplateColumns:
+                            "1fr 1fr",
+
+                          gap:
+                            7,
+
+                          marginTop:
+                            7,
+                        }}
+                      >
+                        <div
+                          style={
+                            card
+                          }
+                        >
+                          <div
+                            style={
+                              estiloLabel
+                            }
+                          >
+                            PONNOT PAC 1
+                          </div>
+
+                          <div
+                            style={
+                              estiloValor
+                            }
+                          >
+                            {
+                              ponto1
+                                ?.id ??
+                              pac1 ??
+                              "-"
+                            }
+                          </div>
+                        </div>
+
+                        <div
+                          style={
+                            card
+                          }
+                        >
+                          <div
+                            style={
+                              estiloLabel
+                            }
+                          >
+                            PONNOT PAC 2
+                          </div>
+
+                          <div
+                            style={
+                              estiloValor
+                            }
+                          >
+                            {
+                              ponto2
+                                ?.id ??
+                              pac2 ??
+                              "-"
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ORIGEM DA COORDENADA */}
+
+                    {equipamentoFonte
+                      ?.coordenadas
+                      ?.origem && (
+                      <div
+                        style={{
+                          ...card,
+
+                          marginTop:
+                            7,
+                        }}
+                      >
+                        <div
+                          style={
+                            estiloLabel
+                          }
+                        >
+                          Referência espacial
+                        </div>
+
+                        <div
+                          style={
+                            estiloValor
+                          }
+                        >
+                          {
+                            equipamentoFonte
+                              .coordenadas
+                              .origem
+                          }
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* TRANSFORMADOR */}
@@ -6225,7 +7472,8 @@ export default function CamadaBDGD({
                     ) ||
                     !Number.isFinite(
                       longitude
-                    ) ) {
+                    )
+                  ) {
                     return null;
                   }
 
@@ -6244,7 +7492,9 @@ export default function CamadaBDGD({
                         latitude,
                         longitude,
                       ]}
-                      radius={5}
+                      radius={
+                        5
+                      }
                       pathOptions={{
                         color:
                           "#ffffff",
@@ -6427,7 +7677,9 @@ export default function CamadaBDGD({
                       center={
                         coordenadas
                       }
-                      radius={4}
+                      radius={
+                        4
+                      }
                       pathOptions={{
                         color:
                           "#ffffff",
@@ -6515,7 +7767,9 @@ export default function CamadaBDGD({
                       center={
                         coordenadas
                       }
-                      radius={5}
+                      radius={
+                        5
+                      }
                       pathOptions={{
                         color:
                           "#ffffff",

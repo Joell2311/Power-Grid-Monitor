@@ -1,13 +1,9 @@
 // ==========================================================
 // NAVEGADOR DA REDE BDGD
-// COI MONITOR
+// POWER GRID MONITOR
 // ==========================================================
 //
-// Responsável por navegar pela topologia criada em:
-//
-//    topologiaBDGD.js
-//
-// Principais funções:
+// Responsável por:
 //
 // 1. Buscar ponto
 // 2. Buscar trecho
@@ -17,11 +13,36 @@
 // 6. Navegar a jusante
 // 7. Navegar a montante
 // 8. Buscar rede conectada
-// 9. Encontrar caminho entre pontos
+// 9. Encontrar caminho
 // 10. Identificar terminais
 // 11. Identificar derivações
 // 12. Identificar passagens
 // 13. Analisar ponto
+// 14. Navegação operacional
+//
+// PRINCÍPIOS:
+//
+// - A direção física preferencial é:
+//
+//       trecho.pontoInicial -> trecho.pontoFinal
+//
+// - A navegação não depende exclusivamente do campo
+//   "sentido" existente na adjacência.
+//
+// - A navegação operacional pode respeitar o estado dos
+//   equipamentos.
+//
+// - A navegação física pode ignorar estados operacionais.
+//
+// - IDs são sempre normalizados antes das comparações.
+//
+// - A navegação normal respeita alimentador/circuito.
+//
+// - A navegação de recomposição pode atravessar alimentadores
+//   e circuitos, quando explicitamente habilitada:
+//
+//      permitirTravessiaEntreAlimentadores: true
+//      permitirTravessiaEntreCircuitos: true
 //
 // ==========================================================
 
@@ -39,16 +60,81 @@ export function normalizarId(valor) {
     return null;
   }
 
-  const id = String(valor).trim();
+  const id =
+    String(valor)
+      .trim();
 
-  return id.length > 0
-    ? id
-    : null;
+  return id || null;
 }
 
 
 // ==========================================================
-// RESULTADO VAZIO - NAVEGAÇÃO
+// NORMALIZAR TEXTO
+// ==========================================================
+
+function normalizarTexto(valor) {
+
+  return String(
+    valor ?? ""
+  )
+    .trim()
+    .toUpperCase();
+}
+
+
+// ==========================================================
+// NORMALIZAR PAC
+// ==========================================================
+//
+// Exemplos:
+//
+// 10060794
+// 10060794M
+// 10060794M-154
+//
+// Todos resultam em:
+//
+// 10060794
+//
+// ==========================================================
+
+function normalizarPac(valor) {
+
+  if (
+    valor === null ||
+    valor === undefined
+  ) {
+    return null;
+  }
+
+  const texto =
+    String(valor)
+      .trim();
+
+  if (!texto) {
+    return null;
+  }
+
+  const match =
+    texto.match(
+      /^(.*?)M(?:-[^-\s]+)?$/i
+    );
+
+  if (match?.[1]) {
+
+    return normalizarId(
+      match[1]
+    );
+  }
+
+  return normalizarId(
+    texto
+  );
+}
+
+
+// ==========================================================
+// RESULTADO VAZIO
 // ==========================================================
 
 function resultadoVazio() {
@@ -78,6 +164,7 @@ function resultadoVazio() {
     quantidadeDerivacoes: 0,
 
     quantidadePassagens: 0
+
   };
 }
 
@@ -96,16 +183,41 @@ export function buscarPonto(
   }
 
   const id =
-    normalizarId(codId);
+    normalizarId(
+      codId
+    );
 
   if (!id) {
     return null;
   }
 
-  return (
-    topologia.pontos?.[id] ??
-    null
-  );
+  const ponto =
+    topologia.pontos?.[id];
+
+  if (ponto) {
+    return ponto;
+  }
+
+  if (
+    Array.isArray(
+      topologia.pontos
+    )
+  ) {
+
+    return (
+      topologia.pontos.find(
+        item =>
+          normalizarId(
+            item?.id ??
+            item?.COD_ID ??
+            item?.codId
+          ) === id
+      ) ??
+      null
+    );
+  }
+
+  return null;
 }
 
 
@@ -123,16 +235,41 @@ export function buscarTrecho(
   }
 
   const id =
-    normalizarId(codId);
+    normalizarId(
+      codId
+    );
 
   if (!id) {
     return null;
   }
 
-  return (
-    topologia.trechos?.[id] ??
-    null
-  );
+  const trecho =
+    topologia.trechos?.[id];
+
+  if (trecho) {
+    return trecho;
+  }
+
+  if (
+    Array.isArray(
+      topologia.trechos
+    )
+  ) {
+
+    return (
+      topologia.trechos.find(
+        item =>
+          normalizarId(
+            item?.id ??
+            item?.COD_ID ??
+            item?.codId
+          ) === id
+      ) ??
+      null
+    );
+  }
+
+  return null;
 }
 
 
@@ -150,7 +287,9 @@ export function buscarConexoes(
   }
 
   const id =
-    normalizarId(codId);
+    normalizarId(
+      codId
+    );
 
   if (!id) {
     return [];
@@ -159,16 +298,980 @@ export function buscarConexoes(
   const conexoes =
     topologia.adjacencia?.[id];
 
-  if (!Array.isArray(conexoes)) {
-    return [];
+  if (
+    Array.isArray(conexoes)
+  ) {
+
+    return conexoes;
   }
 
-  return conexoes;
+  return [];
 }
 
 
 // ==========================================================
-// BUSCAR CONEXÕES DE SAÍDA
+// OBTER ID DO TRECHO
+// ==========================================================
+
+function obterTrechoId(
+  conexao
+) {
+
+  return normalizarId(
+    conexao?.trechoId ??
+    conexao?.idTrecho ??
+    conexao?.COD_ID_TRECHO ??
+    conexao?.COD_ID
+  );
+}
+
+
+// ==========================================================
+// OBTER PONTO ORIGEM DA CONEXÃO
+// ==========================================================
+
+function obterPontoOrigemConexao(
+  conexao
+) {
+
+  return normalizarId(
+    conexao?.pontoOrigem ??
+    conexao?.pontoInicial ??
+    conexao?.origem ??
+    conexao?.PAC_1
+  );
+}
+
+
+// ==========================================================
+// OBTER PONTO DESTINO
+// ==========================================================
+
+function obterPontoDestino(
+  conexao
+) {
+
+  return normalizarId(
+    conexao?.pontoDestino ??
+    conexao?.pontoFinal ??
+    conexao?.destino ??
+    conexao?.PAC_2
+  );
+}
+
+
+// ==========================================================
+// OBTER ALIMENTADOR DO TRECHO
+// ==========================================================
+
+function obterAlimentadorTrecho(
+  trecho
+) {
+
+  if (!trecho) {
+    return null;
+  }
+
+  return normalizarId(
+    trecho.alimentador ??
+    trecho.alimentadorCodigo ??
+    trecho.codigoAlimentador ??
+    trecho.ALIMENTADOR ??
+    trecho.propriedades?.alimentador ??
+    trecho.propriedades?.ALIMENTADOR ??
+    trecho.propriedades?.COD_ALIM ??
+    trecho.propriedades?.COD_ALIMENTADOR ??
+    trecho.propriedades?.CT_COD_OP ??
+    trecho.propriedades?.CT_COD_OPER ??
+    trecho.propriedades?.CT_COD ??
+    trecho.propriedades?.CT_CODIGO ??
+    trecho.propriedades?.CTMT ??
+    trecho.circuito
+  );
+}
+
+
+// ==========================================================
+// OBTER CIRCUITO DO TRECHO
+// ==========================================================
+
+function obterCircuitoTrecho(
+  trecho
+) {
+
+  if (!trecho) {
+    return null;
+  }
+
+  return normalizarId(
+    trecho.circuito ??
+    trecho.circuitoCodigo ??
+    trecho.codigoCircuito ??
+    trecho.CIRCUITO ??
+    trecho.CTMT ??
+    trecho.propriedades?.circuito ??
+    trecho.propriedades?.CIRCUITO ??
+    trecho.propriedades?.COD_CIRCUITO ??
+    trecho.propriedades?.CTMT
+  );
+}
+
+
+// ==========================================================
+// OBTER ALIMENTADOR DO PONTO
+// ==========================================================
+
+function obterAlimentadorPonto(
+  ponto
+) {
+
+  if (!ponto) {
+    return null;
+  }
+
+  return normalizarId(
+    ponto.alimentador ??
+    ponto.alimentadorCodigo ??
+    ponto.ALIMENTADOR ??
+    ponto.propriedades?.alimentador ??
+    ponto.propriedades?.ALIMENTADOR ??
+    ponto.propriedades?.COD_ALIM ??
+    ponto.propriedades?.CT_COD_OP ??
+    ponto.propriedades?.CTMT
+  );
+}
+
+
+// ==========================================================
+// OBTER CIRCUITO DO PONTO
+// ==========================================================
+
+function obterCircuitoPonto(
+  ponto
+) {
+
+  if (!ponto) {
+    return null;
+  }
+
+  return normalizarId(
+    ponto.circuito ??
+    ponto.circuitoCodigo ??
+    ponto.CIRCUITO ??
+    ponto.CTMT ??
+    ponto.propriedades?.circuito ??
+    ponto.propriedades?.CIRCUITO ??
+    ponto.propriedades?.CTMT
+  );
+}
+
+
+// ==========================================================
+// FILTRAR ALIMENTADOR
+// ==========================================================
+//
+// Navegação normal:
+//    respeita alimentador.
+//
+// Recomposição:
+//    pode atravessar alimentadores.
+//
+// ==========================================================
+
+function trechoPertenceAoAlimentador(
+  trecho,
+  alimentador,
+  opcoes = {}
+) {
+
+  if (
+    !alimentador
+  ) {
+    return true;
+  }
+
+  if (
+    opcoes.permitirTravessiaEntreAlimentadores === true
+  ) {
+    return true;
+  }
+
+  const alvo =
+    normalizarTexto(
+      alimentador
+    );
+
+  const valor =
+    normalizarTexto(
+      obterAlimentadorTrecho(
+        trecho
+      )
+    );
+
+  if (!valor) {
+    return false;
+  }
+
+  return valor === alvo;
+}
+
+
+// ==========================================================
+// FILTRAR CIRCUITO
+// ==========================================================
+//
+// Navegação normal:
+//    respeita circuito.
+//
+// Recomposição:
+//    pode atravessar circuitos.
+//
+// ==========================================================
+
+function trechoPertenceAoCircuito(
+  trecho,
+  circuito,
+  opcoes = {}
+) {
+
+  if (
+    !circuito
+  ) {
+    return true;
+  }
+
+  if (
+    opcoes.permitirTravessiaEntreCircuitos === true
+  ) {
+    return true;
+  }
+
+  const alvo =
+    normalizarTexto(
+      circuito
+    );
+
+  const valor =
+    normalizarTexto(
+      obterCircuitoTrecho(
+        trecho
+      )
+    );
+
+  if (!valor) {
+    return false;
+  }
+
+  return valor === alvo;
+}
+
+
+// ==========================================================
+// CRIAR CHAVE DE ARESTA
+// ==========================================================
+
+function criarChaveAresta(
+  pontoA,
+  pontoB
+) {
+
+  const a =
+    normalizarId(
+      pontoA
+    );
+
+  const b =
+    normalizarId(
+      pontoB
+    );
+
+  if (
+    !a ||
+    !b
+  ) {
+    return null;
+  }
+
+  return [
+    a,
+    b
+  ]
+    .sort()
+    .join("::");
+}
+
+
+// ==========================================================
+// OBTER ESTADO DO EQUIPAMENTO
+// ==========================================================
+
+function obterEstadoEquipamento(
+  equipamentoId,
+  opcoes = {}
+) {
+
+  const id =
+    normalizarId(
+      equipamentoId
+    );
+
+  if (!id) {
+    return null;
+  }
+
+  const mapa =
+    opcoes.estadosEquipamentos ||
+    opcoes.mapaEstadosEquipamentos ||
+    {};
+
+  const registro =
+    mapa[id];
+
+  if (
+    registro &&
+    typeof registro === "object"
+  ) {
+
+    return normalizarTexto(
+      registro.estado ??
+      registro.estadoOperacional ??
+      registro.status
+    );
+  }
+
+  if (
+    registro !== null &&
+    registro !== undefined
+  ) {
+
+    return normalizarTexto(
+      registro
+    );
+  }
+
+  return null;
+}
+
+
+// ==========================================================
+// OBTER ID DO EQUIPAMENTO
+// ==========================================================
+
+function obterEquipamentoId(
+  equipamento
+) {
+
+  return normalizarId(
+    equipamento?.id ??
+    equipamento?.COD_ID ??
+    equipamento?.codId ??
+    equipamento?.codigo ??
+    equipamento?.unidadeId ??
+    equipamento?.UNSEMT ??
+    equipamento?.COD_ID_UNSEMT
+  );
+}
+
+
+// ==========================================================
+// VERIFICAR EQUIPAMENTO BLOQUEADOR
+// ==========================================================
+//
+// BLOQUEIA:
+//
+// ABERTO
+// INDISPONIVEL
+//
+// BYPASSADO não bloqueia automaticamente.
+//
+// ==========================================================
+
+function equipamentoBloqueiaTrecho(
+  equipamento,
+  opcoes = {}
+) {
+
+  if (!equipamento) {
+    return false;
+  }
+
+  const id =
+    obterEquipamentoId(
+      equipamento
+    );
+
+  if (!id) {
+    return false;
+  }
+
+  const estado =
+    obterEstadoEquipamento(
+      id,
+      opcoes
+    );
+
+  return (
+    estado === "ABERTO" ||
+    estado === "INDISPONIVEL"
+  );
+}
+
+
+// ==========================================================
+// LISTAR EQUIPAMENTOS OPERACIONAIS
+// ==========================================================
+
+function listarEquipamentosOperacionais(
+  topologia
+) {
+
+  const resultado = [];
+
+  const colecoes = [
+
+    topologia?.equipamentosOperacionais,
+
+    topologia?.equipamentos,
+
+    topologia?.unidadesSeccionadoras,
+
+    topologia?.transformadores,
+
+    topologia?.reguladores,
+
+    topologia?.capacitores
+
+  ];
+
+  for (
+    const colecao
+    of colecoes
+  ) {
+
+    if (!colecao) {
+      continue;
+    }
+
+    const itens =
+      Array.isArray(
+        colecao
+      )
+        ? colecao
+        : Object.values(
+            colecao
+          );
+
+    for (
+      const item
+      of itens
+    ) {
+
+      if (!item) {
+        continue;
+      }
+
+      const id =
+        obterEquipamentoId(
+          item
+        );
+
+      if (!id) {
+        continue;
+      }
+
+      if (
+        resultado.some(
+          existente =>
+            existente.id === id
+        )
+      ) {
+        continue;
+      }
+
+      resultado.push({
+
+        ...item,
+
+        id
+
+      });
+    }
+  }
+
+  return resultado;
+}
+
+
+// ==========================================================
+// CRIAR MAPA DE BARREIRAS OPERACIONAIS
+// ==========================================================
+
+function criarMapaBarreirasOperacionais(
+  topologia,
+  opcoes = {}
+) {
+
+  const barreiras =
+    new Set();
+
+  if (
+    opcoes.respeitarEstadoOperacional ===
+    false
+  ) {
+
+    return barreiras;
+  }
+
+  const equipamentos =
+    listarEquipamentosOperacionais(
+      topologia
+    );
+
+  for (
+    const equipamento
+    of equipamentos
+  ) {
+
+    if (
+      !equipamentoBloqueiaTrecho(
+        equipamento,
+        opcoes
+      )
+    ) {
+      continue;
+    }
+
+    const p =
+      equipamento.propriedades ||
+      equipamento.properties ||
+      equipamento;
+
+    const pac1 =
+      normalizarPac(
+        equipamento.pac1 ??
+        equipamento.PAC_1 ??
+        equipamento.unidade?.pac1 ??
+        equipamento.unidade?.pac1Original ??
+        p.PAC_1 ??
+        p.PAC1 ??
+        p.pac1
+      );
+
+    const pac2 =
+      normalizarPac(
+        equipamento.pac2 ??
+        equipamento.PAC_2 ??
+        equipamento.unidade?.pac2 ??
+        equipamento.unidade?.pac2Original ??
+        p.PAC_2 ??
+        p.PAC1 ??
+        p.pac2
+      );
+
+    if (
+      !pac1 ||
+      !pac2
+    ) {
+      continue;
+    }
+
+    const chave =
+      criarChaveAresta(
+        pac1,
+        pac2
+      );
+
+    if (chave) {
+      barreiras.add(
+        chave
+      );
+    }
+  }
+
+  return barreiras;
+}
+
+
+// ==========================================================
+// VERIFICAR BARREIRA
+// ==========================================================
+
+function existeBarreira(
+  barreiras,
+  pontoA,
+  pontoB
+) {
+
+  if (!barreiras) {
+    return false;
+  }
+
+  const chave =
+    criarChaveAresta(
+      pontoA,
+      pontoB
+    );
+
+  if (!chave) {
+    return false;
+  }
+
+  return barreiras.has(
+    chave
+  );
+}
+
+
+// ==========================================================
+// CRIAR TRECHO NAVEGADO
+// ==========================================================
+
+function criarTrechoNavegado(
+  topologia,
+  trechoId,
+  pontoOrigem,
+  pontoDestino,
+  sentido
+) {
+
+  const id =
+    normalizarId(
+      trechoId
+    );
+
+  if (!id) {
+    return null;
+  }
+
+  const trecho =
+    buscarTrecho(
+      topologia,
+      id
+    );
+
+  if (!trecho) {
+    return null;
+  }
+
+  return {
+
+    ...trecho,
+
+    id:
+      normalizarId(
+        trecho.id ??
+        trecho.COD_ID ??
+        id
+      ),
+
+    pontoOrigem:
+      normalizarId(
+        pontoOrigem
+      ),
+
+    pontoDestino:
+      normalizarId(
+        pontoDestino
+      ),
+
+    sentido:
+      sentido ??
+      null
+
+  };
+}
+
+
+// ==========================================================
+// OBTER SAÍDAS FÍSICAS
+// ==========================================================
+
+function obterSaidasFisicas(
+  topologia,
+  pontoAtual,
+  opcoes = {}
+) {
+
+  const resultado = [];
+
+  const atual =
+    normalizarId(
+      pontoAtual
+    );
+
+  if (!atual) {
+    return resultado;
+  }
+
+  const conexoes =
+    buscarConexoes(
+      topologia,
+      atual
+    );
+
+  const alimentador =
+    opcoes.alimentador ??
+    null;
+
+  const circuito =
+    opcoes.circuito ??
+    null;
+
+  const barreiras =
+    opcoes._barreiras ||
+    new Set();
+
+  for (
+    const conexao
+    of conexoes
+  ) {
+
+    const trechoId =
+      obterTrechoId(
+        conexao
+      );
+
+    if (!trechoId) {
+      continue;
+    }
+
+    const trecho =
+      buscarTrecho(
+        topologia,
+        trechoId
+      );
+
+    if (!trecho) {
+      continue;
+    }
+
+    if (
+      !trechoPertenceAoAlimentador(
+        trecho,
+        alimentador,
+        opcoes
+      )
+    ) {
+      continue;
+    }
+
+    if (
+      !trechoPertenceAoCircuito(
+        trecho,
+        circuito,
+        opcoes
+      )
+    ) {
+      continue;
+    }
+
+    const inicio =
+      normalizarId(
+        trecho.pontoInicial ??
+        trecho.PAC_1 ??
+        trecho.pontoOrigem
+      );
+
+    const fim =
+      normalizarId(
+        trecho.pontoFinal ??
+        trecho.PAC_2 ??
+        trecho.pontoDestino
+      );
+
+    if (
+      !inicio ||
+      !fim
+    ) {
+      continue;
+    }
+
+    if (
+      inicio !== atual
+    ) {
+      continue;
+    }
+
+    if (
+      existeBarreira(
+        barreiras,
+        inicio,
+        fim
+      )
+    ) {
+      continue;
+    }
+
+    resultado.push({
+
+      ...conexao,
+
+      trechoId,
+
+      pontoOrigem:
+        inicio,
+
+      pontoDestino:
+        fim,
+
+      sentido:
+        "SAIDA",
+
+      trecho
+
+    });
+  }
+
+  return resultado;
+}
+
+
+// ==========================================================
+// OBTER ENTRADAS FÍSICAS
+// ==========================================================
+
+function obterEntradasFisicas(
+  topologia,
+  pontoAtual,
+  opcoes = {}
+) {
+
+  const resultado = [];
+
+  const atual =
+    normalizarId(
+      pontoAtual
+    );
+
+  if (!atual) {
+    return resultado;
+  }
+
+  const conexoes =
+    buscarConexoes(
+      topologia,
+      atual
+    );
+
+  const alimentador =
+    opcoes.alimentador ??
+    null;
+
+  const circuito =
+    opcoes.circuito ??
+    null;
+
+  const barreiras =
+    opcoes._barreiras ||
+    new Set();
+
+  for (
+    const conexao
+    of conexoes
+  ) {
+
+    const trechoId =
+      obterTrechoId(
+        conexao
+      );
+
+    if (!trechoId) {
+      continue;
+    }
+
+    const trecho =
+      buscarTrecho(
+        topologia,
+        trechoId
+      );
+
+    if (!trecho) {
+      continue;
+    }
+
+    if (
+      !trechoPertenceAoAlimentador(
+        trecho,
+        alimentador,
+        opcoes
+      )
+    ) {
+      continue;
+    }
+
+    if (
+      !trechoPertenceAoCircuito(
+        trecho,
+        circuito,
+        opcoes
+      )
+    ) {
+      continue;
+    }
+
+    const inicio =
+      normalizarId(
+        trecho.pontoInicial ??
+        trecho.PAC_1 ??
+        trecho.pontoOrigem
+      );
+
+    const fim =
+      normalizarId(
+        trecho.pontoFinal ??
+        trecho.PAC_2 ??
+        trecho.pontoDestino
+      );
+
+    if (
+      !inicio ||
+      !fim
+    ) {
+      continue;
+    }
+
+    if (
+      fim !== atual
+    ) {
+      continue;
+    }
+
+    if (
+      existeBarreira(
+        barreiras,
+        inicio,
+        fim
+      )
+    ) {
+      continue;
+    }
+
+    resultado.push({
+
+      ...conexao,
+
+      trechoId,
+
+      pontoOrigem:
+        fim,
+
+      pontoDestino:
+        inicio,
+
+      sentido:
+        "ENTRADA",
+
+      trecho
+
+    });
+  }
+
+  return resultado;
+}
+
+
+// ==========================================================
+// BUSCAR SAÍDAS
 // ==========================================================
 
 export function buscarSaidas(
@@ -181,13 +1284,15 @@ export function buscarSaidas(
     codId
   ).filter(
     conexao =>
-      conexao?.sentido === "SAIDA"
+      normalizarTexto(
+        conexao?.sentido
+      ) === "SAIDA"
   );
 }
 
 
 // ==========================================================
-// BUSCAR CONEXÕES DE ENTRADA
+// BUSCAR ENTRADAS
 // ==========================================================
 
 export function buscarEntradas(
@@ -200,13 +1305,15 @@ export function buscarEntradas(
     codId
   ).filter(
     conexao =>
-      conexao?.sentido === "ENTRADA"
+      normalizarTexto(
+        conexao?.sentido
+      ) === "ENTRADA"
   );
 }
 
 
 // ==========================================================
-// VERIFICAR TERMINAL
+// TERMINAL
 // ==========================================================
 
 export function ehTerminal(
@@ -214,26 +1321,38 @@ export function ehTerminal(
   codId
 ) {
 
-  if (!topologia) {
-    return false;
-  }
-
   const id =
-    normalizarId(codId);
+    normalizarId(
+      codId
+    );
 
   if (!id) {
     return false;
   }
 
-  return (
-    Array.isArray(topologia.terminais) &&
-    topologia.terminais.includes(id)
-  );
+  if (
+    Array.isArray(
+      topologia?.terminais
+    )
+  ) {
+
+    return topologia.terminais.some(
+      item =>
+        normalizarId(
+          typeof item === "object"
+            ? item?.pontoId ??
+              item?.id
+            : item
+        ) === id
+    );
+  }
+
+  return false;
 }
 
 
 // ==========================================================
-// VERIFICAR DERIVAÇÃO
+// DERIVAÇÃO
 // ==========================================================
 
 export function ehDerivacao(
@@ -241,12 +1360,10 @@ export function ehDerivacao(
   codId
 ) {
 
-  if (!topologia) {
-    return false;
-  }
-
   const id =
-    normalizarId(codId);
+    normalizarId(
+      codId
+    );
 
   if (!id) {
     return false;
@@ -254,45 +1371,26 @@ export function ehDerivacao(
 
   if (
     !Array.isArray(
-      topologia.derivacoes
+      topologia?.derivacoes
     )
   ) {
     return false;
   }
 
   return topologia.derivacoes.some(
-    item => {
-
-      if (
-        item === null ||
-        item === undefined
-      ) {
-        return false;
-      }
-
-      // Caso a topologia guarde apenas o ID
-      if (
-        typeof item !== "object"
-      ) {
-
-        return (
-          normalizarId(item) === id
-        );
-      }
-
-      // Caso guarde { pontoId: "..." }
-      return (
-        normalizarId(
-          item.pontoId
-        ) === id
-      );
-    }
+    item =>
+      normalizarId(
+        typeof item === "object"
+          ? item?.pontoId ??
+            item?.id
+          : item
+      ) === id
   );
 }
 
 
 // ==========================================================
-// VERIFICAR PASSAGEM
+// PASSAGEM
 // ==========================================================
 
 export function ehPassagem(
@@ -300,12 +1398,10 @@ export function ehPassagem(
   codId
 ) {
 
-  if (!topologia) {
-    return false;
-  }
-
   const id =
-    normalizarId(codId);
+    normalizarId(
+      codId
+    );
 
   if (!id) {
     return false;
@@ -313,143 +1409,26 @@ export function ehPassagem(
 
   if (
     !Array.isArray(
-      topologia.passagens
+      topologia?.passagens
     )
   ) {
     return false;
   }
 
   return topologia.passagens.some(
-    item => {
-
-      if (
-        item === null ||
-        item === undefined
-      ) {
-        return false;
-      }
-
-      if (
-        typeof item !== "object"
-      ) {
-
-        return (
-          normalizarId(item) === id
-        );
-      }
-
-      return (
-        normalizarId(
-          item.pontoId
-        ) === id
-      );
-    }
+    item =>
+      normalizarId(
+        typeof item === "object"
+          ? item?.pontoId ??
+            item?.id
+          : item
+      ) === id
   );
-}
-
-
-// ==========================================================
-// OBTER DESTINO DE UMA CONEXÃO
-// ==========================================================
-//
-// A topologia normalmente possui:
-//
-// conexao.pontoDestino
-//
-// Mas deixamos uma proteção para estruturas alternativas.
-//
-
-function obterPontoDestino(
-  conexao
-) {
-
-  if (!conexao) {
-    return null;
-  }
-
-  return normalizarId(
-    conexao.pontoDestino
-  );
-}
-
-
-// ==========================================================
-// OBTER ID DO TRECHO
-// ==========================================================
-
-function obterTrechoId(
-  conexao
-) {
-
-  if (!conexao) {
-    return null;
-  }
-
-  return normalizarId(
-    conexao.trechoId
-  );
-}
-
-
-// ==========================================================
-// ADICIONAR TRECHO
-// ==========================================================
-
-function criarTrechoNavegado(
-  topologia,
-  conexao,
-  pontoOrigem,
-  pontoDestino,
-  sentido
-) {
-
-  const trechoId =
-    obterTrechoId(conexao);
-
-  if (!trechoId) {
-    return null;
-  }
-
-  const trecho =
-    buscarTrecho(
-      topologia,
-      trechoId
-    );
-
-  if (!trecho) {
-    return null;
-  }
-
-  return {
-
-    ...trecho,
-
-    pontoOrigem:
-      normalizarId(pontoOrigem),
-
-    pontoDestino:
-      normalizarId(pontoDestino),
-
-    sentido
-
-  };
 }
 
 
 // ==========================================================
 // NAVEGAR A JUSANTE
-// ==========================================================
-//
-// Percorre:
-//
-// PONTO
-//   ↓
-// TRECHO
-//   ↓
-// PONTO
-//
-// Utiliza somente conexões SAIDA.
-//
 // ==========================================================
 
 export function navegarAJusante(
@@ -471,31 +1450,78 @@ export function navegarAJusante(
     return resultadoVazio();
   }
 
-  const pontoInicio =
+  if (
+    !buscarPonto(
+      topologia,
+      inicio
+    )
+  ) {
+
+    return {
+
+      ...resultadoVazio(),
+
+      pontoInicial:
+        inicio
+
+    };
+  }
+
+  const pontoInicialObj =
     buscarPonto(
       topologia,
       inicio
     );
 
-  if (!pontoInicio) {
+  const alimentador =
+    opcoes.alimentador ??
+    obterAlimentadorPonto(
+      pontoInicialObj
+    );
 
-    return {
-      ...resultadoVazio(),
+  const circuito =
+    opcoes.circuito ??
+    obterCircuitoPonto(
+      pontoInicialObj
+    );
 
-      pontoInicial:
-        inicio
-    };
-  }
+  const maxProfundidade =
+    Number.isFinite(
+      opcoes.maxProfundidade
+    )
+      ? Math.max(
+          0,
+          opcoes.maxProfundidade
+        )
+      : Infinity;
 
   const incluirInicial =
     opcoes.incluirInicial !== false;
 
-  const limitarProfundidade =
-    Number.isFinite(
-      opcoes.maxProfundidade
-    )
-      ? opcoes.maxProfundidade
-      : Infinity;
+  const barreiras =
+    opcoes._barreiras ??
+    (
+      opcoes.respeitarEstadoOperacional ===
+      false
+        ? new Set()
+        : criarMapaBarreirasOperacionais(
+            topologia,
+            opcoes
+          )
+    );
+
+  const fila = [
+
+    {
+      pontoId:
+        inicio,
+
+      profundidade:
+        0
+
+    }
+
+  ];
 
   const visitados =
     new Set();
@@ -503,17 +1529,9 @@ export function navegarAJusante(
   const trechosVisitados =
     new Set();
 
-  const fila = [
-
-    {
-      pontoId: inicio,
-      profundidade: 0
-    }
-
-  ];
-
   const pontos = [];
   const trechos = [];
+
   const terminais = [];
   const derivacoes = [];
   const passagens = [];
@@ -527,17 +1545,17 @@ export function navegarAJusante(
 
     const pontoAtual =
       normalizarId(
-        item.pontoId
+        item?.pontoId
       );
 
     const profundidade =
-      item.profundidade;
-
-    if (!pontoAtual) {
-      continue;
-    }
+      Number(
+        item?.profundidade ??
+        0
+      );
 
     if (
+      !pontoAtual ||
       visitados.has(
         pontoAtual
       )
@@ -568,10 +1586,6 @@ export function navegarAJusante(
       );
     }
 
-    // ------------------------------------------------------
-    // TERMINAL
-    // ------------------------------------------------------
-
     if (
       ehTerminal(
         topologia,
@@ -583,10 +1597,6 @@ export function navegarAJusante(
         pontoAtual
       );
     }
-
-    // ------------------------------------------------------
-    // DERIVAÇÃO
-    // ------------------------------------------------------
 
     if (
       ehDerivacao(
@@ -600,10 +1610,6 @@ export function navegarAJusante(
       );
     }
 
-    // ------------------------------------------------------
-    // PASSAGEM
-    // ------------------------------------------------------
-
     if (
       ehPassagem(
         topologia,
@@ -616,29 +1622,34 @@ export function navegarAJusante(
       );
     }
 
-    // ------------------------------------------------------
-    // LIMITE DE PROFUNDIDADE
-    // ------------------------------------------------------
-
     if (
       profundidade >=
-      limitarProfundidade
+      maxProfundidade
     ) {
       continue;
     }
 
-    // ------------------------------------------------------
-    // SAÍDAS
-    // ------------------------------------------------------
-
     const saidas =
-      buscarSaidas(
+      obterSaidasFisicas(
         topologia,
-        pontoAtual
+        pontoAtual,
+        {
+
+          ...opcoes,
+
+          alimentador,
+
+          circuito,
+
+          _barreiras:
+            barreiras
+
+        }
       );
 
     for (
-      const conexao of saidas
+      const conexao
+      of saidas
     ) {
 
       const trechoId =
@@ -647,8 +1658,8 @@ export function navegarAJusante(
         );
 
       const destino =
-        obterPontoDestino(
-          conexao
+        normalizarId(
+          conexao?.pontoDestino
         );
 
       if (
@@ -657,10 +1668,6 @@ export function navegarAJusante(
       ) {
         continue;
       }
-
-      // ----------------------------------------------------
-      // TRECHO
-      // ----------------------------------------------------
 
       if (
         !trechosVisitados.has(
@@ -675,22 +1682,19 @@ export function navegarAJusante(
         const trecho =
           criarTrechoNavegado(
             topologia,
-            conexao,
+            trechoId,
             pontoAtual,
             destino,
             "SAIDA"
           );
 
         if (trecho) {
+
           trechos.push(
             trecho
           );
         }
       }
-
-      // ----------------------------------------------------
-      // DESTINO
-      // ----------------------------------------------------
 
       if (
         !visitados.has(
@@ -713,7 +1717,8 @@ export function navegarAJusante(
 
   return {
 
-    encontrado: true,
+    encontrado:
+      true,
 
     pontoInicial:
       inicio,
@@ -742,24 +1747,13 @@ export function navegarAJusante(
 
     quantidadePassagens:
       passagens.length
+
   };
 }
 
 
 // ==========================================================
 // NAVEGAR A MONTANTE
-// ==========================================================
-//
-// Percorre conexões ENTRADA.
-//
-// A lógica é:
-//
-// PONTO ATUAL
-//      ↑
-// TRECHO
-//      ↑
-// PONTO ANTERIOR
-//
 // ==========================================================
 
 export function navegarAMontante(
@@ -781,31 +1775,78 @@ export function navegarAMontante(
     return resultadoVazio();
   }
 
-  const pontoInicio =
+  if (
+    !buscarPonto(
+      topologia,
+      inicio
+    )
+  ) {
+
+    return {
+
+      ...resultadoVazio(),
+
+      pontoInicial:
+        inicio
+
+    };
+  }
+
+  const pontoInicialObj =
     buscarPonto(
       topologia,
       inicio
     );
 
-  if (!pontoInicio) {
+  const alimentador =
+    opcoes.alimentador ??
+    obterAlimentadorPonto(
+      pontoInicialObj
+    );
 
-    return {
-      ...resultadoVazio(),
+  const circuito =
+    opcoes.circuito ??
+    obterCircuitoPonto(
+      pontoInicialObj
+    );
 
-      pontoInicial:
-        inicio
-    };
-  }
+  const maxProfundidade =
+    Number.isFinite(
+      opcoes.maxProfundidade
+    )
+      ? Math.max(
+          0,
+          opcoes.maxProfundidade
+        )
+      : Infinity;
 
   const incluirInicial =
     opcoes.incluirInicial !== false;
 
-  const limitarProfundidade =
-    Number.isFinite(
-      opcoes.maxProfundidade
-    )
-      ? opcoes.maxProfundidade
-      : Infinity;
+  const barreiras =
+    opcoes._barreiras ??
+    (
+      opcoes.respeitarEstadoOperacional ===
+      false
+        ? new Set()
+        : criarMapaBarreirasOperacionais(
+            topologia,
+            opcoes
+          )
+    );
+
+  const fila = [
+
+    {
+      pontoId:
+        inicio,
+
+      profundidade:
+        0
+
+    }
+
+  ];
 
   const visitados =
     new Set();
@@ -813,17 +1854,9 @@ export function navegarAMontante(
   const trechosVisitados =
     new Set();
 
-  const fila = [
-
-    {
-      pontoId: inicio,
-      profundidade: 0
-    }
-
-  ];
-
   const pontos = [];
   const trechos = [];
+
   const terminais = [];
   const derivacoes = [];
   const passagens = [];
@@ -837,17 +1870,17 @@ export function navegarAMontante(
 
     const pontoAtual =
       normalizarId(
-        item.pontoId
+        item?.pontoId
       );
 
     const profundidade =
-      item.profundidade;
-
-    if (!pontoAtual) {
-      continue;
-    }
+      Number(
+        item?.profundidade ??
+        0
+      );
 
     if (
+      !pontoAtual ||
       visitados.has(
         pontoAtual
       )
@@ -878,10 +1911,6 @@ export function navegarAMontante(
       );
     }
 
-    // ------------------------------------------------------
-    // TERMINAL
-    // ------------------------------------------------------
-
     if (
       ehTerminal(
         topologia,
@@ -893,10 +1922,6 @@ export function navegarAMontante(
         pontoAtual
       );
     }
-
-    // ------------------------------------------------------
-    // DERIVAÇÃO
-    // ------------------------------------------------------
 
     if (
       ehDerivacao(
@@ -910,10 +1935,6 @@ export function navegarAMontante(
       );
     }
 
-    // ------------------------------------------------------
-    // PASSAGEM
-    // ------------------------------------------------------
-
     if (
       ehPassagem(
         topologia,
@@ -926,29 +1947,34 @@ export function navegarAMontante(
       );
     }
 
-    // ------------------------------------------------------
-    // LIMITE
-    // ------------------------------------------------------
-
     if (
       profundidade >=
-      limitarProfundidade
+      maxProfundidade
     ) {
       continue;
     }
 
-    // ------------------------------------------------------
-    // ENTRADAS
-    // ------------------------------------------------------
-
     const entradas =
-      buscarEntradas(
+      obterEntradasFisicas(
         topologia,
-        pontoAtual
+        pontoAtual,
+        {
+
+          ...opcoes,
+
+          alimentador,
+
+          circuito,
+
+          _barreiras:
+            barreiras
+
+        }
       );
 
     for (
-      const conexao of entradas
+      const conexao
+      of entradas
     ) {
 
       const trechoId =
@@ -956,21 +1982,17 @@ export function navegarAMontante(
           conexao
         );
 
-      const pontoAnterior =
-        obterPontoDestino(
-          conexao
+      const destino =
+        normalizarId(
+          conexao?.pontoDestino
         );
 
       if (
         !trechoId ||
-        !pontoAnterior
+        !destino
       ) {
         continue;
       }
-
-      // ----------------------------------------------------
-      // TRECHO
-      // ----------------------------------------------------
 
       if (
         !trechosVisitados.has(
@@ -985,33 +2007,30 @@ export function navegarAMontante(
         const trecho =
           criarTrechoNavegado(
             topologia,
-            conexao,
+            trechoId,
             pontoAtual,
-            pontoAnterior,
+            destino,
             "ENTRADA"
           );
 
         if (trecho) {
+
           trechos.push(
             trecho
           );
         }
       }
 
-      // ----------------------------------------------------
-      // PONTO ANTERIOR
-      // ----------------------------------------------------
-
       if (
         !visitados.has(
-          pontoAnterior
+          destino
         )
       ) {
 
         fila.push({
 
           pontoId:
-            pontoAnterior,
+            destino,
 
           profundidade:
             profundidade + 1
@@ -1023,7 +2042,8 @@ export function navegarAMontante(
 
   return {
 
-    encontrado: true,
+    encontrado:
+      true,
 
     pontoInicial:
       inicio,
@@ -1052,7 +2072,68 @@ export function navegarAMontante(
 
     quantidadePassagens:
       passagens.length
+
   };
+}
+
+
+// ==========================================================
+// NAVEGAÇÃO OPERACIONAL - JUSANTE
+// ==========================================================
+
+export function navegarJusanteOperacional(
+  topologia,
+  pontoInicial,
+  opcoes = {}
+) {
+
+  return navegarAJusante(
+
+    topologia,
+
+    pontoInicial,
+
+    {
+
+      ...opcoes,
+
+      respeitarEstadoOperacional:
+        opcoes.respeitarEstadoOperacional !==
+        false
+
+    }
+
+  );
+}
+
+
+// ==========================================================
+// NAVEGAÇÃO OPERACIONAL - MONTANTE
+// ==========================================================
+
+export function navegarMontanteOperacional(
+  topologia,
+  pontoInicial,
+  opcoes = {}
+) {
+
+  return navegarAMontante(
+
+    topologia,
+
+    pontoInicial,
+
+    {
+
+      ...opcoes,
+
+      respeitarEstadoOperacional:
+        opcoes.respeitarEstadoOperacional !==
+        false
+
+    }
+
+  );
 }
 
 
@@ -1060,13 +2141,23 @@ export function navegarAMontante(
 // BUSCAR REDE CONECTADA
 // ==========================================================
 //
-// Percorre a rede nos dois sentidos.
+// Descobre tudo fisicamente conectado ao ponto.
+//
+// Por padrão:
+//
+//   respeita alimentador/circuito.
+//
+// Para recomposição:
+//
+//   permitirTravessiaEntreAlimentadores: true
+//   permitirTravessiaEntreCircuitos: true
 //
 // ==========================================================
 
 export function buscarRedeConectada(
   topologia,
-  pontoInicial
+  pontoInicial,
+  opcoes = {}
 ) {
 
   if (!topologia) {
@@ -1082,31 +2173,57 @@ export function buscarRedeConectada(
     return resultadoVazio();
   }
 
-  const pontoInicio =
+  const pontoInicialObj =
     buscarPonto(
       topologia,
       inicio
     );
 
-  if (!pontoInicio) {
+  if (!pontoInicialObj) {
 
     return {
+
       ...resultadoVazio(),
 
       pontoInicial:
         inicio
+
     };
   }
+
+  const alimentador =
+    opcoes.alimentador ??
+    obterAlimentadorPonto(
+      pontoInicialObj
+    );
+
+  const circuito =
+    opcoes.circuito ??
+    obterCircuitoPonto(
+      pontoInicialObj
+    );
+
+  const barreiras =
+    opcoes._barreiras ??
+    (
+      opcoes.respeitarEstadoOperacional ===
+      false
+        ? new Set()
+        : criarMapaBarreirasOperacionais(
+            topologia,
+            opcoes
+          )
+    );
+
+  const fila = [
+    inicio
+  ];
 
   const visitados =
     new Set();
 
   const trechosVisitados =
     new Set();
-
-  const fila = [
-    inicio
-  ];
 
   const pontos = [];
   const trechos = [];
@@ -1120,11 +2237,8 @@ export function buscarRedeConectada(
         fila.shift()
       );
 
-    if (!atual) {
-      continue;
-    }
-
     if (
+      !atual ||
       visitados.has(
         atual
       )
@@ -1143,10 +2257,15 @@ export function buscarRedeConectada(
       );
 
     if (ponto) {
+
       pontos.push(
         ponto
       );
     }
+
+    // ------------------------------------------------------
+    // ADJACÊNCIA PRINCIPAL
+    // ------------------------------------------------------
 
     const conexoes =
       buscarConexoes(
@@ -1154,8 +2273,86 @@ export function buscarRedeConectada(
         atual
       );
 
+    // ------------------------------------------------------
+    // CONEXÕES DIRETAS
+    // ------------------------------------------------------
+
+    const conexoesDiretas = [];
+
+    const todosTrechos =
+      Array.isArray(
+        topologia.trechos
+      )
+        ? topologia.trechos
+        : Object.values(
+            topologia.trechos || {}
+          );
+
     for (
-      const conexao of conexoes
+      const trecho
+      of todosTrechos
+    ) {
+
+      const trechoId =
+        normalizarId(
+          trecho?.id ??
+          trecho?.COD_ID ??
+          trecho?.codId
+        );
+
+      if (!trechoId) {
+        continue;
+      }
+
+      const inicioTrecho =
+        normalizarId(
+          trecho?.pontoInicial ??
+          trecho?.PAC_1
+        );
+
+      const fimTrecho =
+        normalizarId(
+          trecho?.pontoFinal ??
+          trecho?.PAC_2
+        );
+
+      if (
+        inicioTrecho === atual ||
+        fimTrecho === atual
+      ) {
+
+        conexoesDiretas.push({
+
+          trechoId,
+
+          pontoOrigem:
+            atual,
+
+          pontoDestino:
+            inicioTrecho === atual
+              ? fimTrecho
+              : inicioTrecho,
+
+          sentido:
+            inicioTrecho === atual
+              ? "SAIDA"
+              : "ENTRADA",
+
+          trecho
+
+        });
+      }
+    }
+
+    const conexoesNormalizadas = [];
+
+    // ------------------------------------------------------
+    // NORMALIZAR ADJACÊNCIA
+    // ------------------------------------------------------
+
+    for (
+      const conexao
+      of conexoes
     ) {
 
       const trechoId =
@@ -1163,9 +2360,103 @@ export function buscarRedeConectada(
           conexao
         );
 
-      const destino =
+      if (!trechoId) {
+        continue;
+      }
+
+      const trecho =
+        buscarTrecho(
+          topologia,
+          trechoId
+        );
+
+      if (!trecho) {
+        continue;
+      }
+
+      const inicioTrecho =
+        normalizarId(
+          trecho.pontoInicial ??
+          trecho.PAC_1
+        );
+
+      const fimTrecho =
+        normalizarId(
+          trecho.pontoFinal ??
+          trecho.PAC_2
+        );
+
+      let destino =
         obterPontoDestino(
           conexao
+        );
+
+      if (
+        !destino ||
+        destino === atual
+      ) {
+
+        if (
+          inicioTrecho === atual
+        ) {
+
+          destino =
+            fimTrecho;
+
+        } else if (
+          fimTrecho === atual
+        ) {
+
+          destino =
+            inicioTrecho;
+        }
+      }
+
+      if (!destino) {
+        continue;
+      }
+
+      conexoesNormalizadas.push({
+
+        ...conexao,
+
+        trechoId,
+
+        pontoOrigem:
+          atual,
+
+        pontoDestino:
+          destino,
+
+        trecho
+
+      });
+    }
+
+    const todasConexoes = [
+
+      ...conexoesNormalizadas,
+
+      ...conexoesDiretas
+
+    ];
+
+    const conexoesUnicas =
+      new Map();
+
+    for (
+      const conexao
+      of todasConexoes
+    ) {
+
+      const trechoId =
+        normalizarId(
+          conexao?.trechoId
+        );
+
+      const destino =
+        normalizarId(
+          conexao?.pontoDestino
         );
 
       if (
@@ -1175,9 +2466,96 @@ export function buscarRedeConectada(
         continue;
       }
 
-      // ----------------------------------------------------
-      // TRECHO
-      // ----------------------------------------------------
+      const chave =
+        `${trechoId}::${destino}`;
+
+      if (
+        !conexoesUnicas.has(
+          chave
+        )
+      ) {
+
+        conexoesUnicas.set(
+          chave,
+          conexao
+        );
+      }
+    }
+
+    // ------------------------------------------------------
+    // PROCESSAR CONEXÕES
+    // ------------------------------------------------------
+
+    for (
+      const conexao
+      of conexoesUnicas.values()
+    ) {
+
+      const trechoId =
+        normalizarId(
+          conexao.trechoId
+        );
+
+      const destino =
+        normalizarId(
+          conexao.pontoDestino
+        );
+
+      const trecho =
+        conexao.trecho ||
+        buscarTrecho(
+          topologia,
+          trechoId
+        );
+
+      if (
+        !trecho ||
+        !destino
+      ) {
+        continue;
+      }
+
+      if (
+        !trechoPertenceAoAlimentador(
+          trecho,
+          alimentador,
+          opcoes
+        )
+      ) {
+        continue;
+      }
+
+      if (
+        !trechoPertenceAoCircuito(
+          trecho,
+          circuito,
+          opcoes
+        )
+      ) {
+        continue;
+      }
+
+      const trechoInicio =
+        normalizarId(
+          trecho.pontoInicial ??
+          trecho.PAC_1
+        );
+
+      const trechoFim =
+        normalizarId(
+          trecho.pontoFinal ??
+          trecho.PAC_2
+        );
+
+      if (
+        existeBarreira(
+          barreiras,
+          trechoInicio,
+          trechoFim
+        )
+      ) {
+        continue;
+      }
 
       if (
         !trechosVisitados.has(
@@ -1189,25 +2567,33 @@ export function buscarRedeConectada(
           trechoId
         );
 
-        const trecho =
+        const trechoNavegado =
           criarTrechoNavegado(
+
             topologia,
-            conexao,
+
+            trechoId,
+
             atual,
+
             destino,
-            conexao.sentido
+
+            conexao.sentido ??
+            (
+              trechoInicio === atual
+                ? "SAIDA"
+                : "ENTRADA"
+            )
+
           );
 
-        if (trecho) {
+        if (trechoNavegado) {
+
           trechos.push(
-            trecho
+            trechoNavegado
           );
         }
       }
-
-      // ----------------------------------------------------
-      // DESTINO
-      // ----------------------------------------------------
 
       if (
         !visitados.has(
@@ -1224,57 +2610,60 @@ export function buscarRedeConectada(
 
   return {
 
-    encontrado: true,
+    encontrado:
+      true,
 
     pontoInicial:
       inicio,
 
-    pontos,
+    pontos:
+      pontos.filter(Boolean),
 
-    trechos,
+    trechos:
+      trechos.filter(Boolean),
 
     quantidadePontos:
-      pontos.length,
+      pontos.filter(Boolean).length,
 
     quantidadeTrechos:
-      trechos.length
+      trechos.filter(Boolean).length
+
   };
 }
 
 
 // ==========================================================
-// ENCONTRAR CAMINHO
+// BUSCAR CAMINHO
 // ==========================================================
 //
-// Busca o menor caminho entre dois pontos.
+// direcao:
 //
-// Usa BFS.
+// TODAS
+// JUSANTE
+// MONTANTE
+//
+// Recomposição:
+//
+// permitirTravessiaEntreAlimentadores: true
+// permitirTravessiaEntreCircuitos: true
 //
 // ==========================================================
 
 export function buscarCaminho(
   topologia,
-  pontoOrigem,
-  pontoDestino,
+  pontoInicial,
+  pontoFinal,
   opcoes = {}
 ) {
 
-  if (!topologia) {
-    return {
-      encontrado: false,
-      pontos: [],
-      trechos: []
-    };
-  }
-
   const origem =
     normalizarId(
-      pontoOrigem
+      pontoInicial
     );
 
   const destino =
     normalizarId(
-      pontoDestino
+      pontoFinal
     );
 
   if (
@@ -1283,15 +2672,25 @@ export function buscarCaminho(
   ) {
 
     return {
-      encontrado: false,
+
+      encontrado:
+        false,
+
       pontos: [],
-      trechos: []
+
+      trechos: [],
+
+      distancia: 0,
+
+      quantidadePontos: 0,
+
+      quantidadeTrechos: 0,
+
+      motivo:
+        "PONTO_ORIGEM_OU_DESTINO_INVALIDO"
+
     };
   }
-
-  // --------------------------------------------------------
-  // VERIFICAR EXISTÊNCIA
-  // --------------------------------------------------------
 
   if (
     !buscarPonto(
@@ -1301,11 +2700,29 @@ export function buscarCaminho(
   ) {
 
     return {
-      encontrado: false,
+
+      encontrado:
+        false,
+
+      pontoInicial:
+        origem,
+
+      pontoFinal:
+        destino,
+
       pontos: [],
+
       trechos: [],
+
+      distancia: 0,
+
+      quantidadePontos: 0,
+
+      quantidadeTrechos: 0,
+
       motivo:
         "PONTO_ORIGEM_NAO_ENCONTRADO"
+
     };
   }
 
@@ -1317,17 +2734,31 @@ export function buscarCaminho(
   ) {
 
     return {
-      encontrado: false,
+
+      encontrado:
+        false,
+
+      pontoInicial:
+        origem,
+
+      pontoFinal:
+        destino,
+
       pontos: [],
+
       trechos: [],
+
+      distancia: 0,
+
+      quantidadePontos: 0,
+
+      quantidadeTrechos: 0,
+
       motivo:
         "PONTO_DESTINO_NAO_ENCONTRADO"
+
     };
   }
-
-  // --------------------------------------------------------
-  // MESMO PONTO
-  // --------------------------------------------------------
 
   if (
     origem === destino
@@ -1335,7 +2766,14 @@ export function buscarCaminho(
 
     return {
 
-      encontrado: true,
+      encontrado:
+        true,
+
+      pontoInicial:
+        origem,
+
+      pontoFinal:
+        destino,
 
       pontos: [
         origem
@@ -1343,19 +2781,53 @@ export function buscarCaminho(
 
       trechos: [],
 
+      distancia: 0,
+
       quantidadePontos: 1,
 
-      quantidadeTrechos: 0
+      quantidadeTrechos: 0,
+
+      motivo:
+        null
+
     };
   }
 
-  // --------------------------------------------------------
-  // DIREÇÃO
-  // --------------------------------------------------------
-
   const direcao =
-    opcoes.direcao ||
-    "TODAS";
+    normalizarTexto(
+      opcoes.direcao ||
+      "TODAS"
+    );
+
+  const pontoOrigemObj =
+    buscarPonto(
+      topologia,
+      origem
+    );
+
+  const alimentador =
+    opcoes.alimentador ??
+    obterAlimentadorPonto(
+      pontoOrigemObj
+    );
+
+  const circuito =
+    opcoes.circuito ??
+    obterCircuitoPonto(
+      pontoOrigemObj
+    );
+
+  const barreiras =
+    opcoes._barreiras ??
+    (
+      opcoes.respeitarEstadoOperacional ===
+      false
+        ? new Set()
+        : criarMapaBarreirasOperacionais(
+            topologia,
+            opcoes
+          )
+    );
 
   const fila = [
     origem
@@ -1374,66 +2846,159 @@ export function buscarCaminho(
   ) {
 
     const atual =
-      fila.shift();
-
-    let conexoes =
-      buscarConexoes(
-        topologia,
-        atual
+      normalizarId(
+        fila.shift()
       );
 
+    if (!atual) {
+      continue;
+    }
+
+    let conexoes = [];
+
     // ------------------------------------------------------
-    // FILTRAR DIREÇÃO
+    // JUSANTE
     // ------------------------------------------------------
 
     if (
-      direcao === "JUSANTE"
+      direcao ===
+      "JUSANTE"
     ) {
 
       conexoes =
-        conexoes.filter(
-          conexao =>
-            conexao?.sentido === "SAIDA"
-        );
-    }
+        obterSaidasFisicas(
 
-    if (
-      direcao === "MONTANTE"
+          topologia,
+
+          atual,
+
+          {
+
+            ...opcoes,
+
+            alimentador,
+
+            circuito,
+
+            _barreiras:
+              barreiras
+
+          }
+
+        );
+
+    // ------------------------------------------------------
+    // MONTANTE
+    // ------------------------------------------------------
+
+    } else if (
+      direcao ===
+      "MONTANTE"
     ) {
 
       conexoes =
-        conexoes.filter(
-          conexao =>
-            conexao?.sentido === "ENTRADA"
+        obterEntradasFisicas(
+
+          topologia,
+
+          atual,
+
+          {
+
+            ...opcoes,
+
+            alimentador,
+
+            circuito,
+
+            _barreiras:
+              barreiras
+
+          }
+
         );
+
+    // ------------------------------------------------------
+    // TODAS
+    // ------------------------------------------------------
+
+    } else {
+
+      const saidas =
+        obterSaidasFisicas(
+
+          topologia,
+
+          atual,
+
+          {
+
+            ...opcoes,
+
+            alimentador,
+
+            circuito,
+
+            _barreiras:
+              barreiras
+
+          }
+
+        );
+
+      const entradas =
+        obterEntradasFisicas(
+
+          topologia,
+
+          atual,
+
+          {
+
+            ...opcoes,
+
+            alimentador,
+
+            circuito,
+
+            _barreiras:
+              barreiras
+
+          }
+
+        );
+
+      conexoes = [
+
+        ...saidas,
+
+        ...entradas
+
+      ];
     }
 
     // ------------------------------------------------------
-    // PERCORRER
+    // PROCESSAR CONEXÕES
     // ------------------------------------------------------
 
     for (
-      const conexao of conexoes
+      const conexao
+      of conexoes
     ) {
 
       const proximo =
-        obterPontoDestino(
-          conexao
+        normalizarId(
+          conexao?.pontoDestino
         );
 
       const trechoId =
-        obterTrechoId(
-          conexao
+        normalizarId(
+          conexao?.trechoId
         );
 
       if (
         !proximo ||
-        !trechoId
-      ) {
-        continue;
-      }
-
-      if (
+        !trechoId ||
         visitados.has(
           proximo
         )
@@ -1446,27 +3011,26 @@ export function buscarCaminho(
       );
 
       anterior.set(
+
         proximo,
+
         {
 
           pontoAnterior:
             atual,
 
-          trechoId:
-            trechoId,
+          trechoId,
 
           sentido:
             conexao.sentido
 
         }
+
       );
 
-      // ----------------------------------------------------
-      // ENCONTROU
-      // ----------------------------------------------------
-
       if (
-        proximo === destino
+        proximo ===
+        destino
       ) {
 
         const pontos = [];
@@ -1474,6 +3038,9 @@ export function buscarCaminho(
 
         let atualCaminho =
           destino;
+
+        let distancia =
+          0;
 
         while (
           atualCaminho !==
@@ -1490,24 +3057,48 @@ export function buscarCaminho(
             );
 
           if (!etapa) {
-            break;
+
+            return {
+
+              encontrado:
+                false,
+
+              pontoInicial:
+                origem,
+
+              pontoFinal:
+                destino,
+
+              pontos: [],
+
+              trechos: [],
+
+              distancia: 0,
+
+              quantidadePontos: 0,
+
+              quantidadeTrechos: 0,
+
+              motivo:
+                "CAMINHO_INCONSISTENTE"
+
+            };
           }
 
-          trechos.unshift({
+          trechos.unshift(
+            etapa.trechoId
+          );
 
-            id:
-              etapa.trechoId,
+          const trecho =
+            buscarTrecho(
+              topologia,
+              etapa.trechoId
+            );
 
-            sentido:
-              etapa.sentido,
-
-            pontoOrigem:
-              etapa.pontoAnterior,
-
-            pontoDestino:
-              atualCaminho
-
-          });
+          distancia +=
+            obterComprimentoTrecho(
+              trecho
+            );
 
           atualCaminho =
             etapa.pontoAnterior;
@@ -1519,17 +3110,30 @@ export function buscarCaminho(
 
         return {
 
-          encontrado: true,
+          encontrado:
+            true,
+
+          pontoInicial:
+            origem,
+
+          pontoFinal:
+            destino,
 
           pontos,
 
           trechos,
 
+          distancia,
+
           quantidadePontos:
             pontos.length,
 
           quantidadeTrechos:
-            trechos.length
+            trechos.length,
+
+          motivo:
+            null
+
         };
       }
 
@@ -1541,11 +3145,20 @@ export function buscarCaminho(
 
   return {
 
-    encontrado: false,
+    encontrado:
+      false,
+
+    pontoInicial:
+      origem,
+
+    pontoFinal:
+      destino,
 
     pontos: [],
 
     trechos: [],
+
+    distancia: 0,
 
     quantidadePontos: 0,
 
@@ -1553,6 +3166,264 @@ export function buscarCaminho(
 
     motivo:
       "CAMINHO_NAO_ENCONTRADO"
+
+  };
+}
+
+
+// ==========================================================
+// COMPRIMENTO DO TRECHO
+// ==========================================================
+
+function obterComprimentoTrecho(
+  trecho
+) {
+
+  if (!trecho) {
+    return 0;
+  }
+
+  const candidatos = [
+
+    trecho.comprimento,
+
+    trecho.COMPRIMENTO,
+
+    trecho.extensao,
+
+    trecho.EXTENSAO,
+
+    trecho.comp,
+
+    trecho.COMP,
+
+    trecho.propriedades?.comprimento,
+
+    trecho.propriedades?.COMPRIMENTO,
+
+    trecho.propriedades?.COMP,
+
+    trecho.properties?.comprimento,
+
+    trecho.properties?.COMPRIMENTO,
+
+    trecho.properties?.COMP
+
+  ];
+
+  for (
+    const valor
+    of candidatos
+  ) {
+
+    const numero =
+      Number(
+        String(
+          valor ?? ""
+        )
+          .replace(",", ".")
+      );
+
+    if (
+      Number.isFinite(
+        numero
+      )
+    ) {
+
+      return numero;
+    }
+  }
+
+  return 0;
+}
+
+
+// ==========================================================
+// REDE A JUSANTE DO TRECHO
+// ==========================================================
+
+export function buscarRedeAJusanteDoTrecho(
+  topologia,
+  trechoId,
+  opcoes = {}
+) {
+
+  const trecho =
+    buscarTrecho(
+      topologia,
+      trechoId
+    );
+
+  if (!trecho) {
+
+    return {
+
+      encontrado:
+        false,
+
+      pontos: {},
+
+      trechos: {},
+
+      ordemPontos: [],
+
+      ordemTrechos: [],
+
+      quantidadePontos: 0,
+
+      quantidadeTrechos: 0
+
+    };
+  }
+
+  const pontoFinal =
+    normalizarId(
+      trecho.pontoFinal ??
+      trecho.PAC_2
+    );
+
+  if (!pontoFinal) {
+
+    return {
+
+      encontrado:
+        false,
+
+      pontos: {},
+
+      trechos: {},
+
+      ordemPontos: [],
+
+      ordemTrechos: [],
+
+      quantidadePontos: 0,
+
+      quantidadeTrechos: 0
+
+    };
+  }
+
+  const resultado =
+    navegarAJusante(
+
+      topologia,
+
+      pontoFinal,
+
+      {
+
+        ...opcoes,
+
+        alimentador:
+          opcoes.alimentador ??
+          obterAlimentadorTrecho(
+            trecho
+          ),
+
+        circuito:
+          opcoes.circuito ??
+          obterCircuitoTrecho(
+            trecho
+          ),
+
+        incluirInicial:
+          opcoes.incluirInicial !==
+          false
+
+      }
+
+    );
+
+  const pontosArray =
+    resultado.pontos ||
+    [];
+
+  const trechosArray =
+    resultado.trechos ||
+    [];
+
+  return {
+
+    encontrado:
+      resultado.encontrado,
+
+    pontos:
+      Object.fromEntries(
+
+        pontosArray.map(
+          ponto => [
+
+            normalizarId(
+              ponto?.id ??
+              ponto?.COD_ID ??
+              ponto?.codId
+            ),
+
+            ponto
+
+          ]
+        )
+        .filter(
+          ([id]) =>
+            Boolean(id)
+        )
+
+      ),
+
+    trechos:
+      Object.fromEntries(
+
+        trechosArray.map(
+          item => [
+
+            normalizarId(
+              item?.id ??
+              item?.COD_ID ??
+              item?.codId
+            ),
+
+            item
+
+          ]
+        )
+        .filter(
+          ([id]) =>
+            Boolean(id)
+        )
+
+      ),
+
+    ordemPontos:
+      pontosArray
+        .map(
+          ponto =>
+            normalizarId(
+              ponto?.id ??
+              ponto?.COD_ID ??
+              ponto?.codId
+            )
+        )
+        .filter(Boolean),
+
+    ordemTrechos:
+      trechosArray
+        .map(
+          trecho =>
+            normalizarId(
+              trecho?.id ??
+              trecho?.COD_ID ??
+              trecho?.codId
+            )
+        )
+        .filter(Boolean),
+
+    quantidadePontos:
+      pontosArray.length,
+
+    quantidadeTrechos:
+      trechosArray.length
+
   };
 }
 
@@ -1579,6 +3450,8 @@ export function analisarPonto(
   const id =
     normalizarId(
       ponto.id ??
+      ponto.COD_ID ??
+      ponto.codId ??
       codId
     );
 
@@ -1591,16 +3464,46 @@ export function analisarPonto(
   const entradas =
     conexoes.filter(
       conexao =>
-        conexao?.sentido ===
+        normalizarTexto(
+          conexao?.sentido
+        ) ===
         "ENTRADA"
     );
 
   const saidas =
     conexoes.filter(
       conexao =>
-        conexao?.sentido ===
+        normalizarTexto(
+          conexao?.sentido
+        ) ===
         "SAIDA"
     );
+
+  const trechoEntrada =
+    entradas
+      .map(
+        conexao =>
+          buscarTrecho(
+            topologia,
+            obterTrechoId(
+              conexao
+            )
+          )
+      )
+      .filter(Boolean);
+
+  const trechoSaida =
+    saidas
+      .map(
+        conexao =>
+          buscarTrecho(
+            topologia,
+            obterTrechoId(
+              conexao
+            )
+          )
+      )
+      .filter(Boolean);
 
   return {
 
@@ -1609,19 +3512,35 @@ export function analisarPonto(
 
     tipo:
       ponto.tipo ??
+      ponto.tipoPonto ??
+      ponto.TIP_PONTO ??
       null,
 
     estrutura:
       ponto.estrutura ??
+      ponto.ESTRUTURA ??
       null,
 
     latitude:
       ponto.latitude ??
+      ponto.lat ??
       null,
 
     longitude:
       ponto.longitude ??
+      ponto.lng ??
+      ponto.lon ??
       null,
+
+    alimentador:
+      obterAlimentadorPonto(
+        ponto
+      ),
+
+    circuito:
+      obterCircuitoPonto(
+        ponto
+      ),
 
     conexoes:
       conexoes.length,
@@ -1631,6 +3550,12 @@ export function analisarPonto(
 
     saidas:
       saidas.length,
+
+    trechosEntrada:
+      trechoEntrada.length,
+
+    trechosSaida:
+      trechoSaida.length,
 
     terminal:
       ehTerminal(
@@ -1652,6 +3577,7 @@ export function analisarPonto(
 
     conexoesDetalhadas:
       conexoes
+
   };
 }
 
@@ -1663,7 +3589,8 @@ export function analisarPonto(
 export function testarCaminho(
   topologia,
   pontoOrigem,
-  pontoDestino
+  pontoDestino,
+  opcoes = {}
 ) {
 
   console.log(
@@ -1688,11 +3615,22 @@ export function testarCaminho(
     pontoDestino
   );
 
+  console.log(
+    "Opções:",
+    opcoes
+  );
+
   const resultado =
     buscarCaminho(
+
       topologia,
+
       pontoOrigem,
-      pontoDestino
+
+      pontoDestino,
+
+      opcoes
+
     );
 
   console.log(
@@ -1709,12 +3647,13 @@ export function testarCaminho(
 
 
 // ==========================================================
-// TESTE COMPLETO DO NAVEGADOR
+// TESTE COMPLETO
 // ==========================================================
 
 export function testarNavegadorRede(
   topologia,
-  pontoInicial
+  pontoInicial,
+  opcoes = {}
 ) {
 
   console.log(
@@ -1754,130 +3693,136 @@ export function testarNavegadorRede(
     return null;
   }
 
+  const idPonto =
+    normalizarId(
+      ponto.id ??
+      ponto.COD_ID ??
+      ponto.codId ??
+      pontoInicial
+    );
+
   console.log(
     "📍 Ponto inicial:",
-    ponto.id
+    idPonto
   );
 
-  // --------------------------------------------------------
-  // ANÁLISE
-  // --------------------------------------------------------
+  const alimentador =
+    opcoes.alimentador ??
+    obterAlimentadorPonto(
+      ponto
+    );
+
+  const circuito =
+    opcoes.circuito ??
+    obterCircuitoPonto(
+      ponto
+    );
 
   const analise =
     analisarPonto(
       topologia,
-      ponto.id
+      idPonto
     );
-
-  console.log(
-    "📊 Análise:",
-    analise
-  );
-
-  // --------------------------------------------------------
-  // JUSANTE
-  // --------------------------------------------------------
 
   const jusante =
     navegarAJusante(
+
       topologia,
-      ponto.id
+
+      idPonto,
+
+      {
+
+        ...opcoes,
+
+        alimentador,
+
+        circuito
+
+      }
+
     );
-
-  console.log(
-    "⬇️ REDE A JUSANTE"
-  );
-
-  console.log(
-    "Pontos:",
-    jusante.quantidadePontos
-  );
-
-  console.log(
-    "Trechos:",
-    jusante.quantidadeTrechos
-  );
-
-  console.log(
-    "Terminais:",
-    jusante.quantidadeTerminais
-  );
-
-  console.log(
-    "Derivações:",
-    jusante.quantidadeDerivacoes
-  );
-
-  console.log(
-    "Passagens:",
-    jusante.quantidadePassagens
-  );
-
-  // --------------------------------------------------------
-  // MONTANTE
-  // --------------------------------------------------------
 
   const montante =
     navegarAMontante(
+
       topologia,
-      ponto.id
+
+      idPonto,
+
+      {
+
+        ...opcoes,
+
+        alimentador,
+
+        circuito
+
+      }
+
     );
-
-  console.log(
-    "⬆️ REDE A MONTANTE"
-  );
-
-  console.log(
-    "Pontos:",
-    montante.quantidadePontos
-  );
-
-  console.log(
-    "Trechos:",
-    montante.quantidadeTrechos
-  );
-
-  console.log(
-    "Terminais:",
-    montante.quantidadeTerminais
-  );
-
-  console.log(
-    "Derivações:",
-    montante.quantidadeDerivacoes
-  );
-
-  console.log(
-    "Passagens:",
-    montante.quantidadePassagens
-  );
-
-  // --------------------------------------------------------
-  // REDE CONECTADA
-  // --------------------------------------------------------
 
   const rede =
     buscarRedeConectada(
+
       topologia,
-      ponto.id
+
+      idPonto,
+
+      {
+
+        ...opcoes,
+
+        alimentador,
+
+        circuito
+
+      }
+
     );
 
   console.log(
-    "🌐 REDE CONECTADA"
+    "📊 ANÁLISE:",
+    analise
   );
 
   console.log(
-    "Pontos:",
-    rede.quantidadePontos
+    "⬇️ JUSANTE:",
+    {
+
+      pontos:
+        jusante.quantidadePontos,
+
+      trechos:
+        jusante.quantidadeTrechos
+
+    }
   );
 
   console.log(
-    "Trechos:",
-    rede.quantidadeTrechos
+    "⬆️ MONTANTE:",
+    {
+
+      pontos:
+        montante.quantidadePontos,
+
+      trechos:
+        montante.quantidadeTrechos
+
+    }
   );
 
   console.log(
-    "=================================================="
+    "🌐 REDE CONECTADA:",
+    {
+
+      pontos:
+        rede.quantidadePontos,
+
+      trechos:
+        rede.quantidadeTrechos
+
+    }
   );
 
   return {
@@ -1891,12 +3836,13 @@ export function testarNavegadorRede(
     montante,
 
     rede
+
   };
 }
 
 
 // ==========================================================
-// EXPORTAÇÃO
+// EXPORTAÇÃO DEFAULT
 // ==========================================================
 
 export default {
@@ -1923,9 +3869,15 @@ export default {
 
   navegarAMontante,
 
+  navegarJusanteOperacional,
+
+  navegarMontanteOperacional,
+
   buscarRedeConectada,
 
   buscarCaminho,
+
+  buscarRedeAJusanteDoTrecho,
 
   analisarPonto,
 

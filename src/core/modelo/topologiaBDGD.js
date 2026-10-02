@@ -3,14 +3,31 @@
 // POWER GRID MONITOR
 // ==========================================================
 //
-// SSDMT    -> trechos da rede MT
-// PONNOT   -> pontos/conexões
-// UNSEMT   -> unidades de manobra
-// EQSE     -> complemento das UNSEMT
-// UNTRMT   -> transformadores MT
-// EQTRMT   -> complemento dos transformadores MT
-// UNTRAT   -> transformadores AT
-// EQTRAT   -> complemento dos transformadores AT
+// FONTES:
+//
+// SSDMT
+//   -> trechos da rede MT
+//
+// PONNOT
+//   -> pontos/conexões da rede
+//
+// UNSEMT
+//   -> unidades seccionadoras/equipamentos de manobra
+//
+// EQSE
+//   -> dados complementares associados à UNSEMT
+//
+// UNTRMT
+//   -> unidades de transformadores MT
+//
+// EQTRMT
+//   -> dados complementares de transformadores MT
+//
+// UNTRAT
+//   -> unidades de transformadores AT
+//
+// EQTRAT
+//   -> dados complementares de transformadores AT
 //
 // ==========================================================
 // CLASSIFICAÇÃO OFICIAL
@@ -23,25 +40,64 @@
 // 32 -> RELIGADOR
 // 34 -> CHAVE_SECCIONADORA
 //
-// UNTRMT / UNTRAT
+// UNTRMT.TIP_UNID
 //
 // 38 -> TRANSFORMADOR
 //
 // ==========================================================
+// REGRAS IMPORTANTES
+// ==========================================================
+//
+// 1. TIP_UNID da UNSEMT é a autoridade para classificação.
+// 2. EQSE é complementar e não substitui TIP_UNID.
+// 3. UNTRMT.TIP_UNID=38 classifica TRANSFORMADOR.
+// 4. PACs são normalizados sem criar pontos sintéticos.
+// 5. PONNOT real é a referência física preferencial.
+// 6. Quando houver PAC_1/PAC_2, eles são preservados.
+// 7. Quando houver PONNOT associado ao PAC, suas coordenadas
+//    têm prioridade sobre a geometria própria da UNSEMT.
+// 8. Cada equipamento derivado da UNSEMT recebe a mesma
+//    referência física da unidade:
+//       PAC_1
+//       PAC_2
+//       ponto1
+//       ponto2
+//       pontoAssociado
+//       coordenadas
+//       latitude
+//       longitude
+// 9. Interligações oficiais são obtidas por cruzamento de PAC
+//    entre circuitos/alimentadores.
+// 10. Cada interligação preserva os dois lados:
+//       unidadeA / equipamentoA
+//       unidadeB / equipamentoB
+// 11. Quando houver PONNOT e UNSEMT no mesmo PAC, a UNSEMT
+//     possui prioridade para representar o equipamento do lado.
+// 12. Alimentador 151..156 é convertido para CMG01C1..C6.
+// 13. Circuito 151..156 é preservado separadamente.
+// 14. A topologia não cria dados elétricos fictícios.
+// 15. EQSE/TUC/DESCR não substituem TIP_UNID.
+// 16. Não são criados PONNOT sintéticos.
+//
+// ==========================================================
 
 
 // ==========================================================
-// NORMALIZAÇÃO DE ID
+// NORMALIZAÇÃO
 // ==========================================================
 
 function normalizarId(valor) {
-  if (valor === null || valor === undefined) {
+  if (
+    valor === null ||
+    valor === undefined
+  ) {
     return null;
   }
 
-  const valorNormalizado = String(valor).trim();
+  const id =
+    String(valor).trim();
 
-  return valorNormalizado || null;
+  return id || null;
 }
 
 
@@ -58,14 +114,18 @@ function normalizarNumero(valor) {
     return null;
   }
 
+  let texto =
+    String(valor).trim();
+
+  if (!texto) {
+    return null;
+  }
+
+  texto =
+    texto.replace(",", ".");
+
   const numero =
-    typeof valor === "string"
-      ? Number(
-          valor
-            .trim()
-            .replace(",", ".")
-        )
-      : Number(valor);
+    Number(texto);
 
   return Number.isFinite(numero)
     ? numero
@@ -78,7 +138,10 @@ function normalizarNumero(valor) {
 // ==========================================================
 
 function normalizarTexto(valor) {
-  if (valor === null || valor === undefined) {
+  if (
+    valor === null ||
+    valor === undefined
+  ) {
     return "";
   }
 
@@ -89,36 +152,1406 @@ function normalizarTexto(valor) {
 
 
 // ==========================================================
-// CHAVE DE COMPARAÇÃO
+// CIRCUITO
 // ==========================================================
 
-function criarChaveComparacao(valor) {
-  return normalizarTexto(
-    normalizarId(valor)
+function normalizarCircuito(valor) {
+  const texto =
+    normalizarId(valor);
+
+  if (!texto) {
+    return null;
+  }
+
+  const match =
+    texto.match(
+      /(\d{2,6})(?:[A-Z]*)$/i
+    );
+
+  return (
+    match?.[1] ||
+    texto
   );
 }
 
 
 // ==========================================================
-// NORMALIZAÇÃO DO PONTO ASSOCIADO
+// EXTRAIR CIRCUITO DO ID DO PAC
 // ==========================================================
 
-function normalizarIdPontoAssociado(valor) {
-  const id = normalizarId(valor);
+function extrairCircuitoDoIdPAC(valor) {
+  const texto =
+    normalizarId(valor);
 
-  if (!id) {
+  if (!texto) {
     return null;
   }
 
-  const match = id.match(
-    /^(.*?)M(?:-[^-\s]+)?$/i
-  );
+  const match =
+    texto.match(
+      /-(\d{2,6})[A-Z]*$/i
+    );
 
-  if (match?.[1]) {
-    return normalizarId(match[1]);
+  return (
+    match?.[1] ||
+    null
+  );
+}
+
+
+// ==========================================================
+// NORMALIZAR PONTO ASSOCIADO
+// ==========================================================
+//
+// Exemplos:
+//
+// 10060794M
+// 10060794M-154
+// 10060794
+//
+// Resultado esperado:
+//
+// 10060794
+//
+// Não cria nenhum ponto.
+// Apenas normaliza a referência.
+//
+// ==========================================================
+
+function normalizarIdPontoAssociado(valor) {
+  const texto =
+    normalizarId(valor);
+
+  if (!texto) {
+    return null;
   }
 
-  return id;
+  const match =
+    texto.match(
+      /^(.*?)M(?:-[^-\s]+)?$/i
+    );
+
+  if (match?.[1]) {
+    return normalizarId(
+      match[1]
+    );
+  }
+
+  return texto;
+}
+
+
+// ==========================================================
+// BASE PAC
+// ==========================================================
+
+function normalizarIdBasePAC(valor) {
+  return normalizarIdPontoAssociado(
+    valor
+  );
+}
+
+
+// ==========================================================
+// CIRCUITO -> ALIMENTADOR
+// ==========================================================
+
+function mapearCircuitoParaAlimentador(
+  circuito
+) {
+  const c =
+    normalizarCircuito(
+      circuito
+    );
+
+  if (!c) {
+    return null;
+  }
+
+  const mapaFixo = {
+    "151": "CMG01C1",
+    "152": "CMG01C2",
+    "153": "CMG01C3",
+    "154": "CMG01C4",
+    "155": "CMG01C5",
+    "156": "CMG01C6",
+  };
+
+  return (
+    mapaFixo[c] ||
+    null
+  );
+}
+
+
+// ==========================================================
+// NORMALIZAR ALIMENTADOR
+// ==========================================================
+
+function normalizarAlimentador(
+  valor,
+  circuito = null
+) {
+  const texto =
+    normalizarId(valor);
+
+  if (texto) {
+    const normalizado =
+      normalizarTexto(
+        texto
+      );
+
+    if (
+      /^CMG01C[1-6]$/.test(
+        normalizado
+      )
+    ) {
+      return normalizado;
+    }
+
+    const porCircuito =
+      mapearCircuitoParaAlimentador(
+        normalizado
+      );
+
+    if (porCircuito) {
+      return porCircuito;
+    }
+  }
+
+  return mapearCircuitoParaAlimentador(
+    circuito
+  );
+}
+
+
+// ==========================================================
+// ÍNDICE DE ALIMENTADORES
+// ==========================================================
+
+function criarIndiceAlimentadores(
+  trechos
+) {
+  const indice = {};
+
+  for (
+    const trecho of
+    Object.values(
+      trechos || {}
+    )
+  ) {
+    const circuito =
+      normalizarCircuito(
+        trecho?.circuito
+      );
+
+    const alimentador =
+      normalizarAlimentador(
+        trecho?.alimentador,
+        circuito
+      );
+
+    if (!alimentador) {
+      continue;
+    }
+
+    if (!indice[alimentador]) {
+      indice[alimentador] = {
+        id:
+          alimentador,
+
+        alimentador,
+
+        circuito:
+          circuito ||
+          null,
+
+        trechos:
+          [],
+
+        pontos:
+          new Set(),
+
+        quantidadeTrechos:
+          0,
+      };
+    }
+
+    const item =
+      indice[
+        alimentador
+      ];
+
+    item.trechos.push(
+      trecho.id
+    );
+
+    item.quantidadeTrechos +=
+      1;
+
+    if (trecho.pontoInicial) {
+      item.pontos.add(
+        trecho.pontoInicial
+      );
+    }
+
+    if (trecho.pontoFinal) {
+      item.pontos.add(
+        trecho.pontoFinal
+      );
+    }
+
+    if (
+      !item.circuito &&
+      circuito
+    ) {
+      item.circuito =
+        circuito;
+    }
+  }
+
+  for (
+    const item of
+    Object.values(
+      indice
+    )
+  ) {
+    item.pontos =
+      [
+        ...item.pontos,
+      ];
+
+    item.quantidadePontos =
+      item.pontos.length;
+  }
+
+  return indice;
+}
+
+
+// ==========================================================
+// MAPA CIRCUITO -> ALIMENTADOR
+// ==========================================================
+
+function criarMapaCircuitoAlimentador(
+  indiceAlimentadores
+) {
+  const mapa = {};
+
+  for (
+    const item of
+    Object.values(
+      indiceAlimentadores ||
+      {}
+    )
+  ) {
+    const circuito =
+      normalizarCircuito(
+        item?.circuito
+      );
+
+    if (!circuito) {
+      continue;
+    }
+
+    mapa[circuito] =
+      item.alimentador ||
+      mapearCircuitoParaAlimentador(
+        circuito
+      ) ||
+      null;
+  }
+
+  for (
+    const circuito of [
+      "151",
+      "152",
+      "153",
+      "154",
+      "155",
+      "156",
+    ]
+  ) {
+    if (!mapa[circuito]) {
+      mapa[circuito] =
+        mapearCircuitoParaAlimentador(
+          circuito
+        );
+    }
+  }
+
+  return mapa;
+}
+
+
+// ==========================================================
+// ÍNDICE DE PONTOS POR ALIMENTADOR
+// ==========================================================
+
+function criarIndicePontosPorAlimentador(
+  trechos
+) {
+  const indice = {};
+
+  for (
+    const trecho of
+    Object.values(
+      trechos || {}
+    )
+  ) {
+    const circuito =
+      normalizarCircuito(
+        trecho?.circuito
+      );
+
+    const alimentador =
+      normalizarAlimentador(
+        trecho?.alimentador,
+        circuito
+      );
+
+    if (!alimentador) {
+      continue;
+    }
+
+    if (!indice[alimentador]) {
+      indice[alimentador] =
+        new Set();
+    }
+
+    if (trecho.pontoInicial) {
+      indice[
+        alimentador
+      ].add(
+        trecho.pontoInicial
+      );
+    }
+
+    if (trecho.pontoFinal) {
+      indice[
+        alimentador
+      ].add(
+        trecho.pontoFinal
+      );
+    }
+  }
+
+  const resultado = {};
+
+  for (
+    const [
+      alimentador,
+      pontos,
+    ] of Object.entries(
+      indice
+    )
+  ) {
+    resultado[
+      alimentador
+    ] =
+      [
+        ...pontos,
+      ];
+  }
+
+  return resultado;
+}
+
+
+// ==========================================================
+// ÍNDICE DE PONTOS NORMALIZADOS
+// ==========================================================
+
+function criarIndicePontosNormalizados(
+  pontos
+) {
+  const indice = {};
+
+  for (
+    const [
+      idExato,
+    ] of Object.entries(
+      pontos || {}
+    )
+  ) {
+    const base =
+      normalizarIdBasePAC(
+        idExato
+      ) ||
+      idExato;
+
+    if (!indice[base]) {
+      indice[base] =
+        [];
+    }
+
+    if (
+      !indice[base].includes(
+        idExato
+      )
+    ) {
+      indice[base].push(
+        idExato
+      );
+    }
+  }
+
+  return indice;
+}
+
+
+// ==========================================================
+// DESCOBRIR INTERLIGAÇÕES
+// ==========================================================
+
+function descobrirInterligacoes(
+  unsemt,
+  pontos,
+  indiceAlimentadores,
+  mapaCircuitoAlimentador
+) {
+  const registros =
+    [];
+
+  const porPontoBase =
+    {};
+
+  // ========================================================
+  // PONNOT
+  // ========================================================
+
+  for (
+    const ponto of
+    Object.values(
+      pontos || {}
+    )
+  ) {
+    const pontoOriginal =
+      normalizarId(
+        ponto?.id
+      );
+
+    const baseId =
+      normalizarIdBasePAC(
+        pontoOriginal
+      );
+
+    const circuitoPAC =
+      normalizarCircuito(
+        ponto?.circuito
+      ) ||
+      extrairCircuitoDoIdPAC(
+        pontoOriginal
+      );
+
+    const alimentadorPAC =
+      normalizarAlimentador(
+        ponto?.alimentador,
+        circuitoPAC
+      ) ||
+      mapaCircuitoAlimentador?.[
+        circuitoPAC
+      ] ||
+      null;
+
+    if (
+      !baseId ||
+      !alimentadorPAC
+    ) {
+      continue;
+    }
+
+    const registro = {
+      unidadeId:
+        null,
+
+      lado:
+        "PONNOT",
+
+      pacOriginal:
+        pontoOriginal,
+
+      pontoId:
+        baseId,
+
+      circuito:
+        circuitoPAC,
+
+      alimentador:
+        alimentadorPAC,
+
+      subestacao:
+        normalizarId(
+          ponto?.propriedades?.SUB
+        ) ||
+        null,
+
+      tipoUnidade:
+        null,
+
+      feature:
+        ponto,
+    };
+
+    if (
+      !porPontoBase[
+        baseId
+      ]
+    ) {
+      porPontoBase[
+        baseId
+      ] = [];
+    }
+
+    porPontoBase[
+      baseId
+    ].push(
+      registro
+    );
+  }
+
+  // ========================================================
+  // UNSEMT
+  // ========================================================
+
+  for (
+    const feature of
+    unsemt?.features ||
+    []
+  ) {
+    const p =
+      feature?.properties ||
+      {};
+
+    const unidadeId =
+      normalizarId(
+        p.COD_ID
+      );
+
+    if (!unidadeId) {
+      continue;
+    }
+
+    const pacs = [
+      {
+        lado:
+          "PAC_1",
+
+        valor:
+          normalizarId(
+            p.PAC_1
+          ),
+      },
+
+      {
+        lado:
+          "PAC_2",
+
+        valor:
+          normalizarId(
+            p.PAC_2
+          ),
+      },
+    ].filter(
+      (
+        item
+      ) =>
+        item.valor
+    );
+
+    for (
+      const pac of
+      pacs
+    ) {
+      const baseId =
+        normalizarIdBasePAC(
+          pac.valor
+        );
+
+      const circuitoPAC =
+        extrairCircuitoDoIdPAC(
+          pac.valor
+        ) ||
+        normalizarCircuito(
+          p.CTMT
+        );
+
+      const alimentadorPAC =
+        normalizarAlimentador(
+          p.ALIMENTADOR ??
+          p.alimentador ??
+          p.CT_COD_OP,
+          circuitoPAC
+        ) ||
+        mapaCircuitoAlimentador?.[
+          circuitoPAC
+        ] ||
+        null;
+
+      if (
+        !baseId ||
+        !alimentadorPAC
+      ) {
+        continue;
+      }
+
+      const registro = {
+        unidadeId,
+
+        lado:
+          pac.lado,
+
+        pacOriginal:
+          pac.valor,
+
+        pontoId:
+          baseId,
+
+        circuito:
+          circuitoPAC,
+
+        alimentador:
+          alimentadorPAC,
+
+        subestacao:
+          normalizarId(
+            p.SUB
+          ) ||
+          null,
+
+        tipoUnidade:
+          normalizarId(
+            p.TIP_UNID
+          ) ||
+          null,
+
+        feature,
+      };
+
+      registros.push(
+        registro
+      );
+
+      if (
+        !porPontoBase[
+          baseId
+        ]
+      ) {
+        porPontoBase[
+          baseId
+        ] =
+          [];
+      }
+
+      porPontoBase[
+        baseId
+      ].push(
+        registro
+      );
+    }
+  }
+
+  // ========================================================
+  // SELECIONAR MELHOR REGISTRO DO LADO
+  // ========================================================
+
+  function selecionarRegistroDoLado(
+    lista = []
+  ) {
+    const candidatos =
+      Array.isArray(
+        lista
+      )
+        ? lista
+        : [];
+
+    const unsemtComUnidade =
+      candidatos.find(
+        (
+          registro
+        ) =>
+          registro?.unidadeId &&
+          registro?.lado !==
+            "PONNOT"
+      );
+
+    if (
+      unsemtComUnidade
+    ) {
+      return unsemtComUnidade;
+    }
+
+    const qualquerUnidade =
+      candidatos.find(
+        (
+          registro
+        ) =>
+          registro?.unidadeId
+      );
+
+    if (
+      qualquerUnidade
+    ) {
+      return qualquerUnidade;
+    }
+
+    return (
+      candidatos[0] ||
+      null
+    );
+  }
+
+  // ========================================================
+  // FORMAÇÃO DOS ELOS
+  // ========================================================
+
+  const interligacoes =
+    [];
+
+  const chaves =
+    new Set();
+
+  for (
+    const [
+      pontoId,
+      registrosPonto,
+    ] of Object.entries(
+      porPontoBase
+    )
+  ) {
+    const grupos =
+      {};
+
+    for (
+      const registro of
+      registrosPonto
+    ) {
+      const alimentador =
+        registro.alimentador;
+
+      if (!alimentador) {
+        continue;
+      }
+
+      if (
+        !grupos[
+          alimentador
+        ]
+      ) {
+        grupos[
+          alimentador
+        ] =
+          [];
+      }
+
+      grupos[
+        alimentador
+      ].push(
+        registro
+      );
+    }
+
+    const alimentadores =
+      Object.keys(
+        grupos
+      );
+
+    if (
+      alimentadores.length <
+      2
+    ) {
+      continue;
+    }
+
+    for (
+      let i = 0;
+      i <
+      alimentadores.length;
+      i += 1
+    ) {
+      for (
+        let j =
+          i + 1;
+        j <
+        alimentadores.length;
+        j += 1
+      ) {
+        const alimentadorA =
+          alimentadores[i];
+
+        const alimentadorB =
+          alimentadores[j];
+
+        const a =
+          selecionarRegistroDoLado(
+            grupos[
+              alimentadorA
+            ]
+          );
+
+        const b =
+          selecionarRegistroDoLado(
+            grupos[
+              alimentadorB
+            ]
+          );
+
+        if (
+          !a ||
+          !b
+        ) {
+          continue;
+        }
+
+        // --------------------------------------------------
+        // Não criar elo baseado somente em PONNOT
+        // --------------------------------------------------
+
+        if (
+          !a.unidadeId &&
+          !b.unidadeId
+        ) {
+          continue;
+        }
+
+        const chave =
+          [
+            pontoId,
+            alimentadorA,
+            alimentadorB,
+          ]
+            .sort()
+            .join("|");
+
+        if (
+          chaves.has(
+            chave
+          )
+        ) {
+          continue;
+        }
+
+        chaves.add(
+          chave
+        );
+
+        const circuitoA =
+          normalizarCircuito(
+            a.circuito
+          ) ||
+          null;
+
+        const circuitoB =
+          normalizarCircuito(
+            b.circuito
+          ) ||
+          null;
+
+        const equipamentoIdA =
+          normalizarId(
+            a.unidadeId
+          );
+
+        const equipamentoIdB =
+          normalizarId(
+            b.unidadeId
+          );
+
+        interligacoes.push({
+          id:
+            `IL-${interligacoes.length + 1}`,
+
+          tipo:
+            "INTERLIGACAO_BDGD",
+
+          pontoId,
+
+          pontoBase:
+            pontoId,
+
+          // ------------------------------------------------
+          // LADO A
+          // ------------------------------------------------
+
+          alimentadorA,
+
+          circuitoA,
+
+          unidadeA:
+            equipamentoIdA,
+
+          equipamentoIdA,
+
+          pacA:
+            a.pacOriginal,
+
+          pacBaseA:
+            normalizarIdBasePAC(
+              a.pacOriginal
+            ),
+
+          subestacaoA:
+            a.subestacao ||
+            null,
+
+          // ------------------------------------------------
+          // LADO B
+          // ------------------------------------------------
+
+          alimentadorB,
+
+          circuitoB,
+
+          unidadeB:
+            equipamentoIdB,
+
+          equipamentoIdB,
+
+          pacB:
+            b.pacOriginal,
+
+          pacBaseB:
+            normalizarIdBasePAC(
+              b.pacOriginal
+            ),
+
+          subestacaoB:
+            b.subestacao ||
+            null,
+
+          // ------------------------------------------------
+          // REGISTROS ORIGINAIS
+          // ------------------------------------------------
+
+          registroA:
+            a,
+
+          registroB:
+            b,
+
+          // ------------------------------------------------
+          // OBJETOS OPERACIONAIS
+          // ------------------------------------------------
+
+          equipamentoA:
+            null,
+
+          equipamentoB:
+            null,
+
+          equipamentoOrigem:
+            null,
+
+          equipamentoDestino:
+            null,
+
+          equipamentoIdOrigem:
+            null,
+
+          equipamentoIdDestino:
+            null,
+
+          tipoLadoOrigem:
+            null,
+
+          tipoLadoDestino:
+            null,
+
+          // ------------------------------------------------
+          // ESTADO
+          // ------------------------------------------------
+
+          estado:
+            null,
+
+          origemEstado:
+            "SEM_FONTE_DE_ESTADO",
+
+          // ------------------------------------------------
+          // ORIGEM DO REGISTRO
+          // ------------------------------------------------
+
+          origem:
+            "PAC_CIRCUITO_CRUZADO",
+        });
+      }
+    }
+  }
+
+  return interligacoes;
+}
+
+
+// ==========================================================
+// ENRIQUECER INTERLIGAÇÕES COM UNSEMT
+// ==========================================================
+
+function enriquecerInterligacoesComEquipamentos(
+  interligacoes,
+  unidadesSeccionadoras
+) {
+  const lista =
+    Array.isArray(
+      interligacoes
+    )
+      ? interligacoes
+      : [];
+
+  const unidades =
+    unidadesSeccionadoras ||
+    {};
+
+  return lista.map(
+    (
+      interligacao
+    ) => {
+      const unidadeA =
+        normalizarId(
+          interligacao?.unidadeA
+        );
+
+      const unidadeB =
+        normalizarId(
+          interligacao?.unidadeB
+        );
+
+      const equipamentoA =
+        unidadeA &&
+        unidades?.[
+          unidadeA
+        ]
+          ? unidades[
+              unidadeA
+            ]
+          : null;
+
+      const equipamentoB =
+        unidadeB &&
+        unidades?.[
+          unidadeB
+        ]
+          ? unidades[
+              unidadeB
+            ]
+          : null;
+
+      const alimentadorOrigem =
+        normalizarAlimentador(
+          interligacao?.alimentadorOrigem
+        );
+
+      const alimentadorA =
+        normalizarAlimentador(
+          interligacao?.alimentadorA
+        );
+
+      const alimentadorB =
+        normalizarAlimentador(
+          interligacao?.alimentadorB
+        );
+
+      let ladoOrigem =
+        null;
+
+      if (
+        alimentadorOrigem &&
+        alimentadorOrigem ===
+          alimentadorA
+      ) {
+        ladoOrigem =
+          "A";
+      } else if (
+        alimentadorOrigem &&
+        alimentadorOrigem ===
+          alimentadorB
+      ) {
+        ladoOrigem =
+          "B";
+      }
+
+      if (!ladoOrigem) {
+        ladoOrigem =
+          "A";
+      }
+
+      const equipamentoOrigem =
+        ladoOrigem === "A"
+          ? equipamentoA
+          : equipamentoB;
+
+      const equipamentoDestino =
+        ladoOrigem === "A"
+          ? equipamentoB
+          : equipamentoA;
+
+      const alimentadorOrigemFinal =
+        ladoOrigem === "A"
+          ? alimentadorA
+          : alimentadorB;
+
+      const alimentadorDestinoFinal =
+        ladoOrigem === "A"
+          ? alimentadorB
+          : alimentadorA;
+
+      const circuitoOrigem =
+        ladoOrigem === "A"
+          ? interligacao?.circuitoA
+          : interligacao?.circuitoB;
+
+      const circuitoDestino =
+        ladoOrigem === "A"
+          ? interligacao?.circuitoB
+          : interligacao?.circuitoA;
+
+      return {
+        ...interligacao,
+
+        equipamentoA,
+
+        equipamentoB,
+
+        equipamentoIdA:
+          normalizarId(
+            equipamentoA?.id
+          ) ||
+          unidadeA ||
+          interligacao?.equipamentoIdA ||
+          null,
+
+        equipamentoIdB:
+          normalizarId(
+            equipamentoB?.id
+          ) ||
+          unidadeB ||
+          interligacao?.equipamentoIdB ||
+          null,
+
+        tipoEquipamentoA:
+          equipamentoA?.tipoEquipamento ||
+          equipamentoA?.tipoVisual ||
+          null,
+
+        tipoEquipamentoB:
+          equipamentoB?.tipoEquipamento ||
+          equipamentoB?.tipoVisual ||
+          null,
+
+        nomeTipoEquipamentoA:
+          equipamentoA?.nomeTipoEquipamento ||
+          null,
+
+        nomeTipoEquipamentoB:
+          equipamentoB?.nomeTipoEquipamento ||
+          null,
+
+        posicaoA:
+          equipamentoA?.posicao ??
+          null,
+
+        posicaoB:
+          equipamentoB?.posicao ??
+          null,
+
+        situacaoA:
+          equipamentoA?.situacao ??
+          null,
+
+        situacaoB:
+          equipamentoB?.situacao ??
+          null,
+
+        telecomandadoA:
+          Boolean(
+            equipamentoA?.telecomandado
+          ),
+
+        telecomandadoB:
+          Boolean(
+            equipamentoB?.telecomandado
+          ),
+
+        pac1A:
+          equipamentoA?.pac1 ??
+          null,
+
+        pac2A:
+          equipamentoA?.pac2 ??
+          null,
+
+        pac1B:
+          equipamentoB?.pac1 ??
+          null,
+
+        pac2B:
+          equipamentoB?.pac2 ??
+          null,
+
+        ladoOrigem,
+
+        equipamentoOrigem,
+
+        equipamentoDestino,
+
+        equipamentoIdOrigem:
+          normalizarId(
+            equipamentoOrigem?.id
+          ) ||
+          null,
+
+        equipamentoIdDestino:
+          normalizarId(
+            equipamentoDestino?.id
+          ) ||
+          null,
+
+        tipoLadoOrigem:
+          equipamentoOrigem?.tipoEquipamento ||
+          equipamentoOrigem?.tipoVisual ||
+          null,
+
+        tipoLadoDestino:
+          equipamentoDestino?.tipoEquipamento ||
+          equipamentoDestino?.tipoVisual ||
+          null,
+
+        alimentadorOrigem:
+          alimentadorOrigemFinal ||
+          null,
+
+        alimentadorDestino:
+          alimentadorDestinoFinal ||
+          null,
+
+        circuitoOrigem:
+          circuitoOrigem ||
+          null,
+
+        circuitoDestino:
+          circuitoDestino ||
+          null,
+      };
+    }
+  );
+}
+
+
+// ==========================================================
+// ÍNDICE DE INTERLIGAÇÕES
+// ==========================================================
+
+function criarIndiceInterligacoes(
+  interligacoes
+) {
+  const porPonto =
+    {};
+
+  const porAlimentador =
+    {};
+
+  const entreAlimentadores =
+    {};
+
+  for (
+    const interligacao of
+    interligacoes || []
+  ) {
+    const pontoId =
+      normalizarId(
+        interligacao.pontoId
+      );
+
+    if (pontoId) {
+      if (
+        !porPonto[
+          pontoId
+        ]
+      ) {
+        porPonto[
+          pontoId
+        ] =
+          [];
+      }
+
+      porPonto[
+        pontoId
+      ].push(
+        interligacao
+      );
+    }
+
+    const alimentadores = [
+      interligacao.alimentadorA,
+      interligacao.alimentadorB,
+    ]
+      .map(
+        normalizarAlimentador
+      )
+      .filter(
+        Boolean
+      );
+
+    for (
+      const alimentador of
+      alimentadores
+    ) {
+      if (
+        !porAlimentador[
+          alimentador
+        ]
+      ) {
+        porAlimentador[
+          alimentador
+        ] =
+          [];
+      }
+
+      porAlimentador[
+        alimentador
+      ].push(
+        interligacao
+      );
+    }
+
+    const chaveAB =
+      [
+        interligacao.alimentadorA,
+        interligacao.alimentadorB,
+      ]
+        .map(
+          normalizarAlimentador
+        )
+        .filter(
+          Boolean
+        )
+        .sort()
+        .join("|");
+
+    if (chaveAB) {
+      if (
+        !entreAlimentadores[
+          chaveAB
+        ]
+      ) {
+        entreAlimentadores[
+          chaveAB
+        ] =
+          [];
+      }
+
+      entreAlimentadores[
+        chaveAB
+      ].push(
+        interligacao
+      );
+    }
+  }
+
+  return {
+    porPonto,
+    porAlimentador,
+    entreAlimentadores,
+  };
 }
 
 
@@ -132,18 +1565,27 @@ function obterPrimeiroValor(
 ) {
   if (
     !objeto ||
-    typeof objeto !== "object"
+    typeof objeto !==
+      "object"
   ) {
     return null;
   }
 
-  for (const campo of campos) {
-    const valor = objeto[campo];
+  for (
+    const campo of
+    campos
+  ) {
+    const valor =
+      objeto?.[
+        campo
+      ];
 
     if (
       valor !== null &&
       valor !== undefined &&
-      String(valor).trim() !== ""
+      String(
+        valor
+      ).trim() !== ""
     ) {
       return valor;
     }
@@ -157,44 +1599,22 @@ function obterPrimeiroValor(
 // EXTRAIR PROPRIEDADES
 // ==========================================================
 
-function extrairPropriedades(item) {
+function extrairPropriedades(
+  item
+) {
   if (!item) {
     return {};
   }
 
   if (
     item.properties &&
-    typeof item.properties === "object"
+    typeof item.properties ===
+      "object"
   ) {
     return item.properties;
   }
 
-  if (
-    item.propriedades &&
-    typeof item.propriedades === "object"
-  ) {
-    return item.propriedades;
-  }
-
   return item;
-}
-
-
-// ==========================================================
-// VALOR ROBUSTO
-// ==========================================================
-
-function valorCampo(
-  item,
-  ...campos
-) {
-  const propriedades =
-    extrairPropriedades(item);
-
-  return (
-    obterPrimeiroValor(item, campos) ??
-    obterPrimeiroValor(propriedades, campos)
-  );
 }
 
 
@@ -206,21 +1626,18 @@ function classificarUnidadeUNSEMT(
   propriedades
 ) {
   const p =
-    extrairPropriedades(propriedades);
-
-  const tipo =
-    normalizarTexto(
-      obterPrimeiroValor(
-        p,
-        [
-          "TIP_UNID",
-          "tipUnid",
-          "tipoUnidade"
-        ]
-      )
+    extrairPropriedades(
+      propriedades
     );
 
-  switch (tipo) {
+  const tipoUnidade =
+    normalizarTexto(
+      p?.TIP_UNID
+    );
+
+  switch (
+    tipoUnidade
+  ) {
     case "19":
       return "CHAVE_LAMINA";
 
@@ -247,35 +1664,37 @@ function classificarUnidadeTransformador(
   propriedades
 ) {
   const p =
-    extrairPropriedades(propriedades);
-
-  const tipo =
-    normalizarTexto(
-      obterPrimeiroValor(
-        p,
-        [
-          "TIP_UNID",
-          "tipUnid",
-          "tipoUnidade"
-        ]
-      )
+    extrairPropriedades(
+      propriedades
     );
 
-  return tipo === "38"
-    ? "TRANSFORMADOR"
-    : "OUTRO";
+  const tipoUnidade =
+    normalizarTexto(
+      p?.TIP_UNID
+    );
+
+  if (
+    tipoUnidade ===
+    "38"
+  ) {
+    return "TRANSFORMADOR";
+  }
+
+  return "OUTRO";
 }
 
 
 // ==========================================================
-// NOME DO TIPO
+// NOME AMIGÁVEL
 // ==========================================================
 
 function obterNomeTipoEquipamento(
   tipo
 ) {
   switch (
-    normalizarTexto(tipo)
+    normalizarTexto(
+      tipo
+    )
   ) {
     case "CHAVE_LAMINA":
       return "Chave lâmina";
@@ -308,204 +1727,106 @@ function obterNomeTipoEquipamento(
 
 
 // ==========================================================
-// ALIMENTADOR
-// ==========================================================
-//
-// Aceita campos diretamente e dentro de properties/
-// propriedades.
-//
-// ==========================================================
-
-function obterAlimentador(
-  item
-) {
-  const p =
-    extrairPropriedades(item);
-
-  const valor =
-    obterPrimeiroValor(
-      item,
-      [
-        "alimentador",
-        "ALIMENTADOR",
-        "CT_COD_OP",
-        "CT_COD_OPER",
-        "CT_COD",
-        "CT_CODIGO"
-      ]
-    ) ??
-    obterPrimeiroValor(
-      p,
-      [
-        "alimentador",
-        "ALIMENTADOR",
-        "CT_COD_OP",
-        "CT_COD_OPER",
-        "CT_COD",
-        "CT_CODIGO"
-      ]
-    );
-
-  if (valor !== null) {
-    return normalizarId(valor);
-  }
-
-  return normalizarId(
-    obterPrimeiroValor(
-      p,
-      [
-        "CTMT",
-        "circuito",
-        "CIRCUITO"
-      ]
-    )
-  );
-}
-
-
-// ==========================================================
-// CIRCUITO
-// ==========================================================
-
-function obterCircuito(
-  item
-) {
-  const p =
-    extrairPropriedades(item);
-
-  const valor =
-    obterPrimeiroValor(
-      item,
-      [
-        "circuito",
-        "CIRCUITO",
-        "CTMT"
-      ]
-    ) ??
-    obterPrimeiroValor(
-      p,
-      [
-        "circuito",
-        "CIRCUITO",
-        "CTMT"
-      ]
-    );
-
-  return normalizarId(valor);
-}
-
-
-// ==========================================================
-// SUBESTAÇÃO
-// ==========================================================
-
-function obterSubestacao(
-  item
-) {
-  const p =
-    extrairPropriedades(item);
-
-  return normalizarId(
-    obterPrimeiroValor(
-      item,
-      [
-        "SUB",
-        "SUBESTACAO",
-        "SUBESTAÇÃO",
-        "subestacao"
-      ]
-    ) ??
-    obterPrimeiroValor(
-      p,
-      [
-        "SUB",
-        "SUBESTACAO",
-        "SUBESTAÇÃO",
-        "subestacao"
-      ]
-    )
-  );
-}
-
-
-// ==========================================================
 // CLASSIFICAÇÃO EQSE
+// ==========================================================
+//
+// IMPORTANTE:
+//
+// Esta função permanece apenas como informação
+// complementar do EQSE.
+//
+// Ela NÃO deve substituir TIP_UNID.
+//
 // ==========================================================
 
 function classificarEquipamentoEQSE(
   equipamento
 ) {
   const p =
-    extrairPropriedades(equipamento);
+    extrairPropriedades(
+      equipamento
+    );
 
   const tipInst =
     normalizarTexto(
-      obterPrimeiroValor(
-        p,
-        [
-          "TIP_INST",
-          "tipInst"
-        ]
-      )
+      p?.TIP_INST
     );
 
   const descricao =
     normalizarTexto(
-      obterPrimeiroValor(
-        p,
-        [
-          "DESCR",
-          "descricao"
-        ]
-      )
+      p?.DESCR
     );
 
   const texto =
     `${tipInst} ${descricao}`;
 
   if (
-    texto.includes("TRANSFORMADOR") ||
-    texto.includes("TRAFO")
+    texto.includes(
+      "TRANSFORMADOR"
+    ) ||
+    texto.includes(
+      "TRAFO"
+    )
   ) {
     return "TRANSFORMADOR";
   }
 
   if (
-    texto.includes("REGULADOR")
+    texto.includes(
+      "REGULADOR"
+    )
   ) {
     return "REGULADOR";
   }
 
   if (
-    texto.includes("CAPACITOR")
+    texto.includes(
+      "CAPACITOR"
+    )
   ) {
     return "CAPACITOR";
   }
 
   if (
-    texto.includes("RELIGADOR") ||
-    texto.includes("RECLOSER")
+    texto.includes(
+      "RELIGADOR"
+    ) ||
+    texto.includes(
+      "RECLOSER"
+    )
   ) {
     return "RELIGADOR";
   }
 
   if (
-    texto.includes("SECCIONADORA")
+    texto.includes(
+      "SECCIONADORA"
+    )
   ) {
     return "CHAVE_SECCIONADORA";
   }
 
   if (
-    texto.includes("FUSIVEL") ||
-    texto.includes("FUSÍVEL")
+    texto.includes(
+      "FUSIVEL"
+    ) ||
+    texto.includes(
+      "FUSÍVEL"
+    )
   ) {
     return "CHAVE_FUSIVEL";
   }
 
   if (
-    texto.includes("LAMINA") ||
-    texto.includes("LÂMINA") ||
-    texto.includes("FACA")
+    texto.includes(
+      "LAMINA"
+    ) ||
+    texto.includes(
+      "LÂMINA"
+    ) ||
+    texto.includes(
+      "FACA"
+    )
   ) {
     return "CHAVE_LAMINA";
   }
@@ -521,40 +1842,29 @@ function classificarEquipamentoEQSE(
 function criarMapaEquipamentosEQSE(
   eqse
 ) {
-  const equipamentos = {};
-  const porUnidade = {};
+  const equipamentos =
+    {};
+
+  const porUnidade =
+    {};
 
   for (
     const feature of
-      eqse?.features || []
+    eqse?.features ||
+    []
   ) {
     const p =
-      feature?.properties || {};
+      feature?.properties ||
+      {};
 
     const id =
       normalizarId(
-        obterPrimeiroValor(
-          p,
-          [
-            "COD_ID",
-            "ID",
-            "COD_EQUIP"
-          ]
-        )
+        p.COD_ID
       );
 
     const unidadeId =
       normalizarId(
-        obterPrimeiroValor(
-          p,
-          [
-            "UN_SE",
-            "UNSE",
-            "UN_SE_ID",
-            "COD_UN",
-            "COD_UNIDADE"
-          ]
-        )
+        p.UN_SE
       );
 
     if (!id) {
@@ -566,14 +1876,21 @@ function criarMapaEquipamentosEQSE(
 
       unidadeId,
 
-      codId: id,
-
-      unSe: unidadeId,
-
-      origem: "EQSE",
-
       tipo:
-        classificarEquipamentoEQSE(p),
+        classificarEquipamentoEQSE(
+          p
+        ),
+
+      tipoComplementar:
+        classificarEquipamentoEQSE(
+          p
+        ),
+
+      codId:
+        id,
+
+      unSe:
+        unidadeId,
 
       tipoInstalacao:
         normalizarId(
@@ -637,8 +1954,7 @@ function criarMapaEquipamentosEQSE(
 
       situacao:
         normalizarId(
-          p.SITCONT ??
-          p.SIT_ATIV
+          p.SITCONT
         ),
 
       aberturaCarga:
@@ -657,45 +1973,179 @@ function criarMapaEquipamentosEQSE(
           [
             "DESCR",
             "TIP_INST",
-            "TUC"
+            "TUC",
           ]
         ),
 
-      alimentador:
-        obterAlimentador(p),
-
-      circuito:
-        obterCircuito(p),
-
-      subestacao:
-        obterSubestacao(p),
+      descrOriginal:
+        p.DESCR ??
+        null,
 
       propriedades: {
-        ...p
+        ...p,
       },
 
-      feature
+      feature,
     };
 
-    equipamentos[id] =
+    equipamentos[
+      id
+    ] =
       equipamento;
 
     if (!unidadeId) {
       continue;
     }
 
-    if (!porUnidade[unidadeId]) {
-      porUnidade[unidadeId] = [];
+    if (
+      !porUnidade[
+        unidadeId
+      ]
+    ) {
+      porUnidade[
+        unidadeId
+      ] =
+        [];
     }
 
-    porUnidade[unidadeId].push(
+    porUnidade[
+      unidadeId
+    ].push(
       equipamento
     );
   }
 
   return {
     equipamentos,
-    porUnidade
+    porUnidade,
+  };
+}
+
+
+// ==========================================================
+// OBTER COORDENADAS DO PONTO ASSOCIADO
+// ==========================================================
+//
+// Prioridade:
+//
+// 1. PONNOT associado ao PAC_1
+// 2. PONNOT associado ao PAC_2
+// 3. geometria da UNSEMT
+//
+// Não cria ponto sintético.
+//
+// ==========================================================
+
+function obterCoordenadasEquipamento(
+  ponto1,
+  ponto2,
+  geometry
+) {
+  const candidatos = [
+    {
+      ponto:
+        ponto1,
+      origem:
+        "PONNOT_PAC_1",
+    },
+    {
+      ponto:
+        ponto2,
+      origem:
+        "PONNOT_PAC_2",
+    },
+  ];
+
+  for (
+    const candidato of
+    candidatos
+  ) {
+    const ponto =
+      candidato?.ponto;
+
+    const latitude =
+      normalizarNumero(
+        ponto?.latitude
+      );
+
+    const longitude =
+      normalizarNumero(
+        ponto?.longitude
+      );
+
+    if (
+      latitude !== null &&
+      longitude !== null
+    ) {
+      return {
+        latitude,
+        longitude,
+        origem:
+          candidato.origem,
+        pontoId:
+          normalizarId(
+            ponto?.id
+          ),
+        geometria:
+          ponto?.geometria ??
+          null,
+      };
+    }
+  }
+
+  // --------------------------------------------------------
+  // FALLBACK PARA GEOMETRIA DA UNSEMT
+  // --------------------------------------------------------
+
+  if (
+    geometry?.type ===
+      "Point" &&
+    Array.isArray(
+      geometry.coordinates
+    )
+  ) {
+    const longitude =
+      normalizarNumero(
+        geometry.coordinates[0]
+      );
+
+    const latitude =
+      normalizarNumero(
+        geometry.coordinates[1]
+      );
+
+    if (
+      latitude !== null &&
+      longitude !== null
+    ) {
+      return {
+        latitude,
+        longitude,
+        origem:
+          "GEOMETRIA_UNSEMT",
+        pontoId:
+          null,
+        geometria:
+          geometry,
+      };
+    }
+  }
+
+  return {
+    latitude:
+      null,
+
+    longitude:
+      null,
+
+    origem:
+      "SEM_COORDENADA",
+
+    pontoId:
+      null,
+
+    geometria:
+      null,
   };
 }
 
@@ -708,52 +2158,44 @@ function criarMapaUnidadesSeccionadoras(
   unsemt,
   pontos
 ) {
-  const unidades = {};
+  const unidades =
+    {};
 
   for (
     const feature of
-      unsemt?.features || []
+    unsemt?.features ||
+    []
   ) {
     const p =
-      feature?.properties || {};
+      feature?.properties ||
+      {};
 
     const id =
       normalizarId(
-        obterPrimeiroValor(
-          p,
-          [
-            "COD_ID",
-            "ID",
-            "PQT"
-          ]
-        )
+        p.COD_ID
       );
 
     if (!id) {
       continue;
     }
 
+    // ------------------------------------------------------
+    // PAC ORIGINAL
+    // ------------------------------------------------------
+
     const pac1Original =
       normalizarId(
-        obterPrimeiroValor(
-          p,
-          [
-            "PAC_1",
-            "PAC1"
-          ]
-        )
+        p.PAC_1
       );
 
     const pac2Original =
       normalizarId(
-        obterPrimeiroValor(
-          p,
-          [
-            "PAC_2",
-            "PAC2"
-          ]
-        )
+        p.PAC_2
       );
+
+    // ------------------------------------------------------
+    // PAC NORMALIZADO
+    // ------------------------------------------------------
 
     const pac1 =
       normalizarIdPontoAssociado(
@@ -765,89 +2207,170 @@ function criarMapaUnidadesSeccionadoras(
         pac2Original
       );
 
+    // ------------------------------------------------------
+    // PONNOT REAL
+    // ------------------------------------------------------
+
     const ponto1 =
       pac1
-        ? pontos?.[pac1]
+        ? pontos?.[
+            pac1
+          ] || null
         : null;
 
     const ponto2 =
       pac2
-        ? pontos?.[pac2]
+        ? pontos?.[
+            pac2
+          ] || null
         : null;
 
+    // ------------------------------------------------------
+    // PONTO ASSOCIADO
+    // ------------------------------------------------------
+
+    const pontoAssociado =
+      ponto1
+        ? pac1
+        : ponto2
+        ? pac2
+        : pac1 ||
+          pac2 ||
+          null;
+
+    // ------------------------------------------------------
+    // GEOMETRIA ORIGINAL
+    // ------------------------------------------------------
+
     const geometry =
-      feature?.geometry;
+      feature?.geometry ??
+      null;
 
-    let latitude = null;
-    let longitude = null;
+    // ------------------------------------------------------
+    // COORDENADAS
+    // ------------------------------------------------------
+    //
+    // Agora PONNOT tem prioridade.
+    //
 
-    if (
-      geometry?.type === "Point" &&
-      Array.isArray(
-        geometry.coordinates
-      )
-    ) {
-      longitude =
-        normalizarNumero(
-          geometry.coordinates[0]
-        );
+    const coordenadas =
+      obterCoordenadasEquipamento(
+        ponto1,
+        ponto2,
+        geometry
+      );
 
-      latitude =
-        normalizarNumero(
-          geometry.coordinates[1]
-        );
-    }
+    const latitude =
+      coordenadas.latitude;
+
+    const longitude =
+      coordenadas.longitude;
+
+    // ------------------------------------------------------
+    // CLASSIFICAÇÃO OFICIAL
+    // ------------------------------------------------------
 
     const tipoEquipamento =
-      classificarUnidadeUNSEMT(p);
+      classificarUnidadeUNSEMT(
+        p
+      );
 
-    const alimentador =
-      obterAlimentador(p);
+    // ------------------------------------------------------
+    // CIRCUITO
+    // ------------------------------------------------------
 
     const circuito =
-      obterCircuito(p);
+      normalizarCircuito(
+        p.CTMT
+      );
 
-    const subestacao =
-      obterSubestacao(p);
+    // ------------------------------------------------------
+    // ALIMENTADOR
+    // ------------------------------------------------------
 
-    unidades[id] = {
+    const alimentador =
+      normalizarAlimentador(
+        p.ALIMENTADOR ??
+        p.alimentador ??
+        p.CTMT ??
+        p.CT_COD_OP,
+        circuito
+      ) ||
+      mapearCircuitoParaAlimentador(
+        circuito
+      ) ||
+      normalizarId(
+        p.CTMT
+      ) ||
+      null;
+
+    // ------------------------------------------------------
+    // OBJETO FINAL DA UNSEMT
+    // ------------------------------------------------------
+
+    unidades[
+      id
+    ] = {
       id,
-
-      codigo:
-        id,
 
       pqt:
         id,
 
+      // ----------------------------------------------------
+      // PAC
+      // ----------------------------------------------------
+
       pac1Original,
+
       pac2Original,
 
       pac1,
+
       pac2,
 
+      // ----------------------------------------------------
+      // PONNOT
+      // ----------------------------------------------------
+
+      pontoAssociado,
+
       ponto1,
+
       ponto2,
 
-      pontoAssociado:
-        ponto1
-          ? pac1
-          : ponto2
-          ? pac2
-          : pac1 || pac2,
+      // ----------------------------------------------------
+      // COORDENADAS
+      // ----------------------------------------------------
 
       latitude,
+
       longitude,
+
+      coordenadas: {
+        latitude,
+        longitude,
+        origem:
+          coordenadas.origem,
+        pontoId:
+          coordenadas.pontoId,
+      },
+
+      geometria:
+        coordenadas.geometria ??
+        geometry ??
+        null,
+
+      geometriaUNSEMT:
+        geometry ??
+        null,
+
+      // ----------------------------------------------------
+      // CLASSIFICAÇÃO
+      // ----------------------------------------------------
 
       tipoUnidade:
         normalizarId(
-          obterPrimeiroValor(
-            p,
-            [
-              "TIP_UNID",
-              "tipUnid",
-              "tipoUnidade"
-            ]
-          )
+          p.TIP_UNID
         ),
 
       tipoEquipamento,
@@ -857,75 +2380,95 @@ function criarMapaUnidadesSeccionadoras(
           tipoEquipamento
         ),
 
+      // ----------------------------------------------------
+      // DADOS OPERACIONAIS
+      // ----------------------------------------------------
+
       descricao:
         p.DESCR ??
-        p.descricao ??
         null,
 
       fases:
         p.FAS_CON ??
-        p.fases ??
         null,
 
       situacao:
         p.SIT_ATIV ??
-        p.SITCONT ??
-        p.situacao ??
         null,
 
       pontoOperacao:
         p.P_N_OPE ??
-        p.pontoOperacao ??
         null,
 
       capacidadeElo:
         p.CAP_ELO ??
-        p.capacidadeElo ??
         null,
 
       corNominal:
         p.COR_NOM ??
-        p.corNominal ??
         null,
 
       tlcd:
         normalizarNumero(
-          p.TLCD ??
-          p.tlcd
+          p.TLCD
         ),
 
       telecomandado:
         normalizarNumero(
-          p.TLCD ??
-          p.tlcd
-        ),
+          p.TLCD
+        ) === 1,
 
       dataConexao:
         p.DAT_CON ??
-        p.dataConexao ??
         null,
 
       posicao:
         p.POS ??
-        p.posicao ??
         null,
+
+      // ----------------------------------------------------
+      // REDE
+      // ----------------------------------------------------
 
       alimentador,
 
       circuito,
 
-      subestacao,
+      subestacao:
+        normalizarId(
+          p.SUB
+        ),
+
+      // ----------------------------------------------------
+      // PROPRIEDADES
+      // ----------------------------------------------------
 
       propriedades: {
-        ...p
+        ...p,
+
+        alimentador,
+
+        circuito,
+
+        PAC_1:
+          pac1Original,
+
+        PAC_2:
+          pac2Original,
+
+        PAC_1_NORMALIZADO:
+          pac1,
+
+        PAC_2_NORMALIZADO:
+          pac2,
       },
 
-      feature,
+      // ----------------------------------------------------
+      // EQUIPAMENTOS ASSOCIADOS
+      // ----------------------------------------------------
 
-      geometria:
-        geometry ?? null,
-
-      equipamentos: [],
+      equipamentos:
+        [],
 
       quantidadeEquipamentos:
         0,
@@ -933,18 +2476,26 @@ function criarMapaUnidadesSeccionadoras(
       temEquipamento:
         false,
 
+      // ----------------------------------------------------
+      // EQUIPAMENTO PRINCIPAL
+      // ----------------------------------------------------
+
       equipamentoPrincipal:
-        tipoEquipamento !== "OUTRO"
+        tipoEquipamento !==
+          "OUTRO"
           ? tipoEquipamento
           : null,
 
       tiposEquipamentos:
-        tipoEquipamento !== "OUTRO"
-          ? [tipoEquipamento]
+        tipoEquipamento !==
+          "OUTRO"
+          ? [
+              tipoEquipamento,
+            ]
           : [],
 
       tipoVisual:
-        tipoEquipamento
+        tipoEquipamento,
     };
   }
 
@@ -953,7 +2504,22 @@ function criarMapaUnidadesSeccionadoras(
 
 
 // ==========================================================
-// ASSOCIAR EQSE À UNSEMT
+// ASSOCIAR EQSE ÀS UNIDADES UNSEMT
+// ==========================================================
+//
+// A UNSEMT é a fonte estrutural.
+//
+// O EQSE recebe:
+//
+// - PAC_1
+// - PAC_2
+// - PONNOT
+// - coordenadas
+// - alimentador
+// - circuito
+// - subestação
+// - classificação oficial por TIP_UNID
+//
 // ==========================================================
 
 function associarEquipamentosAsUnidades(
@@ -962,34 +2528,213 @@ function associarEquipamentosAsUnidades(
 ) {
   for (
     const unidade of
-      Object.values(
-        unidades || {}
-      )
+    Object.values(
+      unidades ||
+      {}
+    )
   ) {
     const associados =
-      porUnidade?.[unidade.id] || [];
+      porUnidade?.[
+        unidade.id
+      ] ||
+      [];
+
+    const equipamentosEnriquecidos =
+      associados.map(
+        (
+          equipamento
+        ) => ({
+          ...equipamento,
+
+          // ------------------------------------------------
+          // IDENTIDADE DA UNIDADE
+          // ------------------------------------------------
+
+          unidadeId:
+            unidade.id,
+
+          pqt:
+            unidade.id,
+
+          // ------------------------------------------------
+          // PAC ORIGINAL
+          // ------------------------------------------------
+
+          pac1Original:
+            unidade.pac1Original ??
+            null,
+
+          pac2Original:
+            unidade.pac2Original ??
+            null,
+
+          // ------------------------------------------------
+          // PAC NORMALIZADO
+          // ------------------------------------------------
+
+          pac1:
+            unidade.pac1 ??
+            null,
+
+          pac2:
+            unidade.pac2 ??
+            null,
+
+          // ------------------------------------------------
+          // PONNOT
+          // ------------------------------------------------
+
+          ponto1:
+            unidade.ponto1 ??
+            null,
+
+          ponto2:
+            unidade.ponto2 ??
+            null,
+
+          pontoAssociado:
+            unidade.pontoAssociado ??
+            null,
+
+          // ------------------------------------------------
+          // COORDENADAS
+          // ------------------------------------------------
+
+          latitude:
+            unidade.latitude ??
+            null,
+
+          longitude:
+            unidade.longitude ??
+            null,
+
+          coordenadas:
+            unidade.coordenadas ??
+            null,
+
+          geometria:
+            unidade.geometria ??
+            null,
+
+          geometriaUNSEMT:
+            unidade.geometriaUNSEMT ??
+            null,
+
+          // ------------------------------------------------
+          // REDE
+          // ------------------------------------------------
+
+          alimentador:
+            unidade.alimentador ??
+            null,
+
+          circuito:
+            unidade.circuito ??
+            null,
+
+          subestacao:
+            unidade.subestacao ??
+            null,
+
+          // ------------------------------------------------
+          // CLASSIFICAÇÃO OFICIAL
+          // ------------------------------------------------
+          //
+          // TIP_UNID é soberano.
+          //
+
+          tipoUnidade:
+            unidade.tipoUnidade ??
+            null,
+
+          tipoEquipamento:
+            unidade.tipoEquipamento ??
+            equipamento.tipo ??
+            "OUTRO",
+
+          nomeTipoEquipamento:
+            unidade.nomeTipoEquipamento ??
+            obterNomeTipoEquipamento(
+              unidade.tipoEquipamento
+            ),
+
+          tipoVisual:
+            unidade.tipoEquipamento ??
+            equipamento.tipo ??
+            "OUTRO",
+
+          tipoOficialUNSEMT:
+            unidade.tipoEquipamento ??
+            "OUTRO",
+
+          // ------------------------------------------------
+          // INFORMAÇÕES COMPLEMENTARES EQSE
+          // ------------------------------------------------
+
+          tipoComplementarEQSE:
+            equipamento.tipo ??
+            null,
+
+          // ------------------------------------------------
+          // OPERACIONAL
+          // ------------------------------------------------
+
+          situacao:
+            unidade.situacao ??
+            equipamento.situacao ??
+            null,
+
+          posicao:
+            unidade.posicao ??
+            equipamento.posicao ??
+            null,
+
+          telecomandado:
+            unidade.telecomandado ??
+            false,
+
+          tlcd:
+            unidade.tlcd ??
+            null,
+
+          // ------------------------------------------------
+          // REFERÊNCIA COMPLETA DA UNSEMT
+          // ------------------------------------------------
+
+          unidadeSeccionadora:
+            unidade,
+        })
+      );
 
     unidade.equipamentos =
-      associados;
+      equipamentosEnriquecidos;
 
     unidade.quantidadeEquipamentos =
-      associados.length;
+      equipamentosEnriquecidos.length;
 
     unidade.temEquipamento =
-      associados.length > 0;
+      equipamentosEnriquecidos.length >
+      0;
+
+    // ------------------------------------------------------
+    // CLASSIFICAÇÃO OFICIAL
+    // ------------------------------------------------------
 
     const tipoUNSEMT =
       unidade.tipoEquipamento;
 
     if (
       tipoUNSEMT &&
-      tipoUNSEMT !== "OUTRO"
+      tipoUNSEMT !==
+        "OUTRO"
     ) {
       unidade.equipamentoPrincipal =
         tipoUNSEMT;
 
       unidade.tiposEquipamentos =
-        [tipoUNSEMT];
+        [
+          tipoUNSEMT,
+        ];
 
       unidade.tipoVisual =
         tipoUNSEMT;
@@ -997,25 +2742,43 @@ function associarEquipamentosAsUnidades(
       continue;
     }
 
-    const tipos = [
-      ...new Set(
-        associados
-          .map(
-            item =>
-              item?.tipo
-          )
-          .filter(Boolean)
-      )
-    ];
+    // ------------------------------------------------------
+    // FALLBACK
+    // ------------------------------------------------------
+
+    const tipos =
+      [];
+
+    for (
+      const equipamento of
+      equipamentosEnriquecidos
+    ) {
+      const tipo =
+        equipamento?.tipoEquipamento ||
+        equipamento?.tipo;
+
+      if (
+        tipo &&
+        !tipos.includes(
+          tipo
+        )
+      ) {
+        tipos.push(
+          tipo
+        );
+      }
+    }
 
     unidade.tiposEquipamentos =
       tipos;
 
     unidade.equipamentoPrincipal =
-      tipos[0] || null;
+      tipos[0] ||
+      null;
 
     unidade.tipoVisual =
-      tipos[0] || "OUTRO";
+      tipos[0] ||
+      "OUTRO";
   }
 
   return unidades;
@@ -1029,15 +2792,20 @@ function associarEquipamentosAsUnidades(
 function separarEquipamentosCombinados(
   geojson
 ) {
-  const unsemt = [];
-  const untrmt = [];
+  const unsemt =
+    [];
+
+  const untrmt =
+    [];
 
   for (
     const feature of
-      geojson?.features || []
+    geojson?.features ||
+    []
   ) {
     const p =
-      feature?.properties || {};
+      feature?.properties ||
+      {};
 
     const tipo =
       normalizarTexto(
@@ -1051,45 +2819,64 @@ function separarEquipamentosCombinados(
       );
 
     if (
-      tipo === "TRANSFORMADOR" ||
-      tipoUnidade === "38"
+      tipo ===
+        "TRANSFORMADOR" ||
+      tipoUnidade ===
+        "38"
     ) {
-      untrmt.push(feature);
+      untrmt.push(
+        feature
+      );
+
       continue;
     }
 
     if (
-      tipo === "CHAVE_LAMINA" ||
-      tipo === "CHAVE_FUSIVEL" ||
-      tipo === "CHAVE_SECCIONADORA" ||
-      tipo === "RELIGADOR" ||
+      tipo ===
+        "CHAVE_LAMINA" ||
+      tipo ===
+        "CHAVE_FUSIVEL" ||
+      tipo ===
+        "CHAVE_SECCIONADORA" ||
+      tipo ===
+        "RELIGADOR" ||
       [
         "19",
         "22",
         "32",
-        "34"
-      ].includes(tipoUnidade)
+        "34",
+      ].includes(
+        tipoUnidade
+      )
     ) {
-      unsemt.push(feature);
+      unsemt.push(
+        feature
+      );
     }
   }
 
   return {
     unsemt: {
-      type: "FeatureCollection",
-      features: unsemt
+      type:
+        "FeatureCollection",
+
+      features:
+        unsemt,
     },
 
     untrmt: {
-      type: "FeatureCollection",
-      features: untrmt
-    }
+      type:
+        "FeatureCollection",
+
+      features:
+        untrmt,
+    },
   };
 }
 
 
 // ==========================================================
-// MAPA DE TRANSFORMADORES
+// MAPA UNIDADES TRANSFORMADORES
 // ==========================================================
 
 function criarMapaUnidadesTransformadores(
@@ -1097,62 +2884,43 @@ function criarMapaUnidadesTransformadores(
   pontos,
   origem = "UNTRMT"
 ) {
-  const unidades = {};
+  const unidades =
+    {};
 
   for (
     const feature of
-      unidadesTransformadores?.features ||
-      []
+    unidadesTransformadores?.features ||
+    []
   ) {
     const p =
-      feature?.properties || {};
+      feature?.properties ||
+      {};
 
     const id =
       normalizarId(
-        obterPrimeiroValor(
-          p,
-          [
-            "COD_ID",
-            "untrmtId",
-            "UNTR_ID",
-            "ID"
-          ]
-        )
+        p.COD_ID ??
+        p.untrmtId
       );
 
     if (!id) {
       continue;
     }
 
+    const tipoEquipamento =
+      classificarUnidadeTransformador(
+        p
+      );
+
     if (
-      classificarUnidadeTransformador(p) !==
+      tipoEquipamento !==
       "TRANSFORMADOR"
     ) {
       continue;
     }
 
     const geometry =
-      feature?.geometry;
-
-    let latitude = null;
-    let longitude = null;
-
-    if (
-      geometry?.type === "Point" &&
-      Array.isArray(
-        geometry.coordinates
-      )
-    ) {
-      longitude =
-        normalizarNumero(
-          geometry.coordinates[0]
-        );
-
-      latitude =
-        normalizarNumero(
-          geometry.coordinates[1]
-        );
-    }
+      feature?.geometry ??
+      null;
 
     const pac1Original =
       normalizarId(
@@ -1180,19 +2948,65 @@ function criarMapaUnidadesTransformadores(
 
     const ponto1 =
       pac1
-        ? pontos?.[pac1]
+        ? pontos?.[
+            pac1
+          ] || null
         : null;
 
     const ponto2 =
       pac2
-        ? pontos?.[pac2]
+        ? pontos?.[
+            pac2
+          ] || null
         : null;
 
-    unidades[id] = {
-      id,
+    const coordenadas =
+      obterCoordenadasEquipamento(
+        ponto1,
+        ponto2,
+        geometry
+      );
 
-      codigo:
-        id,
+    const pontoAssociado =
+      ponto1
+        ? pac1
+        : ponto2
+        ? pac2
+        : pac1 ||
+          pac2 ||
+          null;
+
+    const latitude =
+      coordenadas.latitude;
+
+    const longitude =
+      coordenadas.longitude;
+
+    const circuito =
+      normalizarCircuito(
+        p.CTMT ??
+        p.ctmt
+      );
+
+    const alimentador =
+      normalizarAlimentador(
+        p.CTMT ??
+        p.ctmt,
+        circuito
+      ) ||
+      mapearCircuitoParaAlimentador(
+        circuito
+      ) ||
+      normalizarId(
+        p.CTMT ??
+        p.ctmt
+      ) ||
+      null;
+
+    unidades[
+      id
+    ] = {
+      id,
 
       origem,
 
@@ -1211,38 +3025,68 @@ function criarMapaUnidadesTransformadores(
           p.tipoUnidade
         ),
 
+      // ----------------------------------------------------
+      // PAC
+      // ----------------------------------------------------
+
       pac1Original,
+
       pac2Original,
 
       pac1,
+
       pac2,
 
+      // ----------------------------------------------------
+      // PONNOT
+      // ----------------------------------------------------
+
       ponto1,
+
       ponto2,
 
-      pontoAssociado:
-        ponto1
-          ? pac1
-          : ponto2
-          ? pac2
-          : pac1 || pac2,
+      pontoAssociado,
+
+      // ----------------------------------------------------
+      // COORDENADAS
+      // ----------------------------------------------------
 
       latitude,
+
       longitude,
+
+      coordenadas: {
+        latitude,
+        longitude,
+        origem:
+          coordenadas.origem,
+        pontoId:
+          coordenadas.pontoId,
+      },
+
+      geometria:
+        coordenadas.geometria ??
+        geometry ??
+        null,
+
+      geometriaUNTRMT:
+        geometry ??
+        null,
 
       descricao:
         p.DESCR ??
         p.descricao ??
         null,
 
-      alimentador:
-        obterAlimentador(p),
+      alimentador,
 
-      circuito:
-        obterCircuito(p),
+      circuito,
 
       subestacao:
-        obterSubestacao(p),
+        normalizarId(
+          p.SUB ??
+          p.subestacao
+        ),
 
       fases:
         normalizarId(
@@ -1267,13 +3111,28 @@ function criarMapaUnidadesTransformadores(
         ),
 
       propriedades: {
-        ...p
+        ...p,
+
+        alimentador,
+
+        circuito,
+
+        PAC_1:
+          pac1Original,
+
+        PAC_2:
+          pac2Original,
+
+        PAC_1_NORMALIZADO:
+          pac1,
+
+        PAC_2_NORMALIZADO:
+          pac2,
       },
 
-      feature,
-
-      geometria:
-        geometry ?? null,
+      geometriaOriginal:
+        geometry ??
+        null,
 
       equipamentos: [],
 
@@ -1287,11 +3146,11 @@ function criarMapaUnidadesTransformadores(
         "TRANSFORMADOR",
 
       tiposEquipamentos: [
-        "TRANSFORMADOR"
+        "TRANSFORMADOR",
       ],
 
       tipoVisual:
-        "TRANSFORMADOR"
+        "TRANSFORMADOR",
     };
   }
 
@@ -1300,7 +3159,7 @@ function criarMapaUnidadesTransformadores(
 
 
 // ==========================================================
-// ID UNIDADE TRANSFORMADOR
+// ID DA UNIDADE DO TRANSFORMADOR
 // ==========================================================
 
 function obterIdUnidadeTransformador(
@@ -1327,8 +3186,6 @@ function obterIdUnidadeTransformador(
         "COD_ID_UN",
         "UNSE",
         "UN_TR_ID",
-        "UNTR",
-        "UNTR_ID"
       ]
     )
   );
@@ -1343,16 +3200,20 @@ function criarMapaEquipamentosTransformadores(
   eqTransformador,
   origem
 ) {
-  const equipamentos = {};
-  const porUnidade = {};
+  const equipamentos =
+    {};
+
+  const porUnidade =
+    {};
 
   for (
     const feature of
-      eqTransformador?.features ||
-      []
+    eqTransformador?.features ||
+    []
   ) {
     const p =
-      feature?.properties || {};
+      feature?.properties ||
+      {};
 
     const id =
       normalizarId(
@@ -1361,7 +3222,7 @@ function criarMapaEquipamentosTransformadores(
           [
             "COD_ID",
             "ID",
-            "COD_EQUIP"
+            "COD_EQUIP",
           ]
         )
       );
@@ -1371,7 +3232,9 @@ function criarMapaEquipamentosTransformadores(
     }
 
     const unidadeId =
-      obterIdUnidadeTransformador(p);
+      obterIdUnidadeTransformador(
+        p
+      );
 
     const equipamento = {
       id,
@@ -1381,6 +3244,9 @@ function criarMapaEquipamentosTransformadores(
       origem,
 
       tipo:
+        "TRANSFORMADOR",
+
+      tipoEquipamento:
         "TRANSFORMADOR",
 
       nomeTipoEquipamento:
@@ -1393,7 +3259,7 @@ function criarMapaEquipamentosTransformadores(
             [
               "TIP_INST",
               "TIP_UNID",
-              "TIP_EQUIP"
+              "TIP_EQUIP",
             ]
           )
         ),
@@ -1424,7 +3290,7 @@ function criarMapaEquipamentosTransformadores(
             p,
             [
               "TIP_INST",
-              "TIP_EQUIP"
+              "TIP_EQUIP",
             ]
           )
         ),
@@ -1440,7 +3306,7 @@ function criarMapaEquipamentosTransformadores(
             p,
             [
               "CLAS_TEN",
-              "GRU_TEN"
+              "GRU_TEN",
             ]
           )
         ),
@@ -1462,45 +3328,47 @@ function criarMapaEquipamentosTransformadores(
             "DESCR",
             "TIP_INST",
             "TIP_EQUIP",
-            "TUC"
+            "TUC",
           ]
         ),
 
-      alimentador:
-        obterAlimentador(p),
-
-      circuito:
-        obterCircuito(p),
-
-      subestacao:
-        obterSubestacao(p),
-
       propriedades: {
-        ...p
+        ...p,
       },
 
-      feature
+      feature,
     };
 
-    equipamentos[id] =
+    equipamentos[
+      id
+    ] =
       equipamento;
 
     if (!unidadeId) {
       continue;
     }
 
-    if (!porUnidade[unidadeId]) {
-      porUnidade[unidadeId] = [];
+    if (
+      !porUnidade[
+        unidadeId
+      ]
+    ) {
+      porUnidade[
+        unidadeId
+      ] =
+        [];
     }
 
-    porUnidade[unidadeId].push(
+    porUnidade[
+      unidadeId
+    ].push(
       equipamento
     );
   }
 
   return {
     equipamentos,
-    porUnidade
+    porUnidade,
   };
 }
 
@@ -1515,28 +3383,123 @@ function associarEquipamentosTransformadores(
 ) {
   for (
     const unidade of
-      Object.values(
-        unidades || {}
-      )
+    Object.values(
+      unidades ||
+      {}
+    )
   ) {
     const associados =
-      porUnidade?.[unidade.id] || [];
+      porUnidade?.[
+        unidade.id
+      ] ||
+      [];
+
+    const equipamentosEnriquecidos =
+      associados.map(
+        (
+          equipamento
+        ) => ({
+          ...equipamento,
+
+          unidadeId:
+            unidade.id,
+
+          tipo:
+            "TRANSFORMADOR",
+
+          tipoEquipamento:
+            "TRANSFORMADOR",
+
+          nomeTipoEquipamento:
+            "Transformador",
+
+          tipoUnidade:
+            unidade.tipoUnidade ??
+            "38",
+
+          pac1Original:
+            unidade.pac1Original ??
+            null,
+
+          pac2Original:
+            unidade.pac2Original ??
+            null,
+
+          pac1:
+            unidade.pac1 ??
+            null,
+
+          pac2:
+            unidade.pac2 ??
+            null,
+
+          ponto1:
+            unidade.ponto1 ??
+            null,
+
+          ponto2:
+            unidade.ponto2 ??
+            null,
+
+          pontoAssociado:
+            unidade.pontoAssociado ??
+            null,
+
+          latitude:
+            unidade.latitude ??
+            null,
+
+          longitude:
+            unidade.longitude ??
+            null,
+
+          coordenadas:
+            unidade.coordenadas ??
+            null,
+
+          geometria:
+            unidade.geometria ??
+            null,
+
+          alimentador:
+            unidade.alimentador ??
+            null,
+
+          circuito:
+            unidade.circuito ??
+            null,
+
+          subestacao:
+            unidade.subestacao ??
+            null,
+
+          posicao:
+            unidade.posicao ??
+            equipamento.posicao ??
+            null,
+
+          unidadeTransformadora:
+            unidade,
+        })
+      );
 
     unidade.equipamentos =
-      associados;
+      equipamentosEnriquecidos;
 
     unidade.quantidadeEquipamentos =
-      associados.length;
+      equipamentosEnriquecidos.length;
 
     unidade.temEquipamento =
-      associados.length > 0;
+      equipamentosEnriquecidos.length >
+      0;
 
     unidade.equipamentoPrincipal =
       "TRANSFORMADOR";
 
-    unidade.tiposEquipamentos = [
-      "TRANSFORMADOR"
-    ];
+    unidade.tiposEquipamentos =
+      [
+        "TRANSFORMADOR",
+      ];
 
     unidade.tipoVisual =
       "TRANSFORMADOR";
@@ -1547,212 +3510,7 @@ function associarEquipamentosTransformadores(
 
 
 // ==========================================================
-// EQUIPAMENTO OPERACIONAL
-// ==========================================================
-//
-// IMPORTANTE:
-//
-// A UNSEMT/UNTRMT é a entidade operacional.
-//
-// EQSE/EQTR são complementos.
-//
-// Assim o filtro e a interface passam a enxergar o equipamento
-// mesmo quando o arquivo complementar não possui correspondência.
-//
-// ==========================================================
-
-function criarEquipamentoOperacional(
-  unidade
-) {
-  if (!unidade?.id) {
-    return null;
-  }
-
-  const tipo =
-    unidade.tipoEquipamento ||
-    unidade.tipo ||
-    "OUTRO";
-
-  return {
-    id:
-      unidade.id,
-
-    unidadeId:
-      unidade.id,
-
-    codId:
-      unidade.id,
-
-    codigo:
-      unidade.id,
-
-    tipo,
-
-    tipoEquipamento:
-      tipo,
-
-    nomeTipoEquipamento:
-      unidade.nomeTipoEquipamento ||
-      obterNomeTipoEquipamento(tipo),
-
-    origem:
-      unidade.origem ||
-      "UNIDADE",
-
-    alimentador:
-      unidade.alimentador ||
-      null,
-
-    circuito:
-      unidade.circuito ||
-      null,
-
-    subestacao:
-      unidade.subestacao ||
-      null,
-
-    pontoAssociado:
-      unidade.pontoAssociado ||
-      unidade.pac1 ||
-      unidade.pac2 ||
-      null,
-
-    pac1:
-      unidade.pac1 ||
-      null,
-
-    pac2:
-      unidade.pac2 ||
-      null,
-
-    latitude:
-      unidade.latitude ??
-      unidade.ponto1?.latitude ??
-      unidade.ponto2?.latitude ??
-      null,
-
-    longitude:
-      unidade.longitude ??
-      unidade.ponto1?.longitude ??
-      unidade.ponto2?.longitude ??
-      null,
-
-    fases:
-      unidade.fases ||
-      null,
-
-    situacao:
-      unidade.situacao ||
-      null,
-
-    estadoNormal:
-      unidade.posicao ||
-      null,
-
-    posicao:
-      unidade.posicao ||
-      null,
-
-    telecomandado:
-      unidade.telecomandado ??
-      null,
-
-    potenciaNominal:
-      unidade.potenciaNominal ??
-      null,
-
-    tensaoLinha:
-      unidade.tensaoLinha ??
-      null,
-
-    descricao:
-      unidade.descricao ||
-      null,
-
-    quantidadeEquipamentos:
-      unidade.quantidadeEquipamentos ||
-      0,
-
-    temEquipamento:
-      unidade.temEquipamento ||
-      false,
-
-    complementos:
-      unidade.equipamentos ||
-      [],
-
-    unidade,
-
-    propriedades:
-      unidade.propriedades ||
-      {},
-
-    feature:
-      unidade.feature ||
-      null,
-
-    geometria:
-      unidade.geometria ||
-      null
-  };
-}
-
-
-// ==========================================================
-// CATÁLOGO OPERACIONAL
-// ==========================================================
-
-function criarCatalogoEquipamentosOperacionais(
-  unidadesSeccionadoras,
-  transformadores
-) {
-  const equipamentos = {};
-  const equipamentosPorUnidade = {};
-
-  const todasUnidades = [
-    ...Object.values(
-      unidadesSeccionadoras || {}
-    ),
-    ...Object.values(
-      transformadores || {}
-    )
-  ];
-
-  for (
-    const unidade of
-      todasUnidades
-  ) {
-    const equipamento =
-      criarEquipamentoOperacional(
-        unidade
-      );
-
-    if (!equipamento) {
-      continue;
-    }
-
-    equipamentos[
-      equipamento.id
-    ] = equipamento;
-
-    equipamentosPorUnidade[
-      unidade.id
-    ] = [
-      equipamento,
-      ...(unidade.equipamentos || [])
-    ];
-  }
-
-  return {
-    equipamentos,
-    porUnidade:
-      equipamentosPorUnidade
-  };
-}
-
-
-// ==========================================================
-// COMBINAR MAPAS DE EQUIPAMENTOS
+// COMBINAR MAPAS
 // ==========================================================
 
 function combinarMapasEquipamentos(
@@ -1760,153 +3518,54 @@ function combinarMapasEquipamentos(
   mapaSecundario
 ) {
   const equipamentos = {
-    ...(mapaPrincipal?.equipamentos || {}),
-    ...(mapaSecundario?.equipamentos || {})
+    ...(
+      mapaPrincipal?.equipamentos ||
+      {}
+    ),
+
+    ...(
+      mapaSecundario?.equipamentos ||
+      {}
+    ),
   };
 
   const porUnidade = {
-    ...(mapaPrincipal?.porUnidade || {})
+    ...(
+      mapaPrincipal?.porUnidade ||
+      {}
+    ),
   };
 
   for (
     const [
       unidadeId,
-      lista
+      lista,
     ] of Object.entries(
       mapaSecundario?.porUnidade ||
       {}
     )
   ) {
-    if (!porUnidade[unidadeId]) {
-      porUnidade[unidadeId] = [];
+    if (
+      !porUnidade[
+        unidadeId
+      ]
+    ) {
+      porUnidade[
+        unidadeId
+      ] =
+        [];
     }
 
-    porUnidade[unidadeId].push(
+    porUnidade[
+      unidadeId
+    ].push(
       ...lista
     );
   }
 
   return {
     equipamentos,
-    porUnidade
-  };
-}
-
-
-// ==========================================================
-// COLEÇÃO GEOJSON A PARTIR DO MODELO
-// ==========================================================
-
-function criarColecaoFeatures(
-  itens
-) {
-  const features = [];
-
-  for (
-    const item of
-      Object.values(itens || {})
-  ) {
-    if (item?.feature) {
-      features.push(
-        item.feature
-      );
-
-      continue;
-    }
-
-    if (!item?.geometria) {
-      continue;
-    }
-
-    features.push({
-      type: "Feature",
-
-      properties: {
-        ...(item.propriedades || {}),
-
-        COD_ID:
-          item.id,
-
-        tipoEquipamento:
-          item.tipoEquipamento ||
-          item.tipo ||
-          null
-      },
-
-      geometry:
-        item.geometria
-    });
-  }
-
-  return {
-    type: "FeatureCollection",
-    features
-  };
-}
-
-
-// ==========================================================
-// FILTRAR FEATURE COLLECTION POR UNIDADE
-// ==========================================================
-
-function filtrarColecaoPorUnidade(
-  geojson,
-  idsUnidades,
-  campos = [
-    "UN_SE",
-    "UNSE",
-    "UN_TR",
-    "UN_TRM",
-    "UN_TR_MT",
-    "UN_TR_AT",
-    "COD_UN",
-    "COD_UNIDADE"
-  ]
-) {
-  if (!geojson) {
-    return {
-      type: "FeatureCollection",
-      features: []
-    };
-  }
-
-  const ids =
-    new Set(
-      [...idsUnidades].map(
-        criarChaveComparacao
-      )
-    );
-
-  const features =
-    (geojson.features || [])
-      .filter(
-        feature => {
-          const p =
-            feature?.properties || {};
-
-          return campos.some(
-            campo => {
-              const valor =
-                normalizarId(
-                  p[campo]
-                );
-
-              return (
-                valor &&
-                ids.has(
-                  criarChaveComparacao(
-                    valor
-                  )
-                )
-              );
-            }
-          );
-        }
-      );
-
-  return {
-    ...geojson,
-    features
+    porUnidade,
   };
 }
 
@@ -1918,36 +3577,50 @@ function filtrarColecaoPorUnidade(
 function criarIndicePQTPorPonto(
   unidades
 ) {
-  const indice = {};
+  const indice =
+    {};
 
   for (
     const unidade of
-      Object.values(
-        unidades || {}
-      )
+    Object.values(
+      unidades ||
+      {}
+    )
   ) {
-    const pontos = [
-      unidade.pac1,
-      unidade.pac2,
-      unidade.pontoAssociado
-    ]
-      .map(normalizarId)
-      .filter(Boolean);
+    const pontosDaUnidade =
+      [
+        unidade.pac1,
+        unidade.pac2,
+        unidade.pontoAssociado,
+      ].filter(Boolean);
 
     for (
       const pontoId of
-        new Set(pontos)
+      new Set(
+        pontosDaUnidade
+      )
     ) {
-      if (!indice[pontoId]) {
-        indice[pontoId] = [];
+      if (
+        !indice[
+          pontoId
+        ]
+      ) {
+        indice[
+          pontoId
+        ] =
+          [];
       }
 
       if (
-        !indice[pontoId].includes(
+        !indice[
+          pontoId
+        ].includes(
           unidade.id
         )
       ) {
-        indice[pontoId].push(
+        indice[
+          pontoId
+        ].push(
           unidade.id
         );
       }
@@ -1965,36 +3638,50 @@ function criarIndicePQTPorPonto(
 function criarIndiceTransformadoresPorPonto(
   unidades
 ) {
-  const indice = {};
+  const indice =
+    {};
 
   for (
     const unidade of
-      Object.values(
-        unidades || {}
-      )
+    Object.values(
+      unidades ||
+      {}
+    )
   ) {
-    const pontos = [
-      unidade.pac1,
-      unidade.pac2,
-      unidade.pontoAssociado
-    ]
-      .map(normalizarId)
-      .filter(Boolean);
+    const pontos =
+      [
+        unidade.pac1,
+        unidade.pac2,
+        unidade.pontoAssociado,
+      ].filter(Boolean);
 
     for (
       const pontoId of
-        new Set(pontos)
+      new Set(
+        pontos
+      )
     ) {
-      if (!indice[pontoId]) {
-        indice[pontoId] = [];
+      if (
+        !indice[
+          pontoId
+        ]
+      ) {
+        indice[
+          pontoId
+        ] =
+          [];
       }
 
       if (
-        !indice[pontoId].includes(
+        !indice[
+          pontoId
+        ].includes(
           unidade.id
         )
       ) {
-        indice[pontoId].push(
+        indice[
+          pontoId
+        ].push(
           unidade.id
         );
       }
@@ -2012,27 +3699,34 @@ function criarIndiceTransformadoresPorPonto(
 function criarMapaPontos(
   ponnot
 ) {
-  const pontos = {};
+  const pontos =
+    {};
 
   for (
     const feature of
-      ponnot?.features || []
+    ponnot?.features ||
+    []
   ) {
     const propriedades =
-      feature?.properties || {};
+      feature?.properties ||
+      {};
 
     const codId =
       normalizarId(
         propriedades.COD_ID
       );
 
+    if (!codId) {
+      continue;
+    }
+
     const geometria =
       feature?.geometry;
 
     if (
-      !codId ||
       !geometria ||
-      geometria.type !== "Point" ||
+      geometria.type !==
+        "Point" ||
       !Array.isArray(
         geometria.coordinates
       )
@@ -2040,29 +3734,58 @@ function criarMapaPontos(
       continue;
     }
 
-    const longitude =
+    const [
+      longitude,
+      latitude,
+    ] =
+      geometria.coordinates;
+
+    const latitudeNormalizada =
       normalizarNumero(
-        geometria.coordinates[0]
+        latitude
       );
 
-    const latitude =
+    const longitudeNormalizada =
       normalizarNumero(
-        geometria.coordinates[1]
+        longitude
       );
 
     if (
-      latitude === null ||
-      longitude === null
+      latitudeNormalizada ===
+        null ||
+      longitudeNormalizada ===
+        null
     ) {
       continue;
     }
 
-    pontos[codId] = {
-      id: codId,
+    const circuito =
+      normalizarCircuito(
+        propriedades.CTMT ??
+        propriedades.ctmt
+      );
 
-      latitude,
+    const alimentador =
+      normalizarAlimentador(
+        propriedades.CT_COD_OP ??
+        propriedades.alimentador ??
+        propriedades.ALIMENTADOR ??
+        propriedades.CTMT,
+        circuito
+      ) ||
+      null;
 
-      longitude,
+    pontos[
+      codId
+    ] = {
+      id:
+        codId,
+
+      latitude:
+        latitudeNormalizada,
+
+      longitude:
+        longitudeNormalizada,
 
       tipo:
         propriedades.TIP_INST ??
@@ -2082,26 +3805,21 @@ function criarMapaPontos(
         propriedades.SITCONT ??
         null,
 
-      alimentador:
-        obterAlimentador(
-          propriedades
-        ),
+      alimentador,
 
-      circuito:
-        obterCircuito(
-          propriedades
-        ),
+      circuito,
 
       subestacao:
-        obterSubestacao(
-          propriedades
-        ),
+        normalizarId(
+          propriedades.SUB
+        ) ||
+        null,
 
       propriedades: {
-        ...propriedades
+        ...propriedades,
       },
 
-      geometria
+      geometria,
     };
   }
 
@@ -2110,7 +3828,7 @@ function criarMapaPontos(
 
 
 // ==========================================================
-// EXTREMIDADE DA GEOMETRIA
+// EXTREMIDADE DE GEOMETRIA
 // ==========================================================
 
 function obterExtremidadeGeometria(
@@ -2121,20 +3839,28 @@ function obterExtremidadeGeometria(
     return null;
   }
 
-  let coordenadas = null;
+  let coordenadas =
+    null;
 
   if (
-    geometry.type === "LineString"
+    geometry.type ===
+    "LineString"
   ) {
     coordenadas =
       geometry.coordinates;
+
   } else if (
-    geometry.type === "MultiLineString"
+    geometry.type ===
+    "MultiLineString"
   ) {
     const linhas =
-      geometry.coordinates || [];
+      geometry.coordinates ||
+      [];
 
-    if (linhas.length > 0) {
+    if (
+      linhas.length >
+      0
+    ) {
       coordenadas =
         primeira
           ? linhas[0]
@@ -2145,8 +3871,11 @@ function obterExtremidadeGeometria(
   }
 
   if (
-    !Array.isArray(coordenadas) ||
-    coordenadas.length === 0
+    !Array.isArray(
+      coordenadas
+    ) ||
+    coordenadas.length ===
+      0
   ) {
     return null;
   }
@@ -2159,8 +3888,11 @@ function obterExtremidadeGeometria(
         ];
 
   if (
-    !Array.isArray(ponto) ||
-    ponto.length < 2
+    !Array.isArray(
+      ponto
+    ) ||
+    ponto.length <
+      2
   ) {
     return null;
   }
@@ -2184,7 +3916,7 @@ function obterExtremidadeGeometria(
 
   return {
     latitude,
-    longitude
+    longitude,
   };
 }
 
@@ -2202,18 +3934,21 @@ function encontrarPontoRealPorCoordenada(
     return null;
   }
 
-  let melhorId = null;
-  let melhorDistancia = Infinity;
+  let melhorId =
+    null;
 
-  const limite =
+  let melhorDistancia =
+    Infinity;
+
+  const tolerancia2 =
     tolerancia *
     tolerancia;
 
   for (
     const ponto of
-      Object.values(
-        pontos || {}
-      )
+    Object.values(
+      pontos || {}
+    )
   ) {
     const latitude =
       normalizarNumero(
@@ -2226,8 +3961,10 @@ function encontrarPontoRealPorCoordenada(
       );
 
     if (
-      latitude === null ||
-      longitude === null
+      latitude ===
+        null ||
+      longitude ===
+        null
     ) {
       continue;
     }
@@ -2240,17 +3977,18 @@ function encontrarPontoRealPorCoordenada(
       longitude -
       coordenada.longitude;
 
-    const distancia =
+    const distancia2 =
       dLat * dLat +
       dLon * dLon;
 
     if (
-      distancia <
+      distancia2 <
         melhorDistancia &&
-      distancia <= limite
+      distancia2 <=
+        tolerancia2
     ) {
       melhorDistancia =
-        distancia;
+        distancia2;
 
       melhorId =
         normalizarId(
@@ -2272,18 +4010,23 @@ function resolverPontoTrecho(
   coordenada,
   pontos
 ) {
-  const id =
+  const idNormalizado =
     normalizarIdPontoAssociado(
       idOriginal
     );
 
   if (
-    id &&
-    pontos?.[id]
+    idNormalizado &&
+    pontos?.[
+      idNormalizado
+    ]
   ) {
     return {
-      id,
-      metodo: "ID_PONNOT"
+      id:
+        idNormalizado,
+
+      metodo:
+        "ID_PONNOT",
     };
   }
 
@@ -2293,22 +4036,26 @@ function resolverPontoTrecho(
       coordenada
     );
 
-  if (idPorCoordenada) {
+  if (
+    idPorCoordenada
+  ) {
     return {
-      id: idPorCoordenada,
+      id:
+        idPorCoordenada,
+
       metodo:
-        "COORDENADA_PONNOT_REAL"
+        "COORDENADA_PONNOT_REAL",
     };
   }
 
   return {
     id:
-      id || null,
+      idNormalizado,
 
     metodo:
-      id
+      idNormalizado
         ? "ID_NAO_ENCONTRADO"
-        : "SEM_ID"
+        : "SEM_ID",
   };
 }
 
@@ -2321,14 +4068,17 @@ function criarMapaTrechos(
   ssdmt,
   pontos
 ) {
-  const trechos = {};
+  const trechos =
+    {};
 
   for (
     const feature of
-      ssdmt?.features || []
+    ssdmt?.features ||
+    []
   ) {
     const propriedades =
-      feature?.properties || {};
+      feature?.properties ||
+      {};
 
     const codId =
       normalizarId(
@@ -2375,40 +4125,37 @@ function criarMapaTrechos(
         pontos
       );
 
-    const alimentador =
-      normalizarId(
-        obterPrimeiroValor(
-          propriedades,
-          [
-            "alimentador",
-            "ALIMENTADOR",
-            "CT_COD_OP",
-            "CT_COD_OPER",
-            "CT_COD"
-          ]
-        )
-      );
+    const pontoInicial =
+      resolucaoInicial.id;
+
+    const pontoFinal =
+      resolucaoFinal.id;
 
     const circuito =
-      normalizarId(
-        obterPrimeiroValor(
-          propriedades,
-          [
-            "circuito",
-            "CIRCUITO",
-            "CTMT"
-          ]
-        )
+      normalizarCircuito(
+        propriedades.CTMT ??
+        propriedades.ctmt
       );
 
-    trechos[codId] = {
-      id: codId,
+    const alimentador =
+      normalizarAlimentador(
+        propriedades.CT_COD_OP ??
+        propriedades.alimentador ??
+        propriedades.ALIMENTADOR ??
+        propriedades.CTMT,
+        circuito
+      ) ||
+      null;
 
-      pontoInicial:
-        resolucaoInicial.id,
+    trechos[
+      codId
+    ] = {
+      id:
+        codId,
 
-      pontoFinal:
-        resolucaoFinal.id,
+      pontoInicial,
+
+      pontoFinal,
 
       pontoInicialOriginal,
 
@@ -2422,13 +4169,7 @@ function criarMapaTrechos(
 
       alimentador,
 
-      alimentadorCodigo:
-        alimentador,
-
       circuito,
-
-      circuitoCodigo:
-        circuito,
 
       subestacao:
         normalizarId(
@@ -2453,14 +4194,12 @@ function criarMapaTrechos(
         null,
 
       propriedades: {
-        ...propriedades
+        ...propriedades,
       },
-
-      feature,
 
       geometria:
         feature?.geometry ??
-        null
+        null,
     };
   }
 
@@ -2476,25 +4215,32 @@ function criarAdjacencia(
   pontos,
   trechos
 ) {
-  const adjacencia = {};
+  const adjacencia =
+    {};
 
   for (
     const pontoId of
-      Object.keys(
-        pontos || {}
-      )
+    Object.keys(
+      pontos
+    )
   ) {
-    adjacencia[pontoId] = [];
+    adjacencia[
+      pontoId
+    ] =
+      [];
   }
 
   for (
-    const [
-      trechoId,
-      trecho
-    ] of Object.entries(
-      trechos || {}
+    const trechoId of
+    Object.keys(
+      trechos
     )
   ) {
+    const trecho =
+      trechos[
+        trechoId
+      ];
+
     const inicio =
       normalizarId(
         trecho.pontoInicial
@@ -2512,15 +4258,31 @@ function criarAdjacencia(
       continue;
     }
 
-    if (!adjacencia[inicio]) {
-      adjacencia[inicio] = [];
+    if (
+      !adjacencia[
+        inicio
+      ]
+    ) {
+      adjacencia[
+        inicio
+      ] =
+        [];
     }
 
-    if (!adjacencia[fim]) {
-      adjacencia[fim] = [];
+    if (
+      !adjacencia[
+        fim
+      ]
+    ) {
+      adjacencia[
+        fim
+      ] =
+        [];
     }
 
-    adjacencia[inicio].push({
+    adjacencia[
+      inicio
+    ].push({
       trechoId,
 
       pontoOrigem:
@@ -2530,10 +4292,12 @@ function criarAdjacencia(
         fim,
 
       sentido:
-        "SAIDA"
+        "SAIDA",
     });
 
-    adjacencia[fim].push({
+    adjacencia[
+      fim
+    ].push({
       trechoId,
 
       pontoOrigem:
@@ -2543,7 +4307,7 @@ function criarAdjacencia(
         inicio,
 
       sentido:
-        "ENTRADA"
+        "ENTRADA",
     });
   }
 
@@ -2558,32 +4322,31 @@ function criarAdjacencia(
 function identificarTerminais(
   adjacencia
 ) {
-  return Object.keys(
-    adjacencia || {}
-  ).filter(
-    id =>
-      (
-        adjacencia[id] || []
-      ).length === 1
-  );
-}
+  const terminais =
+    [];
 
+  for (
+    const pontoId of
+    Object.keys(
+      adjacencia
+    )
+  ) {
+    const conexoes =
+      adjacencia[
+        pontoId
+      ] || [];
 
-// ==========================================================
-// PASSAGENS
-// ==========================================================
+    if (
+      conexoes.length ===
+      1
+    ) {
+      terminais.push(
+        pontoId
+      );
+    }
+  }
 
-function identificarPassagens(
-  adjacencia
-) {
-  return Object.keys(
-    adjacencia || {}
-  ).filter(
-    id =>
-      (
-        adjacencia[id] || []
-      ).length === 2
-  );
+  return terminais;
 }
 
 
@@ -2594,26 +4357,71 @@ function identificarPassagens(
 function identificarDerivacoes(
   adjacencia
 ) {
-  return Object.entries(
-    adjacencia || {}
-  )
-    .filter(
-      ([, conexoes]) =>
-        conexoes.length > 2
+  const derivacoes =
+    [];
+
+  for (
+    const pontoId of
+    Object.keys(
+      adjacencia
     )
-    .map(
-      ([
-        pontoId,
-        conexoes
-      ]) => ({
+  ) {
+    const conexoes =
+      adjacencia[
+        pontoId
+      ] || [];
+
+    if (
+      conexoes.length >
+      2
+    ) {
+      derivacoes.push({
         pontoId,
 
         quantidadeConexoes:
           conexoes.length,
 
-        conexoes
-      })
-    );
+        conexoes,
+      });
+    }
+  }
+
+  return derivacoes;
+}
+
+
+// ==========================================================
+// PASSAGENS
+// ==========================================================
+
+function identificarPassagens(
+  adjacencia
+) {
+  const passagens =
+    [];
+
+  for (
+    const pontoId of
+    Object.keys(
+      adjacencia
+    )
+  ) {
+    const conexoes =
+      adjacencia[
+        pontoId
+      ] || [];
+
+    if (
+      conexoes.length ===
+      2
+    ) {
+      passagens.push(
+        pontoId
+      );
+    }
+  }
+
+  return passagens;
 }
 
 
@@ -2625,21 +4433,27 @@ function identificarTrechosSemPontos(
   pontos,
   trechos
 ) {
-  const problemas = [];
+  const problemas =
+    [];
 
   for (
-    const trecho of
-      Object.values(
-        trechos || {}
-      )
+    const trechoId of
+    Object.keys(
+      trechos
+    )
   ) {
+    const trecho =
+      trechos[
+        trechoId
+      ];
+
     const pontoInicialEncontrado =
-      !!pontos?.[
+      !!pontos[
         trecho.pontoInicial
       ];
 
     const pontoFinalEncontrado =
-      !!pontos?.[
+      !!pontos[
         trecho.pontoFinal
       ];
 
@@ -2648,8 +4462,7 @@ function identificarTrechosSemPontos(
       !pontoFinalEncontrado
     ) {
       problemas.push({
-        trechoId:
-          trecho.id,
+        trechoId,
 
         pontoInicial:
           trecho.pontoInicial,
@@ -2659,7 +4472,7 @@ function identificarTrechosSemPontos(
 
         pontoInicialEncontrado,
 
-        pontoFinalEncontrado
+        pontoFinalEncontrado,
       });
     }
   }
@@ -2676,15 +4489,31 @@ function identificarPontosIsolados(
   pontos,
   adjacencia
 ) {
-  return Object.keys(
-    pontos || {}
-  ).filter(
-    id =>
-      (
-        adjacencia?.[id] ||
-        []
-      ).length === 0
-  );
+  const isolados =
+    [];
+
+  for (
+    const pontoId of
+    Object.keys(
+      pontos
+    )
+  ) {
+    const conexoes =
+      adjacencia[
+        pontoId
+      ] || [];
+
+    if (
+      conexoes.length ===
+      0
+    ) {
+      isolados.push(
+        pontoId
+      );
+    }
+  }
+
+  return isolados;
 }
 
 
@@ -2695,21 +4524,26 @@ function identificarPontosIsolados(
 function identificarTrechosInvalidos(
   trechos
 ) {
-  const problemas = [];
+  const problemas =
+    [];
 
   for (
-    const trecho of
-      Object.values(
-        trechos || {}
-      )
+    const trechoId of
+    Object.keys(
+      trechos
+    )
   ) {
+    const trecho =
+      trechos[
+        trechoId
+      ];
+
     if (
       !trecho.pontoInicial ||
       !trecho.pontoFinal
     ) {
       problemas.push({
-        trechoId:
-          trecho.id,
+        trechoId,
 
         pontoInicial:
           trecho.pontoInicial,
@@ -2718,7 +4552,7 @@ function identificarTrechosInvalidos(
           trecho.pontoFinal,
 
         motivo:
-          "Trecho sem PN_CON_1 ou PN_CON_2"
+          "Trecho sem PN_CON_1 ou PN_CON_2",
       });
 
       continue;
@@ -2729,8 +4563,7 @@ function identificarTrechosInvalidos(
       trecho.pontoFinal
     ) {
       problemas.push({
-        trechoId:
-          trecho.id,
+        trechoId,
 
         pontoInicial:
           trecho.pontoInicial,
@@ -2739,7 +4572,7 @@ function identificarTrechosInvalidos(
           trecho.pontoFinal,
 
         motivo:
-          "Trecho conecta o ponto a ele mesmo"
+          "Trecho conecta o ponto a ele mesmo",
       });
     }
   }
@@ -2749,139 +4582,126 @@ function identificarTrechosInvalidos(
 
 
 // ==========================================================
-// ÍNDICE ALIMENTADORES
+// DESCOBRIR ALIMENTADOR
 // ==========================================================
 
-function criarIndiceAlimentadores(
+function descobrirAlimentador(
   trechos
 ) {
-  const indice = {};
+  const alimentadores =
+    {};
 
   for (
     const trecho of
-      Object.values(
-        trechos || {}
-      )
+    Object.values(
+      trechos ||
+      {}
+    )
   ) {
     const alimentador =
       normalizarId(
         trecho.alimentador
       );
 
-    const circuito =
-      normalizarId(
-        trecho.circuito
-      );
-
-    const subestacao =
-      normalizarId(
-        trecho.subestacao
-      );
-
     if (!alimentador) {
       continue;
     }
 
-    if (!indice[alimentador]) {
-      indice[alimentador] = {
-        id:
-          alimentador,
-
-        alimentador,
-
-        circuitos: [],
-
-        subestacoes: [],
-
-        quantidadeTrechos:
-          0
-      };
-    }
-
-    const registro =
-      indice[alimentador];
-
-    registro.quantidadeTrechos += 1;
-
-    if (
-      circuito &&
-      !registro.circuitos.includes(
-        circuito
-      )
-    ) {
-      registro.circuitos.push(
-        circuito
-      );
-    }
-
-    if (
-      subestacao &&
-      !registro.subestacoes.includes(
-        subestacao
-      )
-    ) {
-      registro.subestacoes.push(
-        subestacao
-      );
-    }
-  }
-
-  for (
-    const registro of
-      Object.values(indice)
-  ) {
-    registro.circuitos.sort();
-    registro.subestacoes.sort();
-  }
-
-  return indice;
-}
-
-
-// ==========================================================
-// MAIS FREQUENTE
-// ==========================================================
-
-function descobrirMaisFrequente(
-  objeto,
-  campo
-) {
-  const contagem = {};
-
-  for (
-    const item of
-      Object.values(
-        objeto || {}
-      )
-  ) {
-    const valor =
-      normalizarId(
-        item?.[campo]
-      );
-
-    if (!valor) {
-      continue;
-    }
-
-    contagem[valor] =
+    alimentadores[
+      alimentador
+    ] =
       (
-        contagem[valor] ||
+        alimentadores[
+          alimentador
+        ] ||
         0
       ) + 1;
   }
 
   const lista =
     Object.entries(
-      contagem
-    ).sort(
-      (a, b) =>
-        b[1] - a[1]
+      alimentadores
     );
 
-  return (
-    lista[0]?.[0] ||
-    null
+  if (
+    lista.length ===
+    0
+  ) {
+    return null;
+  }
+
+  lista.sort(
+    (
+      a,
+      b
+    ) =>
+      b[1] -
+      a[1]
   );
+
+  return lista[0][0];
+}
+
+
+// ==========================================================
+// DESCOBRIR CIRCUITO
+// ==========================================================
+
+function descobrirCircuito(
+  trechos
+) {
+  const circuitos =
+    {};
+
+  for (
+    const trecho of
+    Object.values(
+      trechos ||
+      {}
+    )
+  ) {
+    const circuito =
+      normalizarId(
+        trecho.circuito
+      );
+
+    if (!circuito) {
+      continue;
+    }
+
+    circuitos[
+      circuito
+    ] =
+      (
+        circuitos[
+          circuito
+        ] ||
+        0
+      ) + 1;
+  }
+
+  const lista =
+    Object.entries(
+      circuitos
+    );
+
+  if (
+    lista.length ===
+    0
+  ) {
+    return null;
+  }
+
+  lista.sort(
+    (
+      a,
+      b
+    ) =>
+      b[1] -
+      a[1]
+  );
+
+  return lista[0][0];
 }
 
 
@@ -2901,22 +4721,44 @@ function encontrarOrigemAutomatica(
       topologia.alimentador
     );
 
-  const candidatos = [];
+  const pontos =
+    topologia.pontos ||
+    {};
+
+  const termosFortes =
+    [
+      "SUBESTACAO",
+      "SUBESTAÇÃO",
+      "BARRA",
+      "FONTE",
+      "SAIDA",
+      "SAÍDA",
+      "ORIGEM",
+      "ALIMENTADOR",
+    ];
+
+  const candidatos =
+    [];
 
   for (
     const ponto of
-      Object.values(
-        topologia.pontos || {}
-      )
+    Object.values(
+      pontos
+    )
   ) {
-    let pontuacao = 0;
+    const propriedades =
+      ponto.propriedades ||
+      {};
+
+    let pontuacao =
+      0;
 
     for (
       const [
         campo,
-        valor
+        valor,
       ] of Object.entries(
-        ponto.propriedades || {}
+        propriedades
       )
     ) {
       const campoTexto =
@@ -2938,51 +4780,58 @@ function encontrarOrigemAutomatica(
         valorTexto ===
           alimentador
       ) {
-        pontuacao += 5;
+        pontuacao +=
+          5;
       }
 
       for (
-        const termo of [
-          "SUBESTACAO",
-          "SUBESTAÇÃO",
-          "BARRA",
-          "FONTE",
-          "SAIDA",
-          "SAÍDA",
-          "ORIGEM"
-        ]
+        const termo of
+        termosFortes
       ) {
         if (
-          valorTexto.includes(termo) ||
-          campoTexto.includes(termo)
+          valorTexto.includes(
+            termo
+          ) ||
+          campoTexto.includes(
+            termo
+          )
         ) {
-          pontuacao += 3;
+          pontuacao +=
+            3;
         }
       }
 
       if (
-        (
-          campoTexto.includes(
-            "TIP_INST"
-          ) ||
-          campoTexto.includes(
-            "TIP_PON"
-          ) ||
-          campoTexto.includes(
-            "TIPO"
-          )
-        ) &&
-        (
-          valorTexto.includes("SUB") ||
-          valorTexto.includes("BARR") ||
-          valorTexto.includes("SAID")
+        campoTexto.includes(
+          "TIP_INST"
+        ) ||
+        campoTexto.includes(
+          "TIP_PON"
+        ) ||
+        campoTexto.includes(
+          "TIPO"
         )
       ) {
-        pontuacao += 8;
+        if (
+          valorTexto.includes(
+            "SUB"
+          ) ||
+          valorTexto.includes(
+            "BARR"
+          ) ||
+          valorTexto.includes(
+            "SAID"
+          )
+        ) {
+          pontuacao +=
+            8;
+        }
       }
     }
 
-    if (pontuacao > 0) {
+    if (
+      pontuacao > 0
+    ) {
       candidatos.push({
         pontoId:
           ponto.id,
@@ -2993,14 +4842,20 @@ function encontrarOrigemAutomatica(
           ponto.tipo,
 
         propriedades:
-          ponto.propriedades
+          ponto.propriedades,
       });
     }
   }
 
-  if (candidatos.length > 0) {
+  if (
+    candidatos.length >
+    0
+  ) {
     candidatos.sort(
-      (a, b) =>
+      (
+        a,
+        b
+      ) =>
         b.pontuacao -
         a.pontuacao
     );
@@ -3015,7 +4870,79 @@ function encontrarOrigemAutomatica(
       pontuacao:
         candidatos[0].pontuacao,
 
-      candidatos
+      candidatos,
+    };
+  }
+
+  const graus =
+    Object.keys(
+      pontos
+    ).map(
+      (
+        pontoId
+      ) => ({
+        pontoId,
+
+        grau:
+          (
+            topologia
+              .adjacencia?.[
+                pontoId
+              ] ||
+            []
+          ).length,
+      })
+    );
+
+  const grauUm =
+    graus.filter(
+      (
+        item
+      ) =>
+        item.grau ===
+        1
+    );
+
+  if (
+    grauUm.length ===
+    1
+  ) {
+    return {
+      pontoId:
+        grauUm[0].pontoId,
+
+      metodo:
+        "FALLBACK_TERMINAL_UNICO",
+
+      pontuacao:
+        0,
+
+      candidatos:
+        grauUm,
+    };
+  }
+
+  const ids =
+    Object.keys(
+      pontos
+    ).sort();
+
+  if (
+    ids.length >
+    0
+  ) {
+    return {
+      pontoId:
+        ids[0],
+
+      metodo:
+        "FALLBACK_ID",
+
+      pontuacao:
+        0,
+
+      candidatos:
+        [],
     };
   }
 
@@ -3031,136 +4958,249 @@ function orientarRedeEletrica(
   topologia,
   pontoOrigem
 ) {
+  const pontosOficiais =
+    topologia?.pontos ||
+    {};
+
+  const trechosOficiais =
+    topologia?.trechos ||
+    {};
+
+  const adjacencia =
+    topologia?.adjacencia ||
+    {};
+
+  const idsPontosOficiais =
+    Object.keys(
+      pontosOficiais
+    );
+
+  const idsTrechosOficiais =
+    Object.keys(
+      trechosOficiais
+    );
+
+  const conjuntoPontos =
+    new Set(
+      idsPontosOficiais
+    );
+
+  const conjuntoTrechos =
+    new Set(
+      idsTrechosOficiais
+    );
+
   const origem =
     normalizarId(
       pontoOrigem
     );
 
-  if (
-    !origem ||
-    !topologia?.pontos?.[origem]
-  ) {
-    return {
-      pontoOrigem:
-        origem,
+  const vazio = (
+    pontoOrigemNormalizado =
+      null
+  ) => ({
+    pontoOrigem:
+      pontoOrigemNormalizado,
 
-      pontos: {},
+    pontos:
+      {},
 
-      trechos: {},
+    trechos:
+      {},
 
-      pontosNaoOrientados:
-        Object.keys(
-          topologia?.pontos || {}
-        ),
+    pontosNaoOrientados:
+      [
+        ...idsPontosOficiais,
+      ],
 
-      trechosNaoOrientados:
-        Object.keys(
-          topologia?.trechos || {}
-        )
-    };
+    trechosNaoOrientados:
+      [
+        ...idsTrechosOficiais,
+      ],
+
+    quantidadePontos:
+      0,
+
+    quantidadeTrechos:
+      0,
+
+    quantidadePontosNaoOrientados:
+      idsPontosOficiais.length,
+
+    quantidadeTrechosNaoOrientados:
+      idsTrechosOficiais.length,
+
+    orientacaoCompleta:
+      false,
+  });
+
+  if (!origem) {
+    return vazio(
+      null
+    );
   }
 
-  const pontos = {};
-  const trechos = {};
+  if (
+    !conjuntoPontos.has(
+      origem
+    )
+  ) {
+    console.warn(
+      "⚠️ Ponto de origem não pertence aos pontos oficiais:",
+      origem
+    );
 
-  const pontosVisitados =
-    new Set();
+    return vazio(
+      origem
+    );
+  }
+
+  const pontosOrientados =
+    {};
+
+  const trechosOrientados =
+    {};
+
+  const visitados =
+    new Set([
+      origem,
+    ]);
 
   const trechosVisitados =
     new Set();
 
-  const fila = [
-    {
-      pontoId:
-        origem,
+  const fila =
+    [
+      {
+        pontoId:
+          origem,
 
-      nivel: 0,
+        nivel:
+          0,
 
-      pontoMontante:
-        null,
+        pontoMontante:
+          null,
 
-      trechoMontante:
-        null
-    }
-  ];
+        trechoMontante:
+          null,
+      },
+    ];
 
-  while (fila.length > 0) {
+  let indiceFila =
+    0;
+
+  while (
+    indiceFila <
+    fila.length
+  ) {
     const item =
-      fila.shift();
+      fila[
+        indiceFila++
+      ];
 
     const pontoAtual =
       normalizarId(
-        item.pontoId
+        item?.pontoId
       );
 
     if (
       !pontoAtual ||
-      pontosVisitados.has(
+      !conjuntoPontos.has(
         pontoAtual
       )
     ) {
       continue;
     }
 
-    const ponto =
-      topologia.pontos?.[
+    if (
+      !pontosOrientados[
         pontoAtual
-      ];
+      ]
+    ) {
+      const pontoOficial =
+        pontosOficiais[
+          pontoAtual
+        ];
 
-    if (!ponto) {
-      continue;
+      pontosOrientados[
+        pontoAtual
+      ] =
+        {
+          ...pontoOficial,
+
+          nivel:
+            Number(
+              item?.nivel
+            ) || 0,
+
+          pontoMontante:
+            item?.pontoMontante ||
+            null,
+
+          trechoMontante:
+            item?.trechoMontante ||
+            null,
+
+          origem:
+            pontoAtual ===
+            origem,
+        };
     }
 
-    pontosVisitados.add(
-      pontoAtual
-    );
-
-    pontos[pontoAtual] = {
-      ...ponto,
-
-      nivel:
-        item.nivel,
-
-      pontoMontante:
-        item.pontoMontante,
-
-      trechoMontante:
-        item.trechoMontante,
-
-      origem:
-        pontoAtual ===
-        origem
-    };
-
     const conexoes =
-      topologia.adjacencia?.[
-        pontoAtual
-      ] || [];
+      Array.isArray(
+        adjacencia[
+          pontoAtual
+        ]
+      )
+        ? adjacencia[
+            pontoAtual
+          ]
+        : [];
 
     for (
       const conexao of
-        conexoes
+      conexoes
     ) {
       const trechoId =
         normalizarId(
-          conexao.trechoId
+          conexao?.trechoId
         );
 
       const destino =
         normalizarId(
-          conexao.pontoDestino
+          conexao?.pontoDestino
         );
-
-      const trecho =
-        topologia.trechos?.[
-          trechoId
-        ];
 
       if (
         !trechoId ||
-        !destino ||
-        !trecho
+        !destino
       ) {
+        continue;
+      }
+
+      if (
+        !conjuntoTrechos.has(
+          trechoId
+        )
+      ) {
+        continue;
+      }
+
+      if (
+        !conjuntoPontos.has(
+          destino
+        )
+      ) {
+        continue;
+      }
+
+      const trechoOficial =
+        trechosOficiais[
+          trechoId
+        ];
+
+      if (!trechoOficial) {
         continue;
       }
 
@@ -3173,87 +5213,182 @@ function orientarRedeEletrica(
           trechoId
         );
 
-        trechos[trechoId] = {
-          ...trecho,
+        trechosOrientados[
+          trechoId
+        ] =
+          {
+            ...trechoOficial,
 
-          pontoMontante:
-            pontoAtual,
+            pontoMontante:
+              pontoAtual,
 
-          pontoJusante:
-            destino,
+            pontoJusante:
+              destino,
 
-          nivel:
-            item.nivel + 1
-        };
+            nivel:
+              (
+                Number(
+                  item?.nivel
+                ) || 0
+              ) + 1,
+          };
       }
 
       if (
-        !pontosVisitados.has(
+        !visitados.has(
           destino
         )
       ) {
+        visitados.add(
+          destino
+        );
+
         fila.push({
           pontoId:
             destino,
 
           nivel:
-            item.nivel + 1,
+            (
+              Number(
+                item?.nivel
+              ) || 0
+            ) + 1,
 
           pontoMontante:
             pontoAtual,
 
           trechoMontante:
-            trechoId
+            trechoId,
         });
       }
     }
   }
 
+  const pontosValidos =
+    {};
+
+  for (
+    const id of
+    idsPontosOficiais
+  ) {
+    if (
+      pontosOrientados[
+        id
+      ]
+    ) {
+      pontosValidos[
+        id
+      ] =
+        pontosOrientados[
+          id
+        ];
+    }
+  }
+
+  const trechosValidos =
+    {};
+
+  for (
+    const id of
+    idsTrechosOficiais
+  ) {
+    if (
+      trechosOrientados[
+        id
+      ]
+    ) {
+      const trecho =
+        trechosOrientados[
+          id
+        ];
+
+      const pontoMontante =
+        normalizarId(
+          trecho.pontoMontante
+        );
+
+      const pontoJusante =
+        normalizarId(
+          trecho.pontoJusante
+        );
+
+      if (
+        conjuntoPontos.has(
+          pontoMontante
+        ) &&
+        conjuntoPontos.has(
+          pontoJusante
+        )
+      ) {
+        trechosValidos[
+          id
+        ] =
+          trecho;
+      }
+    }
+  }
+
   const pontosNaoOrientados =
-    Object.keys(
-      topologia.pontos || {}
-    ).filter(
-      id =>
-        !pontos[id]
+    idsPontosOficiais.filter(
+      (
+        id
+      ) =>
+        !pontosValidos[
+          id
+        ]
     );
 
   const trechosNaoOrientados =
-    Object.keys(
-      topologia.trechos || {}
-    ).filter(
-      id =>
-        !trechos[id]
+    idsTrechosOficiais.filter(
+      (
+        id
+      ) =>
+        !trechosValidos[
+          id
+        ]
     );
 
   return {
     pontoOrigem:
       origem,
 
-    pontos,
+    pontos:
+      pontosValidos,
 
-    trechos,
+    trechos:
+      trechosValidos,
 
     pontosNaoOrientados,
 
     trechosNaoOrientados,
 
     quantidadePontos:
-      Object.keys(pontos).length,
+      Object.keys(
+        pontosValidos
+      ).length,
 
     quantidadeTrechos:
-      Object.keys(trechos).length,
+      Object.keys(
+        trechosValidos
+      ).length,
 
     quantidadePontosNaoOrientados:
       pontosNaoOrientados.length,
 
     quantidadeTrechosNaoOrientados:
-      trechosNaoOrientados.length
+      trechosNaoOrientados.length,
+
+    orientacaoCompleta:
+      pontosNaoOrientados.length ===
+        0 &&
+      trechosNaoOrientados.length ===
+        0,
   };
 }
 
 
 // ==========================================================
-// REDE A JUSANTE
+// BUSCAR REDE A JUSANTE
 // ==========================================================
 
 export function buscarRedeAJusante(
@@ -3261,6 +5396,25 @@ export function buscarRedeAJusante(
   pontoInicial,
   opcoes = {}
 ) {
+  if (!topologia) {
+    return {
+      pontoInicial:
+        null,
+
+      pontos:
+        {},
+
+      trechos:
+        {},
+
+      ordemPontos:
+        [],
+
+      ordemTrechos:
+        [],
+    };
+  }
+
   const origem =
     normalizarId(
       pontoInicial
@@ -3271,25 +5425,43 @@ export function buscarRedeAJusante(
       pontoInicial:
         null,
 
-      pontos: {},
+      pontos:
+        {},
 
-      trechos: {},
+      trechos:
+        {},
 
-      ordemPontos: [],
+      ordemPontos:
+        [],
 
-      ordemTrechos: [],
-
-      quantidadePontos: 0,
-
-      quantidadeTrechos: 0
+      ordemTrechos:
+        [],
     };
   }
 
-  const pontos = {};
-  const trechos = {};
+  const pontos =
+    topologia.pontos ||
+    {};
 
-  const ordemPontos = [];
-  const ordemTrechos = [];
+  const trechos =
+    topologia.trechos ||
+    {};
+
+  const adjacencia =
+    topologia.adjacencia ||
+    {};
+
+  const pontosEncontrados =
+    {};
+
+  const trechosEncontrados =
+    {};
+
+  const ordemPontos =
+    [];
+
+  const ordemTrechos =
+    [];
 
   const visitados =
     new Set();
@@ -3297,27 +5469,28 @@ export function buscarRedeAJusante(
   const trechosVisitados =
     new Set();
 
-  const fila = [origem];
+  const fila =
+    [
+      origem,
+    ];
 
-  while (fila.length > 0) {
+  while (
+    fila.length >
+    0
+  ) {
     const pontoAtual =
       normalizarId(
         fila.shift()
       );
 
-    if (
-      !pontoAtual ||
-      visitados.has(
-        pontoAtual
-      )
-    ) {
+    if (!pontoAtual) {
       continue;
     }
 
     if (
-      !topologia?.pontos?.[
+      visitados.has(
         pontoAtual
-      ]
+      )
     ) {
       continue;
     }
@@ -3326,8 +5499,18 @@ export function buscarRedeAJusante(
       pontoAtual
     );
 
-    pontos[pontoAtual] =
-      topologia.pontos[
+    if (
+      !pontos[
+        pontoAtual
+      ]
+    ) {
+      continue;
+    }
+
+    pontosEncontrados[
+      pontoAtual
+    ] =
+      pontos[
         pontoAtual
       ];
 
@@ -3335,11 +5518,14 @@ export function buscarRedeAJusante(
       pontoAtual
     );
 
+    const conexoes =
+      adjacencia[
+        pontoAtual
+      ] || [];
+
     for (
       const conexao of
-        topologia.adjacencia?.[
-          pontoAtual
-        ] || []
+      conexoes
     ) {
       const trechoId =
         normalizarId(
@@ -3351,29 +5537,35 @@ export function buscarRedeAJusante(
           conexao.pontoDestino
         );
 
+      if (
+        !trechoId ||
+        !destino
+      ) {
+        continue;
+      }
+
       const trecho =
-        topologia.trechos?.[
+        trechos[
           trechoId
         ];
 
-      if (
-        !trechoId ||
-        !destino ||
-        !trecho
-      ) {
+      if (!trecho) {
         continue;
       }
 
       if (
         opcoes.respeitarOrientacao &&
         trecho.pontoMontante &&
-        trecho.pontoJusante &&
-        normalizarId(
-          trecho.pontoMontante
-        ) !==
-          pontoAtual
+        trecho.pontoJusante
       ) {
-        continue;
+        if (
+          normalizarId(
+            trecho.pontoMontante
+          ) !==
+          pontoAtual
+        ) {
+          continue;
+        }
       }
 
       if (
@@ -3385,7 +5577,9 @@ export function buscarRedeAJusante(
           trechoId
         );
 
-        trechos[trechoId] =
+        trechosEncontrados[
+          trechoId
+        ] =
           trecho;
 
         ordemTrechos.push(
@@ -3409,9 +5603,11 @@ export function buscarRedeAJusante(
     pontoInicial:
       origem,
 
-    pontos,
+    pontos:
+      pontosEncontrados,
 
-    trechos,
+    trechos:
+      trechosEncontrados,
 
     ordemPontos,
 
@@ -3421,19 +5617,38 @@ export function buscarRedeAJusante(
       ordemPontos.length,
 
     quantidadeTrechos:
-      ordemTrechos.length
+      ordemTrechos.length,
   };
 }
 
 
 // ==========================================================
-// REDE A MONTANTE
+// BUSCAR REDE A MONTANTE
 // ==========================================================
 
 export function buscarRedeAMontante(
   topologia,
   pontoInicial
 ) {
+  if (!topologia) {
+    return {
+      pontoInicial:
+        null,
+
+      pontos:
+        {},
+
+      trechos:
+        {},
+
+      ordemPontos:
+        [],
+
+      ordemTrechos:
+        [],
+    };
+  }
+
   const origem =
     normalizarId(
       pontoInicial
@@ -3444,25 +5659,43 @@ export function buscarRedeAMontante(
       pontoInicial:
         null,
 
-      pontos: {},
+      pontos:
+        {},
 
-      trechos: {},
+      trechos:
+        {},
 
-      ordemPontos: [],
+      ordemPontos:
+        [],
 
-      ordemTrechos: [],
-
-      quantidadePontos: 0,
-
-      quantidadeTrechos: 0
+      ordemTrechos:
+        [],
     };
   }
 
-  const pontos = {};
-  const trechos = {};
+  const pontos =
+    topologia.pontos ||
+    {};
 
-  const ordemPontos = [];
-  const ordemTrechos = [];
+  const trechos =
+    topologia.trechos ||
+    {};
+
+  const adjacencia =
+    topologia.adjacencia ||
+    {};
+
+  const pontosEncontrados =
+    {};
+
+  const trechosEncontrados =
+    {};
+
+  const ordemPontos =
+    [];
+
+  const ordemTrechos =
+    [];
 
   const visitados =
     new Set();
@@ -3470,27 +5703,28 @@ export function buscarRedeAMontante(
   const trechosVisitados =
     new Set();
 
-  const fila = [origem];
+  const fila =
+    [
+      origem,
+    ];
 
-  while (fila.length > 0) {
+  while (
+    fila.length >
+    0
+  ) {
     const pontoAtual =
       normalizarId(
         fila.shift()
       );
 
-    if (
-      !pontoAtual ||
-      visitados.has(
-        pontoAtual
-      )
-    ) {
+    if (!pontoAtual) {
       continue;
     }
 
     if (
-      !topologia?.pontos?.[
+      visitados.has(
         pontoAtual
-      ]
+      )
     ) {
       continue;
     }
@@ -3499,8 +5733,18 @@ export function buscarRedeAMontante(
       pontoAtual
     );
 
-    pontos[pontoAtual] =
-      topologia.pontos[
+    if (
+      !pontos[
+        pontoAtual
+      ]
+    ) {
+      continue;
+    }
+
+    pontosEncontrados[
+      pontoAtual
+    ] =
+      pontos[
         pontoAtual
       ];
 
@@ -3508,54 +5752,69 @@ export function buscarRedeAMontante(
       pontoAtual
     );
 
+    const conexoes =
+      adjacencia[
+        pontoAtual
+      ] || [];
+
     for (
       const conexao of
-        topologia.adjacencia?.[
-          pontoAtual
-        ] || []
+      conexoes
     ) {
       const trechoId =
         normalizarId(
           conexao.trechoId
         );
 
+      if (!trechoId) {
+        continue;
+      }
+
       const trecho =
-        topologia.trechos?.[
+        trechos[
           trechoId
         ];
 
-      if (
-        !trechoId ||
-        !trecho
-      ) {
+      if (!trecho) {
         continue;
       }
 
       let pontoMontante =
         null;
 
+      let podeSubir =
+        true;
+
       if (
         trecho.pontoMontante &&
         trecho.pontoJusante
       ) {
-        if (
+        const jusante =
           normalizarId(
             trecho.pontoJusante
-          ) !==
-            pontoAtual
-        ) {
-          continue;
-        }
+          );
 
         pontoMontante =
           normalizarId(
             trecho.pontoMontante
           );
+
+        if (
+          jusante !==
+          pontoAtual
+        ) {
+          podeSubir =
+            false;
+        }
       } else {
         pontoMontante =
           normalizarId(
             conexao.pontoDestino
           );
+      }
+
+      if (!podeSubir) {
+        continue;
       }
 
       if (
@@ -3575,7 +5834,9 @@ export function buscarRedeAMontante(
           trechoId
         );
 
-        trechos[trechoId] =
+        trechosEncontrados[
+          trechoId
+        ] =
           trecho;
 
         ordemTrechos.push(
@@ -3599,9 +5860,11 @@ export function buscarRedeAMontante(
     pontoInicial:
       origem,
 
-    pontos,
+    pontos:
+      pontosEncontrados,
 
-    trechos,
+    trechos:
+      trechosEncontrados,
 
     ordemPontos,
 
@@ -3611,7 +5874,7 @@ export function buscarRedeAMontante(
       ordemPontos.length,
 
     quantidadeTrechos:
-      ordemTrechos.length
+      ordemTrechos.length,
   };
 }
 
@@ -3625,6 +5888,31 @@ export function buscarCaminho(
   pontoInicial,
   pontoFinal
 ) {
+  if (!topologia) {
+    return {
+      encontrado:
+        false,
+
+      pontoInicial:
+        null,
+
+      pontoFinal:
+        null,
+
+      pontos:
+        [],
+
+      trechos:
+        [],
+
+      distancia:
+        0,
+
+      motivo:
+        "Topologia não informada",
+    };
+  }
+
   const inicio =
     normalizarId(
       pontoInicial
@@ -3637,7 +5925,8 @@ export function buscarCaminho(
 
   if (!inicio || !fim) {
     return {
-      encontrado: false,
+      encontrado:
+        false,
 
       pontoInicial:
         inicio,
@@ -3645,24 +5934,89 @@ export function buscarCaminho(
       pontoFinal:
         fim,
 
-      pontos: [],
+      pontos:
+        [],
 
-      trechos: [],
+      trechos:
+        [],
 
-      distancia: 0,
+      distancia:
+        0,
 
       motivo:
-        "Ponto inicial ou final inválido"
+        "Ponto inicial ou final inválido",
+    };
+  }
+
+  const pontos =
+    topologia.pontos ||
+    {};
+
+  const trechos =
+    topologia.trechos ||
+    {};
+
+  const adjacencia =
+    topologia.adjacencia ||
+    {};
+
+  if (!pontos[inicio]) {
+    return {
+      encontrado:
+        false,
+
+      pontoInicial:
+        inicio,
+
+      pontoFinal:
+        fim,
+
+      pontos:
+        [],
+
+      trechos:
+        [],
+
+      distancia:
+        0,
+
+      motivo:
+        "Ponto inicial não encontrado",
+    };
+  }
+
+  if (!pontos[fim]) {
+    return {
+      encontrado:
+        false,
+
+      pontoInicial:
+        inicio,
+
+      pontoFinal:
+        fim,
+
+      pontos:
+        [],
+
+      trechos:
+        [],
+
+      distancia:
+        0,
+
+      motivo:
+        "Ponto final não encontrado",
     };
   }
 
   if (
-    !topologia?.pontos?.[
-      inicio
-    ]
+    inicio ===
+    fim
   ) {
     return {
-      encontrado: false,
+      encontrado:
+        true,
 
       pontoInicial:
         inicio,
@@ -3670,84 +6024,56 @@ export function buscarCaminho(
       pontoFinal:
         fim,
 
-      pontos: [],
+      pontos:
+        [
+          inicio,
+        ],
 
-      trechos: [],
+      trechos:
+        [],
 
-      distancia: 0,
+      distancia:
+        0,
 
       motivo:
-        "Ponto inicial não encontrado"
+        null,
     };
   }
 
-  if (
-    !topologia?.pontos?.[
-      fim
-    ]
-  ) {
-    return {
-      encontrado: false,
-
-      pontoInicial:
-        inicio,
-
-      pontoFinal:
-        fim,
-
-      pontos: [],
-
-      trechos: [],
-
-      distancia: 0,
-
-      motivo:
-        "Ponto final não encontrado"
-    };
-  }
-
-  if (inicio === fim) {
-    return {
-      encontrado: true,
-
-      pontoInicial:
-        inicio,
-
-      pontoFinal:
-        fim,
-
-      pontos: [inicio],
-
-      trechos: [],
-
-      distancia: 0,
-
-      motivo: null
-    };
-  }
-
-  const fila = [inicio];
+  const fila =
+    [
+      inicio,
+    ];
 
   const visitados =
-    new Set([inicio]);
+    new Set([
+      inicio,
+    ]);
 
-  const pontoAnterior = {};
-  const trechoAnterior = {};
+  const pontoAnterior =
+    {};
 
-  let encontrado = false;
+  const trechoAnterior =
+    {};
+
+  let encontrado =
+    false;
 
   while (
-    fila.length > 0 &&
-    !encontrado
+    fila.length >
+    0
   ) {
     const atual =
       fila.shift();
 
+    const conexoes =
+      adjacencia[
+        atual
+      ] || [];
+
     for (
       const conexao of
-        topologia.adjacencia?.[
-          atual
-        ] || []
+      conexoes
     ) {
       const destino =
         normalizarId(
@@ -3761,10 +6087,20 @@ export function buscarCaminho(
 
       if (
         !destino ||
-        !trechoId ||
-        !topologia.trechos?.[
+        !trechoId
+      ) {
+        continue;
+      }
+
+      if (
+        !trechos[
           trechoId
-        ] ||
+        ]
+      ) {
+        continue;
+      }
+
+      if (
         visitados.has(
           destino
         )
@@ -3776,16 +6112,23 @@ export function buscarCaminho(
         destino
       );
 
-      pontoAnterior[destino] =
+      pontoAnterior[
+        destino
+      ] =
         atual;
 
-      trechoAnterior[destino] =
+      trechoAnterior[
+        destino
+      ] =
         trechoId;
 
       if (
-        destino === fim
+        destino ===
+        fim
       ) {
-        encontrado = true;
+        encontrado =
+          true;
+
         break;
       }
 
@@ -3793,11 +6136,18 @@ export function buscarCaminho(
         destino
       );
     }
+
+    if (
+      encontrado
+    ) {
+      break;
+    }
   }
 
   if (!encontrado) {
     return {
-      encontrado: false,
+      encontrado:
+        false,
 
       pontoInicial:
         inicio,
@@ -3805,42 +6155,46 @@ export function buscarCaminho(
       pontoFinal:
         fim,
 
-      pontos: [],
+      pontos:
+        [],
 
-      trechos: [],
+      trechos:
+        [],
 
-      distancia: 0,
+      distancia:
+        0,
 
       motivo:
-        "Não existe caminho entre os pontos informados"
+        "Não existe caminho entre os pontos informados",
     };
   }
 
-  const pontos = [];
-  const trechos = [];
+  const caminhoPontos =
+    [];
 
-  let atual = fim;
-  let distancia = 0;
+  const caminhoTrechos =
+    [];
+
+  let atual =
+    fim;
 
   while (
-    atual !== inicio
+    atual !==
+    inicio
   ) {
-    pontos.push(atual);
+    caminhoPontos.push(
+      atual
+    );
 
     const trechoId =
-      trechoAnterior[atual];
+      trechoAnterior[
+        atual
+      ];
 
     if (trechoId) {
-      trechos.push(
+      caminhoTrechos.push(
         trechoId
       );
-
-      distancia +=
-        normalizarNumero(
-          topologia.trechos[
-            trechoId
-          ]?.comprimento
-        ) ?? 0;
     }
 
     atual =
@@ -3850,7 +6204,8 @@ export function buscarCaminho(
 
     if (!atual) {
       return {
-        encontrado: false,
+        encontrado:
+          false,
 
         pontoInicial:
           inicio,
@@ -3858,25 +6213,55 @@ export function buscarCaminho(
         pontoFinal:
           fim,
 
-        pontos: [],
+        pontos:
+          [],
 
-        trechos: [],
+        trechos:
+          [],
 
-        distancia: 0,
+        distancia:
+          0,
 
         motivo:
-          "Falha ao reconstruir o caminho"
+          "Falha ao reconstruir o caminho",
       };
     }
   }
 
-  pontos.push(inicio);
+  caminhoPontos.push(
+    inicio
+  );
 
-  pontos.reverse();
-  trechos.reverse();
+  caminhoPontos.reverse();
+
+  caminhoTrechos.reverse();
+
+  let distancia =
+    0;
+
+  for (
+    const trechoId of
+    caminhoTrechos
+  ) {
+    const comprimento =
+      normalizarNumero(
+        trechos[
+          trechoId
+        ]?.comprimento
+      );
+
+    if (
+      comprimento !==
+      null
+    ) {
+      distancia +=
+        comprimento;
+    }
+  }
 
   return {
-    encontrado: true,
+    encontrado:
+      true,
 
     pontoInicial:
       inicio,
@@ -3884,25 +6269,28 @@ export function buscarCaminho(
     pontoFinal:
       fim,
 
-    pontos,
+    pontos:
+      caminhoPontos,
 
-    trechos,
+    trechos:
+      caminhoTrechos,
 
     distancia,
 
     quantidadePontos:
-      pontos.length,
+      caminhoPontos.length,
 
     quantidadeTrechos:
-      trechos.length,
+      caminhoTrechos.length,
 
-    motivo: null
+    motivo:
+      null,
   };
 }
 
 
 // ==========================================================
-// REDE A JUSANTE DO TRECHO
+// BUSCAR REDE A JUSANTE DE UM TRECHO
 // ==========================================================
 
 export function buscarRedeAJusanteDoTrecho(
@@ -3917,26 +6305,192 @@ export function buscarRedeAJusanteDoTrecho(
 
   if (!trecho) {
     return {
-      encontrado: false,
+      encontrado:
+        false,
 
-      pontos: {},
+      pontos:
+        {},
 
-      trechos: {},
+      trechos:
+        {},
 
-      ordemPontos: [],
+      ordemPontos:
+        [],
 
-      ordemTrechos: []
+      ordemTrechos:
+        [],
     };
   }
 
+  const pontoInicial =
+    normalizarId(
+      trecho.pontoFinal
+    );
+
   return buscarRedeAJusante(
     topologia,
-    trecho.pontoFinal,
+    pontoInicial,
     {
       respeitarOrientacao:
-        true
+        true,
     }
   );
+}
+
+
+// ==========================================================
+// RESUMO DE PONTO
+// ==========================================================
+
+export function obterResumoPonto(
+  topologia,
+  pontoId
+) {
+  const ponto =
+    buscarPonto(
+      topologia,
+      pontoId
+    );
+
+  if (!ponto) {
+    return null;
+  }
+
+  const conexoes =
+    buscarConexoes(
+      topologia,
+      ponto.id
+    );
+
+  const pqts =
+    buscarPQTDoPonto(
+      topologia,
+      ponto.id
+    );
+
+  const transformadores =
+    buscarTransformadoresDoPonto(
+      topologia,
+      ponto.id
+    );
+
+  const equipamentos =
+    [];
+
+  for (
+    const pqt of
+    pqts
+  ) {
+    for (
+      const equipamento of
+      pqt?.equipamentos ||
+      []
+    ) {
+      equipamentos.push(
+        equipamento
+      );
+    }
+  }
+
+  for (
+    const transformador of
+    transformadores
+  ) {
+    for (
+      const equipamento of
+      transformador?.equipamentos ||
+      []
+    ) {
+      equipamentos.push(
+        equipamento
+      );
+    }
+  }
+
+  return {
+    ponto,
+
+    quantidadeConexoes:
+      conexoes.length,
+
+    conexoes,
+
+    quantidadePQT:
+      pqts.length,
+
+    pqts,
+
+    quantidadeTransformadores:
+      transformadores.length,
+
+    transformadores,
+
+    quantidadeEquipamentos:
+      equipamentos.length,
+
+    equipamentos,
+  };
+}
+
+
+// ==========================================================
+// RESUMO DE TRECHO
+// ==========================================================
+
+export function obterResumoTrecho(
+  topologia,
+  trechoId
+) {
+  const trecho =
+    buscarTrechoBDGD(
+      topologia,
+      trechoId
+    );
+
+  if (!trecho) {
+    return null;
+  }
+
+  const pontoInicial =
+    buscarPonto(
+      topologia,
+      trecho.pontoInicial
+    );
+
+  const pontoFinal =
+    buscarPonto(
+      topologia,
+      trecho.pontoFinal
+    );
+
+  return {
+    trecho,
+
+    pontoInicial,
+
+    pontoFinal,
+
+    comprimento:
+      trecho.comprimento,
+
+    alimentador:
+      trecho.alimentador,
+
+    circuito:
+      trecho.circuito,
+
+    subestacao:
+      trecho.subestacao,
+
+    fases:
+      trecho.fases,
+
+    condutor:
+      trecho.condutor,
+
+    situacao:
+      trecho.situacao,
+  };
 }
 
 
@@ -3978,7 +6532,7 @@ export function criarTopologiaBDGD(
     );
 
   // ========================================================
-  // DETECTAR ARQUIVO COMBINADO
+  // ARQUIVO COMBINADO
   // ========================================================
 
   let unsemtReal =
@@ -3987,11 +6541,14 @@ export function criarTopologiaBDGD(
   let untrmtReal =
     untrmt;
 
-  const arquivoCombinado =
+  const temTransformadoresNoMesmoArquivo =
     (
-      unsemt?.features || []
+      unsemt?.features ||
+      []
     ).some(
-      feature => {
+      (
+        feature
+      ) => {
         const p =
           feature?.properties ||
           {};
@@ -4001,7 +6558,7 @@ export function criarTopologiaBDGD(
             p.tipoEquipamento
           );
 
-        const tipoUnidade =
+        const tipUnid =
           normalizarTexto(
             p.TIP_UNID ??
             p.tipoUnidade
@@ -4010,13 +6567,15 @@ export function criarTopologiaBDGD(
         return (
           tipo ===
             "TRANSFORMADOR" ||
-          tipoUnidade ===
+          tipUnid ===
             "38"
         );
       }
     );
 
-  if (arquivoCombinado) {
+  if (
+    temTransformadoresNoMesmoArquivo
+  ) {
     const separados =
       separarEquipamentosCombinados(
         unsemt
@@ -4033,13 +6592,19 @@ export function criarTopologiaBDGD(
     );
 
     console.log(
-      "UNSEMT:",
-      separados.unsemt.features.length
+      "UNSEMT no arquivo:",
+      separados
+        .unsemt
+        .features
+        .length
     );
 
     console.log(
-      "UNTRMT:",
-      separados.untrmt.features.length
+      "UNTRMT no arquivo:",
+      separados
+        .untrmt
+        .features
+        .length
     );
   }
 
@@ -4071,12 +6636,16 @@ export function criarTopologiaBDGD(
   // UNTRMT
   // ========================================================
 
-  const transformadoresMT =
+  const mapaUnidadesTRMT =
     criarMapaUnidadesTransformadores(
       untrmtReal,
       pontos,
       "UNTRMT"
     );
+
+  // ========================================================
+  // EQTRMT
+  // ========================================================
 
   const mapaEqTRMT =
     criarMapaEquipamentosTransformadores(
@@ -4085,7 +6654,7 @@ export function criarTopologiaBDGD(
     );
 
   associarEquipamentosTransformadores(
-    transformadoresMT,
+    mapaUnidadesTRMT,
     mapaEqTRMT.porUnidade
   );
 
@@ -4093,12 +6662,16 @@ export function criarTopologiaBDGD(
   // UNTRAT
   // ========================================================
 
-  const transformadoresAT =
+  const mapaUnidadesTRAT =
     criarMapaUnidadesTransformadores(
       untrat,
       pontos,
       "UNTRAT"
     );
+
+  // ========================================================
+  // EQTRAT
+  // ========================================================
 
   const mapaEqTRAT =
     criarMapaEquipamentosTransformadores(
@@ -4107,7 +6680,7 @@ export function criarTopologiaBDGD(
     );
 
   associarEquipamentosTransformadores(
-    transformadoresAT,
+    mapaUnidadesTRAT,
     mapaEqTRAT.porUnidade
   );
 
@@ -4115,13 +6688,14 @@ export function criarTopologiaBDGD(
   // TRANSFORMADORES
   // ========================================================
 
-  const transformadores = {
-    ...transformadoresMT,
-    ...transformadoresAT
-  };
+  const transformadores =
+    {
+      ...mapaUnidadesTRMT,
+      ...mapaUnidadesTRAT,
+    };
 
   // ========================================================
-  // EQUIPAMENTOS COMPLEMENTARES
+  // EQUIPAMENTOS TRANSFORMADORES
   // ========================================================
 
   const equipamentosTransformadores =
@@ -4130,99 +6704,59 @@ export function criarTopologiaBDGD(
       mapaEqTRAT
     );
 
-  const mapaEquipamentosComplementares =
+  // ========================================================
+  // EQUIPAMENTOS TOTAIS
+  // ========================================================
+
+  const mapaEquipamentosTotal =
     combinarMapasEquipamentos(
       mapaEqse,
       equipamentosTransformadores
     );
 
   // ========================================================
-  // CATÁLOGO OPERACIONAL
-  // ========================================================
+  // IMPORTANTE:
+  // SUBSTITUIR OBJETOS EQSE PELOS OBJETOS FÍSICOS
+  // ENRIQUECIDOS DAS UNIDADES QUANDO EXISTIREM.
   //
-  // ESTA É A CORREÇÃO PRINCIPAL.
+  // Isso garante que:
   //
-  // Agora o catálogo `equipamentos` é construído a partir
-  // das unidades operacionais.
+  // topologia.equipamentos["G02722"]
   //
-  // Assim uma UNSEMT continua sendo encontrada mesmo quando
-  // seu EQSE complementar não foi carregado ou associado.
-  //
+  // tenha PAC, PONNOT e coordenadas.
   // ========================================================
-
-  const catalogoEquipamentosOperacionais =
-    criarCatalogoEquipamentosOperacionais(
-      unidadesSeccionadoras,
-      transformadores
-    );
-
-  // ========================================================
-  // EQUIPAMENTOS TOTAIS
-  // ========================================================
-
-  const equipamentos =
-    {
-      ...catalogoEquipamentosOperacionais.equipamentos,
-
-      ...mapaEquipamentosComplementares.equipamentos
-    };
-
-  // ========================================================
-  // POR UNIDADE
-  // ========================================================
-
-  const equipamentosPorUnidade =
-    {
-      ...catalogoEquipamentosOperacionais.porUnidade
-    };
-
-  // Adiciona complementos mesmo quando não houve catálogo
-  // operacional correspondente.
 
   for (
-    const [
-      unidadeId,
-      lista
-    ] of Object.entries(
-      mapaEquipamentosComplementares.porUnidade ||
-      {}
+    const unidade of
+    Object.values(
+      unidadesSeccionadoras
     )
   ) {
-    if (
-      !equipamentosPorUnidade[
-        unidadeId
-      ]
-    ) {
-      equipamentosPorUnidade[
-        unidadeId
-      ] = [];
-    }
-
-    const idsExistentes =
-      new Set(
-        equipamentosPorUnidade[
-          unidadeId
-        ].map(
-          equipamento =>
-            equipamento?.id
-        )
-      );
+    const equipamentosDaUnidade =
+      Array.isArray(
+        unidade.equipamentos
+      )
+        ? unidade.equipamentos
+        : [];
 
     for (
       const equipamento of
-        lista
+      equipamentosDaUnidade
     ) {
-      if (
-        !idsExistentes.has(
-          equipamento.id
-        )
-      ) {
-        equipamentosPorUnidade[
-          unidadeId
-        ].push(
-          equipamento
+      const equipamentoId =
+        normalizarId(
+          equipamento?.id
         );
+
+      if (!equipamentoId) {
+        continue;
       }
+
+      mapaEquipamentosTotal
+        .equipamentos[
+          equipamentoId
+        ] =
+        equipamento;
     }
   }
 
@@ -4240,11 +6774,6 @@ export function criarTopologiaBDGD(
       transformadores
     );
 
-  const indiceAlimentadores =
-    criarIndiceAlimentadores(
-      trechos
-    );
-
   // ========================================================
   // ADJACÊNCIA
   // ========================================================
@@ -4256,11 +6785,75 @@ export function criarTopologiaBDGD(
     );
 
   // ========================================================
-  // DIAGNÓSTICOS
+  // DIAGNÓSTICO DE CONECTIVIDADE
+  // ========================================================
+
+  const diagnosticoConectividade =
+    {
+      trechosComPontoInicial:
+        Object.values(
+          trechos
+        ).filter(
+          (
+            trecho
+          ) =>
+            !!trecho.pontoInicial
+        ).length,
+
+      trechosComPontoFinal:
+        Object.values(
+          trechos
+        ).filter(
+          (
+            trecho
+          ) =>
+            !!trecho.pontoFinal
+        ).length,
+
+      pontosResolvidosPorCoordenada:
+        Object.values(
+          trechos
+        ).filter(
+          (
+            trecho
+          ) =>
+            trecho
+              .resolucaoPontoInicial ===
+              "COORDENADA_PONNOT_REAL" ||
+            trecho
+              .resolucaoPontoFinal ===
+              "COORDENADA_PONNOT_REAL"
+        ).length,
+
+      trechosComExtremosNaoEncontrados:
+        Object.values(
+          trechos
+        ).filter(
+          (
+            trecho
+          ) =>
+            !trecho.pontoInicial ||
+            !trecho.pontoFinal ||
+            !pontos[
+              trecho.pontoInicial
+            ] ||
+            !pontos[
+              trecho.pontoFinal
+            ]
+        ).length,
+    };
+
+  // ========================================================
+  // CLASSIFICAÇÃO
   // ========================================================
 
   const terminais =
     identificarTerminais(
+      adjacencia
+    );
+
+  const derivacoes =
+    identificarDerivacoes(
       adjacencia
     );
 
@@ -4269,10 +6862,9 @@ export function criarTopologiaBDGD(
       adjacencia
     );
 
-  const derivacoes =
-    identificarDerivacoes(
-      adjacencia
-    );
+  // ========================================================
+  // VALIDAÇÃO
+  // ========================================================
 
   const problemas =
     identificarTrechosSemPontos(
@@ -4292,28 +6884,78 @@ export function criarTopologiaBDGD(
     );
 
   // ========================================================
-  // INFORMAÇÕES DO CIRCUITO
+  // INFORMAÇÕES
   // ========================================================
 
   const alimentador =
-    descobrirMaisFrequente(
-      trechos,
-      "alimentador"
+    descobrirAlimentador(
+      trechos
     );
 
   const circuito =
-    descobrirMaisFrequente(
-      trechos,
-      "circuito"
+    descobrirCircuito(
+      trechos
     );
 
   const primeiroTrecho =
     Object.values(
       trechos
-    )[0] || null;
+    )[0] ||
+    null;
 
   // ========================================================
-  // LISTA UNSEMT
+  // ÍNDICES OPERACIONAIS
+  // ========================================================
+
+  const indicePontosNormalizados =
+    criarIndicePontosNormalizados(
+      pontos
+    );
+
+  const indiceAlimentadores =
+    criarIndiceAlimentadores(
+      trechos
+    );
+
+  const mapaCircuitoAlimentador =
+    criarMapaCircuitoAlimentador(
+      indiceAlimentadores
+    );
+
+  const indicePontosPorAlimentador =
+    criarIndicePontosPorAlimentador(
+      trechos
+    );
+
+  // ========================================================
+  // INTERLIGAÇÕES
+  // ========================================================
+
+  let interligacoes =
+    descobrirInterligacoes(
+      unsemtReal,
+      pontos,
+      indiceAlimentadores,
+      mapaCircuitoAlimentador
+    );
+
+  // ========================================================
+  // ENRIQUECER INTERLIGAÇÕES
+  // ========================================================
+
+  interligacoes =
+    enriquecerInterligacoesComEquipamentos(
+      interligacoes,
+      unidadesSeccionadoras
+    );
+
+  const indiceInterligacoes =
+    criarIndiceInterligacoes(
+      interligacoes
+    );
+
+  // ========================================================
+  // LISTAS
   // ========================================================
 
   const unidadesLista =
@@ -4325,34 +6967,96 @@ export function criarTopologiaBDGD(
   // CONTAGEM
   // ========================================================
 
-  const contagem = {
-    CHAVE_LAMINA: 0,
+  const quantidadeChavesLamina =
+    unidadesLista.filter(
+      (
+        unidade
+      ) =>
+        unidade.tipoEquipamento ===
+        "CHAVE_LAMINA"
+    ).length;
 
-    CHAVE_FUSIVEL: 0,
+  const quantidadeChavesFusiveis =
+    unidadesLista.filter(
+      (
+        unidade
+      ) =>
+        unidade.tipoEquipamento ===
+        "CHAVE_FUSIVEL"
+    ).length;
 
-    CHAVE_SECCIONADORA: 0,
+  const quantidadeChavesSeccionadoras =
+    unidadesLista.filter(
+      (
+        unidade
+      ) =>
+        unidade.tipoEquipamento ===
+        "CHAVE_SECCIONADORA"
+    ).length;
 
-    RELIGADOR: 0,
+  const quantidadeReligadores =
+    unidadesLista.filter(
+      (
+        unidade
+      ) =>
+        unidade.tipoEquipamento ===
+        "RELIGADOR"
+    ).length;
 
-    OUTRO: 0
-  };
+  const quantidadeOutros =
+    unidadesLista.filter(
+      (
+        unidade
+      ) =>
+        unidade.tipoEquipamento ===
+        "OUTRO"
+    ).length;
 
-  for (
-    const unidade of
-      unidadesLista
-  ) {
-    if (
-      contagem[
-        unidade.tipoEquipamento
-      ] !== undefined
-    ) {
-      contagem[
-        unidade.tipoEquipamento
-      ] += 1;
-    } else {
-      contagem.OUTRO += 1;
-    }
-  }
+  const quantidadeTransformadores =
+    Object.keys(
+      transformadores
+    ).length;
+
+  // ========================================================
+  // DIAGNÓSTICO EQUIPAMENTOS
+  // ========================================================
+
+  const equipamentosComPAC =
+    Object.values(
+      mapaEquipamentosTotal.equipamentos
+    ).filter(
+      (
+        equipamento
+      ) =>
+        !!(
+          equipamento?.pac1 ||
+          equipamento?.pac2
+        )
+    );
+
+  const equipamentosComCoordenadas =
+    Object.values(
+      mapaEquipamentosTotal.equipamentos
+    ).filter(
+      (
+        equipamento
+      ) =>
+        normalizarNumero(
+          equipamento?.latitude
+        ) !== null &&
+        normalizarNumero(
+          equipamento?.longitude
+        ) !== null
+    );
+
+  const unidadesUNSEMTSemPAC =
+    unidadesLista.filter(
+      (
+        unidade
+      ) =>
+        !unidade.pac1 &&
+        !unidade.pac2
+    );
 
   // ========================================================
   // TOPOLOGIA FINAL
@@ -4374,23 +7078,26 @@ export function criarTopologiaBDGD(
       null,
 
     // ------------------------------------------------------
-    // ÍNDICES
-    // ------------------------------------------------------
-
-    indiceAlimentadores,
-
-    alimentadores:
-      Object.values(
-        indiceAlimentadores
-      ),
-
-    // ------------------------------------------------------
-    // DADOS PRINCIPAIS
+    // PONTOS
     // ------------------------------------------------------
 
     pontos,
 
+    listaPontos:
+      Object.values(
+        pontos
+      ),
+
+    // ------------------------------------------------------
+    // TRECHOS
+    // ------------------------------------------------------
+
     trechos,
+
+    listaTrechos:
+      Object.values(
+        trechos
+      ),
 
     // ------------------------------------------------------
     // UNSEMT
@@ -4405,54 +7112,21 @@ export function criarTopologiaBDGD(
       unidadesSeccionadoras,
 
     // ------------------------------------------------------
-    // EQSE ORIGINAL
+    // EQSE
     // ------------------------------------------------------
 
-    eqse:
+    eqse,
 
-      eqse || {
-        type:
-          "FeatureCollection",
+    equipamentos:
+      mapaEquipamentosTotal.equipamentos,
 
-        features: []
-      },
+    listaEquipamentos:
+      Object.values(
+        mapaEquipamentosTotal.equipamentos
+      ),
 
-    equipamentosEQSE:
-      mapaEqse.equipamentos,
-
-    equipamentosEQSEPorUnidade:
-      mapaEqse.porUnidade,
-
-    // ------------------------------------------------------
-    // EQUIPAMENTOS
-    // ------------------------------------------------------
-    //
-    // `equipamentos` agora contém:
-    //
-    // 1. equipamento operacional da UNSEMT/UNTRMT/UNTRAT
-    // 2. registros complementares EQSE/EQTR
-    //
-    // ------------------------------------------------------
-
-    equipamentos,
-
-    equipamentosPorUnidade,
-
-    equipamentosOperacionais:
-      catalogoEquipamentosOperacionais
-        .equipamentos,
-
-    equipamentosOperacionaisPorUnidade:
-      catalogoEquipamentosOperacionais
-        .porUnidade,
-
-    equipamentosComplementares:
-      mapaEquipamentosComplementares
-        .equipamentos,
-
-    equipamentosComplementaresPorUnidade:
-      mapaEquipamentosComplementares
-        .porUnidade,
+    equipamentosPorUnidade:
+      mapaEquipamentosTotal.porUnidade,
 
     // ------------------------------------------------------
     // ÍNDICES
@@ -4460,49 +7134,60 @@ export function criarTopologiaBDGD(
 
     pqtPorPonto,
 
+    indicePontosNormalizados,
+
+    indiceAlimentadores,
+
+    mapaCircuitoAlimentador,
+
+    indicePontosPorAlimentador,
+
     // ------------------------------------------------------
     // TRANSFORMADORES
     // ------------------------------------------------------
 
     transformadores,
 
-    transformadoresMT,
+    listaTransformadores:
+      Object.values(
+        transformadores
+      ),
 
-    transformadoresAT,
+    transformadoresMT:
+      mapaUnidadesTRMT,
+
+    transformadoresAT:
+      mapaUnidadesTRAT,
 
     equipamentosTransformadores:
-      equipamentosTransformadores
-        .equipamentos,
+      equipamentosTransformadores.equipamentos,
 
     equipamentosTransformadoresPorUnidade:
-      equipamentosTransformadores
-        .porUnidade,
-
-    // ------------------------------------------------------
-    // ARQUIVOS ORIGINAIS
-    // ------------------------------------------------------
-
-    untrmt:
-      untrmtReal,
-
-    untrat:
-      untrat,
-
-    eqtrmt:
-      eqtrmt || {
-        type:
-          "FeatureCollection",
-        features: []
-      },
-
-    eqtrat:
-      eqtrat || {
-        type:
-          "FeatureCollection",
-        features: []
-      },
+      equipamentosTransformadores.porUnidade,
 
     transformadoresPorPonto,
+
+    // ------------------------------------------------------
+    // INTERLIGAÇÕES
+    // ------------------------------------------------------
+
+    interligacoes,
+
+    indiceInterligacoes,
+
+    // ------------------------------------------------------
+    // ALIMENTADORES
+    // ------------------------------------------------------
+
+    alimentadores:
+      Object.keys(
+        indiceAlimentadores
+      ),
+
+    listaAlimentadores:
+      Object.values(
+        indiceAlimentadores
+      ),
 
     // ------------------------------------------------------
     // REDE
@@ -4533,6 +7218,90 @@ export function criarTopologiaBDGD(
       null,
 
     // ------------------------------------------------------
+    // DIAGNÓSTICO
+    // ------------------------------------------------------
+
+    diagnosticoConectividade,
+
+    diagnosticoEquipamentos: {
+      total:
+        Object.keys(
+          mapaEquipamentosTotal.equipamentos
+        ).length,
+
+      comPAC:
+        equipamentosComPAC.length,
+
+      semPAC:
+        Object.keys(
+          mapaEquipamentosTotal.equipamentos
+        ).length -
+        equipamentosComPAC.length,
+
+      comCoordenadas:
+        equipamentosComCoordenadas.length,
+
+      semCoordenadas:
+        Object.keys(
+          mapaEquipamentosTotal.equipamentos
+        ).length -
+        equipamentosComCoordenadas.length,
+
+      unidadesUNSEMT:
+        unidadesLista.length,
+
+      unidadesUNSEMTComPAC:
+        unidadesLista.filter(
+          (
+            unidade
+          ) =>
+            !!(
+              unidade.pac1 ||
+              unidade.pac2
+            )
+        ).length,
+
+      unidadesUNSEMTSemPAC:
+        unidadesUNSEMTSemPAC.length,
+
+      amostrasSemPAC:
+        unidadesUNSEMTSemPAC
+          .slice(
+            0,
+            20
+          )
+          .map(
+            (
+              unidade
+            ) => ({
+              id:
+                unidade.id,
+
+              tipoUnidade:
+                unidade.tipoUnidade,
+
+              tipoEquipamento:
+                unidade.tipoEquipamento,
+
+              propriedades:
+                {
+                  PAC_1:
+                    unidade.pac1Original,
+
+                  PAC_2:
+                    unidade.pac2Original,
+
+                  CTMT:
+                    unidade.circuito,
+
+                  alimentador:
+                    unidade.alimentador,
+                },
+            })
+          ),
+    },
+
+    // ------------------------------------------------------
     // RESUMO
     // ------------------------------------------------------
 
@@ -4555,62 +7324,68 @@ export function criarTopologiaBDGD(
 
       unidadesComEquipamento:
         unidadesLista.filter(
-          unidade =>
+          (
+            unidade
+          ) =>
             unidade.temEquipamento
         ).length,
 
       equipamentos:
         Object.keys(
-          catalogoEquipamentosOperacionais
-            .equipamentos
+          mapaEquipamentosTotal.equipamentos
         ).length,
 
-      equipamentosTotais:
+      equipamentosEQSE:
         Object.keys(
-          equipamentos
-        ).length,
-
-      equipamentosComplementares:
-        Object.keys(
-          mapaEquipamentosComplementares
-            .equipamentos
+          mapaEqse.equipamentos
         ).length,
 
       equipamentosTransformadores:
         Object.keys(
-          equipamentosTransformadores
-            .equipamentos
+          equipamentosTransformadores.equipamentos
         ).length,
 
       transformadores:
-        Object.keys(
-          transformadores
-        ).length,
+        quantidadeTransformadores,
 
       transformadoresMT:
         Object.keys(
-          transformadoresMT
+          mapaUnidadesTRMT
         ).length,
 
       transformadoresAT:
         Object.keys(
-          transformadoresAT
+          mapaUnidadesTRAT
         ).length,
 
+      interligacoes:
+        interligacoes.length,
+
+      equipamentosTotais:
+        Object.keys(
+          mapaEquipamentosTotal.equipamentos
+        ).length,
+
+      equipamentosComPAC:
+        equipamentosComPAC.length,
+
+      equipamentosComCoordenadas:
+        equipamentosComCoordenadas.length,
+
       chavesLamina:
-        contagem.CHAVE_LAMINA,
+        quantidadeChavesLamina,
 
       chavesFusiveis:
-        contagem.CHAVE_FUSIVEL,
+        quantidadeChavesFusiveis,
 
       chavesSeccionadoras:
-        contagem.CHAVE_SECCIONADORA,
+        quantidadeChavesSeccionadoras,
 
       religadores:
-        contagem.RELIGADOR,
+        quantidadeReligadores,
 
       outros:
-        contagem.OUTRO,
+        quantidadeOutros,
 
       terminais:
         terminais.length,
@@ -4628,12 +7403,12 @@ export function criarTopologiaBDGD(
         pontosIsolados.length,
 
       trechosInvalidos:
-        trechosInvalidos.length
-    }
+        trechosInvalidos.length,
+    },
   };
 
   // ========================================================
-  // ORIGEM
+  // ORIGEM AUTOMÁTICA
   // ========================================================
 
   const origem =
@@ -4641,7 +7416,9 @@ export function criarTopologiaBDGD(
       topologia
     );
 
-  if (origem?.pontoId) {
+  if (
+    origem?.pontoId
+  ) {
     topologia.origemAutomatica =
       origem;
 
@@ -4653,11 +7430,19 @@ export function criarTopologiaBDGD(
   }
 
   // ========================================================
-  // LOGS
+  // LOG PRINCIPAL
   // ========================================================
 
   console.log(
+    "=================================================="
+  );
+
+  console.log(
     "⚡ TOPOLOGIA BDGD CRIADA"
+  );
+
+  console.log(
+    "=================================================="
   );
 
   console.log(
@@ -4691,35 +7476,413 @@ export function criarTopologiaBDGD(
   );
 
   console.log(
-    "Equipamentos operacionais:",
-    topologia.resumo.equipamentos
+    "UNSEMT com EQSE:",
+    topologia.resumo.unidadesComEquipamento
   );
 
   console.log(
-    "Equipamentos totais:",
-    topologia.resumo.equipamentosTotais
+    "--------------------------------------------------"
   );
 
   console.log(
-    "EQSE:",
-    Object.keys(
-      mapaEqse.equipamentos
-    ).length
+    "CHAVES LÂMINA:",
+    topologia.resumo.chavesLamina
   );
 
   console.log(
-    "Transformadores:",
+    "CHAVES FUSÍVEIS:",
+    topologia.resumo.chavesFusiveis
+  );
+
+  console.log(
+    "CHAVES SECCIONADORAS:",
+    topologia.resumo.chavesSeccionadoras
+  );
+
+  console.log(
+    "RELIGADORES:",
+    topologia.resumo.religadores
+  );
+
+  console.log(
+    "OUTROS:",
+    topologia.resumo.outros
+  );
+
+  console.log(
+    "--------------------------------------------------"
+  );
+
+  console.log(
+    "TRANSFORMADORES:",
     topologia.resumo.transformadores
   );
 
   console.log(
-    "Alimentadores:",
-    Object.keys(
-      indiceAlimentadores
-    )
+    "TRANSFORMADORES MT:",
+    topologia.resumo.transformadoresMT
   );
 
+  console.log(
+    "TRANSFORMADORES AT:",
+    topologia.resumo.transformadoresAT
+  );
+
+  console.log(
+    "EQ TRANSFORMADORES:",
+    topologia.resumo.equipamentosTransformadores
+  );
+
+  console.log(
+    "--------------------------------------------------"
+  );
+
+  console.log(
+    "INTERLIGAÇÕES:",
+    topologia.resumo.interligacoes
+  );
+
+  console.log(
+    "ALIMENTADORES:",
+    topologia.alimentadores
+  );
+
+  console.log(
+    "--------------------------------------------------"
+  );
+
+  console.log(
+    "EQUIPAMENTOS COM PAC:",
+    topologia.diagnosticoEquipamentos.comPAC
+  );
+
+  console.log(
+    "EQUIPAMENTOS SEM PAC:",
+    topologia.diagnosticoEquipamentos.semPAC
+  );
+
+  console.log(
+    "EQUIPAMENTOS COM COORDENADAS:",
+    topologia.diagnosticoEquipamentos
+      .comCoordenadas
+  );
+
+  console.log(
+    "EQUIPAMENTOS SEM COORDENADAS:",
+    topologia.diagnosticoEquipamentos
+      .semCoordenadas
+  );
+
+  console.log(
+    "UNSEMT SEM PAC:",
+    topologia.diagnosticoEquipamentos
+      .unidadesUNSEMTSemPAC
+  );
+
+  console.log(
+    "--------------------------------------------------"
+  );
+
+  console.log(
+    "TERMINAIS:",
+    topologia.resumo.terminais
+  );
+
+  console.log(
+    "PASSAGENS:",
+    topologia.resumo.passagens
+  );
+
+  console.log(
+    "DERIVAÇÕES:",
+    topologia.resumo.derivacoes
+  );
+
+  console.log(
+    "PROBLEMAS:",
+    topologia.resumo.problemas
+  );
+
+  console.log(
+    "PONTOS ISOLADOS:",
+    topologia.resumo.pontosIsolados
+  );
+
+  console.log(
+    "TRECHOS INVÁLIDOS:",
+    topologia.resumo.trechosInvalidos
+  );
+
+  console.log(
+    "--------------------------------------------------"
+  );
+
+  console.log(
+    "DIAGNÓSTICO CONECTIVIDADE:",
+    diagnosticoConectividade
+  );
+
+  if (
+    topologia.origemAutomatica
+  ) {
+    console.log(
+      "ORIGEM AUTOMÁTICA:",
+      topologia.origemAutomatica
+    );
+  }
+
+  if (
+    topologia.orientacaoEletrica
+  ) {
+    console.log(
+      "PONTOS ORIENTADOS:",
+      topologia.orientacaoEletrica
+        .quantidadePontos
+    );
+
+    console.log(
+      "TRECHOS ORIENTADOS:",
+      topologia.orientacaoEletrica
+        .quantidadeTrechos
+    );
+
+    console.log(
+      "PONTOS NÃO ORIENTADOS:",
+      topologia.orientacaoEletrica
+        .quantidadePontosNaoOrientados
+    );
+
+    console.log(
+      "TRECHOS NÃO ORIENTADOS:",
+      topologia.orientacaoEletrica
+        .quantidadeTrechosNaoOrientados
+    );
+
+    console.log(
+      "ORIENTAÇÃO COMPLETA:",
+      topologia.orientacaoEletrica
+        .orientacaoCompleta
+    );
+  }
+
+  console.log(
+    "=================================================="
+  );
+
+  // ========================================================
+  // DIAGNÓSTICO ESPECÍFICO G02722
+  // ========================================================
+
+  const equipamentoG02722 =
+    topologia.equipamentos?.[
+      "G02722"
+    ] ||
+    topologia.unidadesSeccionadoras?.[
+      "G02722"
+    ] ||
+    null;
+
+  if (
+    equipamentoG02722
+  ) {
+    console.log(
+      "=================================================="
+    );
+
+    console.log(
+      "🔎 DIAGNÓSTICO G02722"
+    );
+
+    console.log(
+      "=================================================="
+    );
+
+    console.log(
+      "ID:",
+      equipamentoG02722.id
+    );
+
+    console.log(
+      "Tipo:",
+      equipamentoG02722.tipoEquipamento
+    );
+
+    console.log(
+      "TIP_UNID:",
+      equipamentoG02722.tipoUnidade
+    );
+
+    console.log(
+      "PAC_1:",
+      equipamentoG02722.pac1
+    );
+
+    console.log(
+      "PAC_2:",
+      equipamentoG02722.pac2
+    );
+
+    console.log(
+      "Ponto associado:",
+      equipamentoG02722.pontoAssociado
+    );
+
+    console.log(
+      "Latitude:",
+      equipamentoG02722.latitude
+    );
+
+    console.log(
+      "Longitude:",
+      equipamentoG02722.longitude
+    );
+
+    console.log(
+      "Origem coordenada:",
+      equipamentoG02722
+        .coordenadas
+        ?.origem
+    );
+
+    console.log(
+      "Alimentador:",
+      equipamentoG02722.alimentador
+    );
+
+    console.log(
+      "Circuito:",
+      equipamentoG02722.circuito
+    );
+
+    console.log(
+      "=================================================="
+    );
+  }
+
   return topologia;
+}
+
+
+// ==========================================================
+// ORIENTAR TOPOLOGIA MANUALMENTE
+// ==========================================================
+
+export function orientarTopologia(
+  topologia,
+  pontoOrigem
+) {
+  if (!topologia) {
+    return null;
+  }
+
+  console.log(
+    "⚡ Orientando rede eletricamente..."
+  );
+
+  const orientacao =
+    orientarRedeEletrica(
+      topologia,
+      pontoOrigem
+    );
+
+  topologia.orientacaoEletrica =
+    orientacao;
+
+  console.log(
+    "=================================================="
+  );
+
+  console.log(
+    "⚡ ORIENTAÇÃO ELÉTRICA"
+  );
+
+  console.log(
+    "=================================================="
+  );
+
+  console.log(
+    "Ponto origem:",
+    orientacao.pontoOrigem
+  );
+
+  console.log(
+    "Pontos orientados:",
+    orientacao.quantidadePontos
+  );
+
+  console.log(
+    "Trechos orientados:",
+    orientacao.quantidadeTrechos
+  );
+
+  console.log(
+    "Pontos não orientados:",
+    orientacao.quantidadePontosNaoOrientados
+  );
+
+  console.log(
+    "Trechos não orientados:",
+    orientacao.quantidadeTrechosNaoOrientados
+  );
+
+  console.log(
+    "Orientação completa:",
+    orientacao.orientacaoCompleta
+  );
+
+  console.log(
+    "=================================================="
+  );
+
+  return orientacao;
+}
+
+
+// ==========================================================
+// ORIENTAR AUTOMATICAMENTE
+// ==========================================================
+
+export function orientarTopologiaAutomaticamente(
+  topologia
+) {
+  if (!topologia) {
+    return null;
+  }
+
+  const origem =
+    encontrarOrigemAutomatica(
+      topologia
+    );
+
+  if (!origem) {
+    console.warn(
+      "⚠️ Origem automática não encontrada."
+    );
+
+    return null;
+  }
+
+  console.log(
+    "🧭 Origem automática:",
+    origem.pontoId
+  );
+
+  const orientacao =
+    orientarRedeEletrica(
+      topologia,
+      origem.pontoId
+    );
+
+  orientacao.origemAutomatica =
+    origem;
+
+  topologia.origemAutomatica =
+    origem;
+
+  topologia.orientacaoEletrica =
+    orientacao;
+
+  return orientacao;
 }
 
 
@@ -4741,7 +7904,9 @@ export function buscarPonto(
   }
 
   return (
-    topologia?.pontos?.[id] ||
+    topologia?.pontos?.[
+      id
+    ] ||
     null
   );
 }
@@ -4765,7 +7930,9 @@ export function buscarTrechoBDGD(
   }
 
   return (
-    topologia?.trechos?.[id] ||
+    topologia?.trechos?.[
+      id
+    ] ||
     null
   );
 }
@@ -4789,9 +7956,493 @@ export function buscarConexoes(
   }
 
   return (
-    topologia?.adjacencia?.[id] ||
+    topologia
+      ?.adjacencia
+      ?.[id] ||
     []
   );
+}
+
+
+// ==========================================================
+// BUSCAR TRECHOS CONECTADOS
+// ==========================================================
+
+export function buscarTrechosConectados(
+  topologia,
+  codId
+) {
+  const conexoes =
+    buscarConexoes(
+      topologia,
+      codId
+    );
+
+  return conexoes
+    .map(
+      (
+        conexao
+      ) =>
+        topologia?.trechos?.[
+          conexao.trechoId
+        ]
+    )
+    .filter(
+      Boolean
+    );
+}
+
+
+// ==========================================================
+// BUSCAR TRECHOS A PARTIR DO PONTO
+// ==========================================================
+
+export function buscarTrechosApartirDePonto(
+  topologia,
+  codId
+) {
+  const pontoId =
+    normalizarId(
+      codId
+    );
+
+  if (!pontoId) {
+    return [];
+  }
+
+  return buscarConexoes(
+    topologia,
+    pontoId
+  )
+    .map(
+      (
+        conexao
+      ) => {
+        const trecho =
+          topologia?.trechos?.[
+            conexao.trechoId
+          ];
+
+        if (!trecho) {
+          return null;
+        }
+
+        return {
+          ...trecho,
+
+          trechoId:
+            conexao.trechoId,
+
+          pontoOrigem:
+            pontoId,
+
+          pontoDestino:
+            conexao.pontoDestino,
+
+          sentido:
+            conexao.sentido,
+        };
+      }
+    )
+    .filter(
+      Boolean
+    );
+}
+
+
+// ==========================================================
+// BUSCAR TRECHOS DE SAÍDA
+// ==========================================================
+
+export function buscarTrechosDeSaida(
+  topologia,
+  codId
+) {
+  return buscarTrechosApartirDePonto(
+    topologia,
+    codId
+  ).filter(
+    (
+      item
+    ) =>
+      item.sentido ===
+      "SAIDA"
+  );
+}
+
+
+// ==========================================================
+// BUSCAR TRECHOS DE ENTRADA
+// ==========================================================
+
+export function buscarTrechosDeEntrada(
+  topologia,
+  codId
+) {
+  return buscarTrechosApartirDePonto(
+    topologia,
+    codId
+  ).filter(
+    (
+      item
+    ) =>
+      item.sentido ===
+      "ENTRADA"
+  );
+}
+
+
+// ==========================================================
+// PONTO TERMINAL
+// ==========================================================
+
+export function pontoEhTerminal(
+  topologia,
+  codId
+) {
+  const id =
+    normalizarId(
+      codId
+    );
+
+  if (!id) {
+    return false;
+  }
+
+  return (
+    topologia?.terminais?.includes(
+      id
+    ) ||
+    false
+  );
+}
+
+
+// ==========================================================
+// PONTO DERIVAÇÃO
+// ==========================================================
+
+export function pontoEhDerivacao(
+  topologia,
+  codId
+) {
+  const id =
+    normalizarId(
+      codId
+    );
+
+  if (!id) {
+    return false;
+  }
+
+  return (
+    topologia?.derivacoes?.some(
+      (
+        item
+      ) =>
+        item?.pontoId ===
+        id
+    ) ||
+    false
+  );
+}
+
+
+// ==========================================================
+// PONTO PASSAGEM
+// ==========================================================
+
+export function pontoEhPassagem(
+  topologia,
+  codId
+) {
+  const id =
+    normalizarId(
+      codId
+    );
+
+  if (!id) {
+    return false;
+  }
+
+  return (
+    topologia?.passagens?.includes(
+      id
+    ) ||
+    false
+  );
+}
+
+
+// ==========================================================
+// BUSCAR PONTO DESTINO
+// ==========================================================
+
+export function buscarPontoDestino(
+  topologia,
+  trechoId,
+  pontoOrigem
+) {
+  const trecho =
+    buscarTrechoBDGD(
+      topologia,
+      trechoId
+    );
+
+  if (!trecho) {
+    return null;
+  }
+
+  const origem =
+    normalizarId(
+      pontoOrigem
+    );
+
+  if (!origem) {
+    return null;
+  }
+
+  if (
+    normalizarId(
+      trecho.pontoInicial
+    ) ===
+    origem
+  ) {
+    return buscarPonto(
+      topologia,
+      trecho.pontoFinal
+    );
+  }
+
+  if (
+    normalizarId(
+      trecho.pontoFinal
+    ) ===
+    origem
+  ) {
+    return buscarPonto(
+      topologia,
+      trecho.pontoInicial
+    );
+  }
+
+  return null;
+}
+
+
+// ==========================================================
+// BUSCAR REDE CONECTADA
+// ==========================================================
+
+export function buscarRedeConectada(
+  topologia,
+  pontoInicial
+) {
+  if (!topologia) {
+    return {
+      pontoInicial:
+        null,
+
+      pontos:
+        {},
+
+      trechos:
+        {},
+
+      ordemPontos:
+        [],
+
+      ordemTrechos:
+        [],
+    };
+  }
+
+  const inicio =
+    normalizarId(
+      pontoInicial
+    );
+
+  if (!inicio) {
+    return {
+      pontoInicial:
+        null,
+
+      pontos:
+        {},
+
+      trechos:
+        {},
+
+      ordemPontos:
+        [],
+
+      ordemTrechos:
+        [],
+    };
+  }
+
+  const pontos =
+    topologia.pontos ||
+    {};
+
+  const trechos =
+    topologia.trechos ||
+    {};
+
+  const adjacencia =
+    topologia.adjacencia ||
+    {};
+
+  const pontosEncontrados =
+    {};
+
+  const trechosEncontrados =
+    {};
+
+  const ordemPontos =
+    [];
+
+  const ordemTrechos =
+    [];
+
+  const visitados =
+    new Set();
+
+  const trechosVisitados =
+    new Set();
+
+  const fila =
+    [
+      inicio,
+    ];
+
+  while (
+    fila.length >
+    0
+  ) {
+    const pontoAtual =
+      normalizarId(
+        fila.shift()
+      );
+
+    if (
+      !pontoAtual ||
+      visitados.has(
+        pontoAtual
+      )
+    ) {
+      continue;
+    }
+
+    visitados.add(
+      pontoAtual
+    );
+
+    const ponto =
+      pontos[
+        pontoAtual
+      ];
+
+    if (!ponto) {
+      continue;
+    }
+
+    pontosEncontrados[
+      pontoAtual
+    ] =
+      ponto;
+
+    ordemPontos.push(
+      pontoAtual
+    );
+
+    const conexoes =
+      adjacencia[
+        pontoAtual
+      ] || [];
+
+    for (
+      const conexao of
+      conexoes
+    ) {
+      const trechoId =
+        normalizarId(
+          conexao.trechoId
+        );
+
+      const destino =
+        normalizarId(
+          conexao.pontoDestino
+        );
+
+      if (
+        !trechoId ||
+        !destino
+      ) {
+        continue;
+      }
+
+      if (
+        !trechos[
+          trechoId
+        ]
+      ) {
+        continue;
+      }
+
+      if (
+        !trechosVisitados.has(
+          trechoId
+        )
+      ) {
+        trechosVisitados.add(
+          trechoId
+        );
+
+        trechosEncontrados[
+          trechoId
+        ] =
+          trechos[
+            trechoId
+          ];
+
+        ordemTrechos.push(
+          trechoId
+        );
+      }
+
+      if (
+        !visitados.has(
+          destino
+        )
+      ) {
+        fila.push(
+          destino
+        );
+      }
+    }
+  }
+
+  return {
+    pontoInicial:
+      inicio,
+
+    pontos:
+      pontosEncontrados,
+
+    trechos:
+      trechosEncontrados,
+
+    ordemPontos,
+
+    ordemTrechos,
+
+    quantidadePontos:
+      ordemPontos.length,
+
+    quantidadeTrechos:
+      ordemTrechos.length,
+  };
 }
 
 
@@ -4814,7 +8465,8 @@ export function buscarPQT(
 
   return (
     topologia
-      ?.unidadesSeccionadoras?.[id] ||
+      ?.unidadesSeccionadoras
+      ?.[id] ||
     null
   );
 }
@@ -4823,31 +8475,16 @@ export function buscarPQT(
 // ==========================================================
 // BUSCAR EQUIPAMENTOS DA PQT
 // ==========================================================
-//
-// Retorna primeiro o equipamento operacional da UNSEMT e,
-// depois, seus complementos EQSE.
-//
-// ==========================================================
 
 export function buscarEquipamentosDaPQT(
   topologia,
   pqtId
 ) {
-  const id =
-    normalizarId(
-      pqtId
-    );
-
-  if (!id) {
-    return [];
-  }
-
   return (
-    topologia
-      ?.equipamentosPorUnidade?.[id] ||
-    topologia
-      ?.unidadesSeccionadoras?.[id]
-      ?.equipamentos ||
+    buscarPQT(
+      topologia,
+      pqtId
+    )?.equipamentos ||
     []
   );
 }
@@ -4872,17 +8509,22 @@ export function buscarPQTDoPonto(
 
   return (
     topologia
-      ?.pqtPorPonto?.[id] ||
+      ?.pqtPorPonto
+      ?.[id] ||
     []
   )
     .map(
-      pqtId =>
+      (
+        pqtId
+      ) =>
         buscarPQT(
           topologia,
           pqtId
         )
     )
-    .filter(Boolean);
+    .filter(
+      Boolean
+    );
 }
 
 
@@ -4905,7 +8547,8 @@ export function buscarTransformador(
 
   return (
     topologia
-      ?.transformadores?.[id] ||
+      ?.transformadores
+      ?.[id] ||
     null
   );
 }
@@ -4928,19 +8571,25 @@ export function buscarTransformadoresDoPonto(
     return [];
   }
 
-  return (
+  const ids =
     topologia
-      ?.transformadoresPorPonto?.[id] ||
-    []
-  )
+      ?.transformadoresPorPonto
+      ?.[id] ||
+    [];
+
+  return ids
     .map(
-      transformadorId =>
+      (
+        transformadorId
+      ) =>
         buscarTransformador(
           topologia,
           transformadorId
         )
     )
-    .filter(Boolean);
+    .filter(
+      Boolean
+    );
 }
 
 
@@ -4952,28 +8601,18 @@ export function buscarEquipamentosDoTransformador(
   topologia,
   transformadorId
 ) {
-  const id =
-    normalizarId(
-      transformadorId
-    );
-
-  if (!id) {
-    return [];
-  }
-
   return (
-    topologia
-      ?.equipamentosPorUnidade?.[id] ||
-    topologia
-      ?.transformadores?.[id]
-      ?.equipamentos ||
+    buscarTransformador(
+      topologia,
+      transformadorId
+    )?.equipamentos ||
     []
   );
 }
 
 
 // ==========================================================
-// EQUIPAMENTO PRINCIPAL
+// BUSCAR EQUIPAMENTO PRINCIPAL DA PQT
 // ==========================================================
 
 export function buscarEquipamentoPrincipalPQT(
@@ -4991,7 +8630,7 @@ export function buscarEquipamentoPrincipalPQT(
 
 
 // ==========================================================
-// TIPO DE EQUIPAMENTO
+// BUSCAR TIPO DE EQUIPAMENTO
 // ==========================================================
 
 export function buscarTipoEquipamentoPQT(
@@ -5009,1237 +8648,112 @@ export function buscarTipoEquipamentoPQT(
 
 
 // ==========================================================
-// BUSCAR EQUIPAMENTO GLOBAL
-// ==========================================================
-//
-// Procura:
-// 1. equipamento operacional
-// 2. equipamento complementar
-// 3. PQT
-// 4. transformador
-//
+// BUSCAR INTERLIGAÇÕES
 // ==========================================================
 
-export function buscarEquipamentoBDGD(
-  topologia,
-  id
+export function buscarInterligacoes(
+  topologia
 ) {
-  const codigo =
-    normalizarId(id);
+  return Array.isArray(
+    topologia?.interligacoes
+  )
+    ? topologia.interligacoes
+    : [];
+}
 
-  if (!codigo) {
-    return null;
+
+export function buscarInterligacoesDoPonto(
+  topologia,
+  pontoId
+) {
+  const id =
+    normalizarIdBasePAC(
+      pontoId
+    );
+
+  if (!id) {
+    return [];
   }
 
   return (
     topologia
-      ?.equipamentos?.[codigo] ||
-
-    topologia
-      ?.equipamentosOperacionais?.[codigo] ||
-
-    topologia
-      ?.equipamentosComplementares?.[codigo] ||
-
-    topologia
-      ?.unidadesSeccionadoras?.[codigo] ||
-
-    topologia
-      ?.transformadores?.[codigo] ||
-
-    null
+      ?.indiceInterligacoes
+      ?.porPonto?.[
+        id
+      ] ||
+    []
   );
 }
 
 
-// ==========================================================
-// LISTAR ALIMENTADORES
-// ==========================================================
-
-export function listarAlimentadores(
-  topologia
-) {
-  return Object.values(
-    topologia?.indiceAlimentadores ||
-    {}
-  ).sort(
-    (a, b) =>
-      String(a.id).localeCompare(
-        String(b.id)
-      )
-  );
-}
-
-
-// ==========================================================
-// FILTRAR TOPOLOGIA POR ALIMENTADOR
-// ==========================================================
-
-export function filtrarTopologiaPorAlimentador(
+export function buscarInterligacoesAlimentador(
   topologia,
   alimentador
 ) {
-  if (!topologia) {
-    return null;
-  }
-
-  const alvo =
-    normalizarId(
+  const id =
+    normalizarAlimentador(
+      alimentador,
       alimentador
     );
 
-  if (
-    !alvo ||
-    normalizarTexto(alvo) === "TODOS"
-  ) {
-    return topologia;
-  }
-
-  const chaveAlvo =
-    criarChaveComparacao(
-      alvo
-    );
-
-  const registro =
-    Object.values(
-      topologia?.indiceAlimentadores ||
-      {}
-    ).find(
-      item =>
-        criarChaveComparacao(
-          item?.id
-        ) === chaveAlvo
-    ) || null;
-
-  const circuitos =
-    new Set(
-      (
-        registro?.circuitos || []
-      )
-        .map(
-          criarChaveComparacao
-        )
-        .filter(Boolean)
-    );
-
-  function pertence(
-    item
-  ) {
-    if (!item) {
-      return false;
-    }
-
-    const p =
-      item.propriedades ||
-      item.properties ||
-      {};
-
-    const candidatos = [
-      item.alimentador,
-      item.ALIMENTADOR,
-      item.CT_COD_OP,
-      item.CT_COD_OPER,
-      item.CT_COD,
-      item.CT_CODIGO,
-
-      p.alimentador,
-      p.ALIMENTADOR,
-      p.CT_COD_OP,
-      p.CT_COD_OPER,
-      p.CT_COD,
-      p.CT_CODIGO
-    ]
-      .map(normalizarId)
-      .filter(Boolean);
-
-    if (
-      candidatos.some(
-        valor =>
-          criarChaveComparacao(
-            valor
-          ) === chaveAlvo
-      )
-    ) {
-      return true;
-    }
-
-    const circuito =
-      normalizarId(
-        item.circuito ??
-        item.CIRCUITO ??
-        item.CTMT ??
-        p.circuito ??
-        p.CIRCUITO ??
-        p.CTMT
-      );
-
-    return (
-      !!circuito &&
-      circuitos.has(
-        criarChaveComparacao(
-          circuito
-        )
-      )
-    );
-  }
-
-  // --------------------------------------------------------
-  // TRECHOS
-  // --------------------------------------------------------
-
-  const trechos = {};
-
-  for (
-    const [
-      id,
-      trecho
-    ] of Object.entries(
-      topologia.trechos || {}
-    )
-  ) {
-    if (pertence(trecho)) {
-      trechos[id] =
-        trecho;
-    }
-  }
-
-  // --------------------------------------------------------
-  // PONTOS UTILIZADOS
-  // --------------------------------------------------------
-
-  const pontosUsados =
-    new Set();
-
-  for (
-    const trecho of
-      Object.values(trechos)
-  ) {
-    if (trecho.pontoInicial) {
-      pontosUsados.add(
-        normalizarId(
-          trecho.pontoInicial
-        )
-      );
-    }
-
-    if (trecho.pontoFinal) {
-      pontosUsados.add(
-        normalizarId(
-          trecho.pontoFinal
-        )
-      );
-    }
-  }
-
-  // --------------------------------------------------------
-  // PONTOS
-  // --------------------------------------------------------
-
-  const pontos = {};
-
-  for (
-    const [
-      id,
-      ponto
-    ] of Object.entries(
-      topologia.pontos || {}
-    )
-  ) {
-    if (
-      pertence(ponto) ||
-      pontosUsados.has(
-        normalizarId(id)
-      )
-    ) {
-      pontos[id] = ponto;
-    }
-  }
-
-  // --------------------------------------------------------
-  // FUNÇÃO DE CONEXÃO AO ALIMENTADOR
-  // --------------------------------------------------------
-
-  function estaConectadoAosPontosDoAlimentador(
-    unidade
-  ) {
-    if (!unidade) {
-      return false;
-    }
-
-    const ids = [
-      unidade.pac1,
-      unidade.pac2,
-      unidade.pontoAssociado
-    ]
-      .map(normalizarId)
-      .filter(Boolean);
-
-    return ids.some(
-      pontoId =>
-        pontosUsados.has(
-          pontoId
-        )
-    );
-  }
-
-  // --------------------------------------------------------
-  // UNSEMT
-  // --------------------------------------------------------
-
-  const unidadesSeccionadoras =
-    {};
-
-  for (
-    const [
-      id,
-      unidade
-    ] of Object.entries(
-      topologia
-        .unidadesSeccionadoras ||
-      {}
-    )
-  ) {
-    if (
-      pertence(unidade) ||
-      estaConectadoAosPontosDoAlimentador(
-        unidade
-      )
-    ) {
-      unidadesSeccionadoras[
-        id
-      ] =
-        unidade;
-    }
-  }
-
-  // --------------------------------------------------------
-  // TRANSFORMADORES
-  // --------------------------------------------------------
-
-  const transformadores =
-    {};
-
-  for (
-    const [
-      id,
-      transformador
-    ] of Object.entries(
-      topologia
-        .transformadores ||
-      {}
-    )
-  ) {
-    if (
-      pertence(transformador) ||
-      estaConectadoAosPontosDoAlimentador(
-        transformador
-      )
-    ) {
-      transformadores[
-        id
-      ] =
-        transformador;
-    }
-  }
-
-  // --------------------------------------------------------
-  // ÍNDICES
-  // --------------------------------------------------------
-
-  const pqtPorPonto =
-    criarIndicePQTPorPonto(
-      unidadesSeccionadoras
-    );
-
-  const transformadoresPorPonto =
-    criarIndiceTransformadoresPorPonto(
-      transformadores
-    );
-
-  const adjacencia =
-    criarAdjacencia(
-      pontos,
-      trechos
-    );
-
-  // --------------------------------------------------------
-  // CATÁLOGO OPERACIONAL FILTRADO
-  // --------------------------------------------------------
-
-  const catalogoOperacionalFiltrado =
-    criarCatalogoEquipamentosOperacionais(
-      unidadesSeccionadoras,
-      transformadores
-    );
-
-  // --------------------------------------------------------
-  // IDs DAS UNIDADES FILTRADAS
-  // --------------------------------------------------------
-
-  const idsUnidadesFiltradas =
-    new Set([
-      ...Object.keys(
-        unidadesSeccionadoras
-      ),
-      ...Object.keys(
-        transformadores
-      )
-    ]);
-
-  // --------------------------------------------------------
-  // EQUIPAMENTOS COMPLEMENTARES FILTRADOS
-  // --------------------------------------------------------
-
-  const equipamentosComplementares =
-    {};
-
-  const equipamentosPorUnidade =
-    {};
-
-  // Primeiro: equipamento operacional.
-
-  for (
-    const [
-      unidadeId,
-      lista
-    ] of Object.entries(
-      catalogoOperacionalFiltrado.porUnidade ||
-      {}
-    )
-  ) {
-    equipamentosPorUnidade[
-      unidadeId
-    ] = [
-      ...lista
-    ];
-
-    for (
-      const equipamento of
-        lista
-    ) {
-      if (
-        equipamento?.id
-      ) {
-        equipamentosComplementares[
-          equipamento.id
-        ] =
-          equipamento;
-      }
-    }
-  }
-
-  // Depois: complementos EQSE/EQTR.
-
-  for (
-    const [
-      unidadeId,
-      lista
-    ] of Object.entries(
-      topologia
-        .equipamentosComplementaresPorUnidade ||
-      {}
-    )
-  ) {
-    if (
-      !idsUnidadesFiltradas.has(
-        unidadeId
-      )
-    ) {
-      continue;
-    }
-
-    if (
-      !equipamentosPorUnidade[
-        unidadeId
-      ]
-    ) {
-      equipamentosPorUnidade[
-        unidadeId
-      ] = [];
-    }
-
-    const idsExistentes =
-      new Set(
-        equipamentosPorUnidade[
-          unidadeId
-        ].map(
-          equipamento =>
-            equipamento?.id
-        )
-      );
-
-    for (
-      const equipamento of
-        lista
-    ) {
-      if (!equipamento?.id) {
-        continue;
-      }
-
-      if (
-        !idsExistentes.has(
-          equipamento.id
-        )
-      ) {
-        equipamentosPorUnidade[
-          unidadeId
-        ].push(
-          equipamento
-        );
-
-        idsExistentes.add(
-          equipamento.id
-        );
-      }
-
-      equipamentosComplementares[
-        equipamento.id
-      ] =
-        equipamento;
-    }
-  }
-
-  // --------------------------------------------------------
-  // EQUIPAMENTOS GLOBAIS FILTRADOS
-  // --------------------------------------------------------
-
-  const equipamentos =
-    {};
-
-  for (
-    const [
-      unidadeId,
-      lista
-    ] of Object.entries(
-      equipamentosPorUnidade
-    )
-  ) {
-    for (
-      const equipamento of
-        lista
-    ) {
-      if (!equipamento?.id) {
-        continue;
-      }
-
-      // Evita que um complemento substitua o equipamento
-      // operacional que usa o COD_ID da unidade.
-
-      if (
-        !equipamentos[
-          equipamento.id
-        ] ||
-        equipamento.origem === "UNIDADE"
-      ) {
-        equipamentos[
-          equipamento.id
-        ] =
-          equipamento;
-      }
-    }
-  }
-
-  // --------------------------------------------------------
-  // TIPOS
-  // --------------------------------------------------------
-
-  const equipamentosEQSE =
-    {};
-
-  for (
-    const [
-      id,
-      equipamento
-    ] of Object.entries(
-      equipamentos
-    )
-  ) {
-    if (
-      equipamento?.origem ===
-      "EQSE"
-    ) {
-      equipamentosEQSE[
-        id
-      ] =
-        equipamento;
-    }
-  }
-
-  // --------------------------------------------------------
-  // TRANSFORMADORES MT/AT
-  // --------------------------------------------------------
-
-  const transformadoresMT =
-    Object.fromEntries(
-      Object.entries(
-        transformadores
-      ).filter(
-        ([, transformador]) =>
-          transformador?.origem ===
-          "UNTRMT"
-      )
-    );
-
-  const transformadoresAT =
-    Object.fromEntries(
-      Object.entries(
-        transformadores
-      ).filter(
-        ([, transformador]) =>
-          transformador?.origem ===
-          "UNTRAT"
-      )
-    );
-
-  // --------------------------------------------------------
-  // COLEÇÕES FILTRADAS
-  // --------------------------------------------------------
-
-  const eqseFiltrado =
-    filtrarColecaoPorUnidade(
-      topologia.eqse,
-      Object.keys(
-        unidadesSeccionadoras
-      ),
-      [
-        "UN_SE",
-        "UNSE",
-        "UN_SE_ID",
-        "COD_UN",
-        "COD_UNIDADE"
-      ]
-    );
-
-  const eqtrmtFiltrado =
-    filtrarColecaoPorUnidade(
-      topologia.eqtrmt,
-      Object.keys(
-        transformadoresMT
-      ),
-      [
-        "UN_TR",
-        "UN_TRM",
-        "UN_TR_MT",
-        "COD_UN",
-        "COD_UNIDADE"
-      ]
-    );
-
-  const eqtratFiltrado =
-    filtrarColecaoPorUnidade(
-      topologia.eqtrat,
-      Object.keys(
-        transformadoresAT
-      ),
-      [
-        "UN_TR",
-        "UN_TR_AT",
-        "COD_UN",
-        "COD_UNIDADE"
-      ]
-    );
-
-  // --------------------------------------------------------
-  // DIAGNÓSTICOS
-  // --------------------------------------------------------
-
-  const terminais =
-    identificarTerminais(
-      adjacencia
-    );
-
-  const passagens =
-    identificarPassagens(
-      adjacencia
-    );
-
-  const derivacoes =
-    identificarDerivacoes(
-      adjacencia
-    );
-
-  const problemas =
-    identificarTrechosSemPontos(
-      pontos,
-      trechos
-    );
-
-  const pontosIsolados =
-    identificarPontosIsolados(
-      pontos,
-      adjacencia
-    );
-
-  const trechosInvalidos =
-    identificarTrechosInvalidos(
-      trechos
-    );
-
-  // --------------------------------------------------------
-  // CIRCULOS / ALIMENTADOR
-  // --------------------------------------------------------
-
-  const primeiroTrecho =
-    Object.values(
-      trechos
-    )[0] || null;
-
-  // --------------------------------------------------------
-  // MAPA FILTRADO
-  // --------------------------------------------------------
-
-  return {
-    ...topologia,
-
-    alimentador:
-      alvo,
-
-    circuito:
-      registro?.circuitos?.[0] ||
-      primeiroTrecho?.circuito ||
-      null,
-
-    subestacao:
-      registro?.subestacoes?.[0] ||
-      primeiroTrecho?.subestacao ||
-      null,
-
-    pontos,
-
-    trechos,
-
-    // ------------------------------------------------------
-    // UNSEMT
-    // ------------------------------------------------------
-
-    unsemt:
-      criarColecaoFeatures(
-        unidadesSeccionadoras
-      ),
-
-    unidadesSeccionadoras,
-
-    pqt:
-      unidadesSeccionadoras,
-
-    // ------------------------------------------------------
-    // EQSE
-    // ------------------------------------------------------
-
-    eqse:
-      eqseFiltrado,
-
-    equipamentosEQSE:
-      equipamentosEQSE,
-
-    // ------------------------------------------------------
-    // EQUIPAMENTOS
-    // ------------------------------------------------------
-
-    equipamentos,
-
-    equipamentosPorUnidade,
-
-    equipamentosOperacionais:
-      catalogoOperacionalFiltrado
-        .equipamentos,
-
-    equipamentosOperacionaisPorUnidade:
-      catalogoOperacionalFiltrado
-        .porUnidade,
-
-    equipamentosComplementares:
-      equipamentosComplementares,
-
-    equipamentosComplementaresPorUnidade:
-      topologia
-        .equipamentosComplementaresPorUnidade,
-
-    // ------------------------------------------------------
-    // ÍNDICES
-    // ------------------------------------------------------
-
-    pqtPorPonto,
-
-    // ------------------------------------------------------
-    // TRANSFORMADORES
-    // ------------------------------------------------------
-
-    transformadores,
-
-    transformadoresMT,
-
-    transformadoresAT,
-
-    transformadoresPorPonto,
-
-    equipamentosTransformadores:
-      Object.fromEntries(
-        Object.entries(
-          equipamentos
-        ).filter(
-          ([, equipamento]) =>
-            equipamento?.tipo ===
-            "TRANSFORMADOR"
-        )
-      ),
-
-    equipamentosTransformadoresPorUnidade:
-      Object.fromEntries(
-        Object.entries(
-          equipamentosPorUnidade
-        ).filter(
-          ([unidadeId]) =>
-            !!transformadores[
-              unidadeId
-            ]
-        )
-      ),
-
-    untrmt:
-      criarColecaoFeatures(
-        transformadoresMT
-      ),
-
-    untrat:
-      criarColecaoFeatures(
-        transformadoresAT
-      ),
-
-    eqtrmt:
-      eqtrmtFiltrado,
-
-    eqtrat:
-      eqtratFiltrado,
-
-    // ------------------------------------------------------
-    // REDE
-    // ------------------------------------------------------
-
-    adjacencia,
-
-    terminais,
-
-    passagens,
-
-    derivacoes,
-
-    problemas,
-
-    pontosIsolados,
-
-    trechosInvalidos,
-
-    // ------------------------------------------------------
-    // RESUMO
-    // ------------------------------------------------------
-
-    resumo: {
-      ...(topologia.resumo || {}),
-
-      pontos:
-        Object.keys(
-          pontos
-        ).length,
-
-      trechos:
-        Object.keys(
-          trechos
-        ).length,
-
-      unidades:
-        Object.keys(
-          unidadesSeccionadoras
-        ).length,
-
-      pqt:
-        Object.keys(
-          unidadesSeccionadoras
-        ).length,
-
-      transformadores:
-        Object.keys(
-          transformadores
-        ).length,
-
-      equipamentos:
-        Object.keys(
-          equipamentos
-        ).length,
-
-      equipamentosOperacionais:
-        Object.keys(
-          catalogoOperacionalFiltrado
-            .equipamentos
-        ).length,
-
-      equipamentosComplementares:
-        Object.keys(
-          equipamentosComplementares
-        ).length,
-
-      terminais:
-        terminais.length,
-
-      passagens:
-        passagens.length,
-
-      derivacoes:
-        derivacoes.length,
-
-      problemas:
-        problemas.length,
-
-      pontosIsolados:
-        pontosIsolados.length,
-
-      trechosInvalidos:
-        trechosInvalidos.length
-    }
-  };
-}
-
-
-// ==========================================================
-// FICHA OPERACIONAL DO EQUIPAMENTO
-// ==========================================================
-
-export function obterFichaOperacionalEquipamento(
-  topologia,
-  equipamentoId
-) {
-  const id =
-    normalizarId(
-      equipamentoId
-    );
-
   if (!id) {
-    return null;
+    return [];
   }
 
-  let equipamento =
-    buscarEquipamentoBDGD(
-      topologia,
-      id
+  return (
+    topologia
+      ?.indiceInterligacoes
+      ?.porAlimentador?.[
+        id
+      ] ||
+    []
+  );
+}
+
+
+export function buscarInterligacoesEntreAlimentadores(
+  topologia,
+  alimentadorA,
+  alimentadorB
+) {
+  const a =
+    normalizarAlimentador(
+      alimentadorA,
+      alimentadorA
     );
 
-  let unidade = null;
-
-  // --------------------------------------------------------
-  // PRIMEIRA TENTATIVA
-  // --------------------------------------------------------
+  const b =
+    normalizarAlimentador(
+      alimentadorB,
+      alimentadorB
+    );
 
   if (
-    equipamento?.unidadeId
+    !a ||
+    !b
   ) {
-    unidade =
-      buscarPQT(
-        topologia,
-        equipamento.unidadeId
-      );
-
-    if (!unidade) {
-      unidade =
-        buscarTransformador(
-          topologia,
-          equipamento.unidadeId
-        );
-    }
+    return [];
   }
 
-  // --------------------------------------------------------
-  // O PRÓPRIO ID PODE SER A UNIDADE
-  // --------------------------------------------------------
-
-  if (!unidade) {
-    unidade =
-      buscarPQT(
-        topologia,
-        id
+  return buscarInterligacoes(
+    topologia
+  ).filter(
+    (
+      item
+    ) =>
+      (
+        item.alimentadorA ===
+          a &&
+        item.alimentadorB ===
+          b
       ) ||
-      buscarTransformador(
-        topologia,
-        id
-      );
-  }
-
-  // --------------------------------------------------------
-  // EQUIPAMENTO COMPLEMENTAR
-  // --------------------------------------------------------
-
-  if (
-    !equipamento &&
-    topologia?.equipamentosComplementares?.[id]
-  ) {
-    equipamento =
-      topologia
-        .equipamentosComplementares[id];
-  }
-
-  const base =
-    unidade ||
-    equipamento;
-
-  if (!base) {
-    return null;
-  }
-
-  const tipo =
-    equipamento?.tipo ||
-    equipamento?.tipoEquipamento ||
-    base.tipoEquipamento ||
-    base.tipo ||
-    "OUTRO";
-
-  return {
-    id,
-
-    tipo,
-
-    nomeTipo:
-      obterNomeTipoEquipamento(
-        tipo
-      ),
-
-    alimentador:
-      equipamento?.alimentador ||
-      base.alimentador ||
-      null,
-
-    circuito:
-      equipamento?.circuito ||
-      base.circuito ||
-      null,
-
-    subestacao:
-      equipamento?.subestacao ||
-      base.subestacao ||
-      null,
-
-    pontoAssociado:
-      base.pontoAssociado ||
-      base.pac1 ||
-      base.pac2 ||
-      null,
-
-    pac1:
-      base.pac1 ||
-      null,
-
-    pac2:
-      base.pac2 ||
-      null,
-
-    latitude:
-      equipamento?.latitude ??
-      base.latitude ??
-      null,
-
-    longitude:
-      equipamento?.longitude ??
-      base.longitude ??
-      null,
-
-    fases:
-      equipamento?.fases ||
-      base.fases ||
-      null,
-
-    situacao:
-      equipamento?.situacao ||
-      base.situacao ||
-      null,
-
-    estadoNormal:
-      base.posicao ||
-      equipamento?.posicao ||
-      null,
-
-    potenciaNominal:
-      base.potenciaNominal ??
-      equipamento?.potenciaNominal ??
-      null,
-
-    tensaoLinha:
-      base.tensaoLinha ??
-      equipamento?.tensaoLinha ??
-      null,
-
-    telecomandado:
-      base.telecomandado ??
-      equipamento?.telecomandado ??
-      null,
-
-    descricao:
-      equipamento?.descricao ||
-      base.descricao ||
-      null,
-
-    propriedades:
-      equipamento?.propriedades ||
-      base.propriedades ||
-      {},
-
-    equipamentosComplementares:
-      base.equipamentos ||
-      [],
-
-    equipamento:
-      equipamento ||
-      null,
-
-    unidade:
-      unidade ||
-      null
-  };
-}
-
-
-// ==========================================================
-// RESUMO DO PONTO
-// ==========================================================
-
-export function obterResumoPonto(
-  topologia,
-  pontoId
-) {
-  const ponto =
-    buscarPonto(
-      topologia,
-      pontoId
-    );
-
-  if (!ponto) {
-    return null;
-  }
-
-  const conexoes =
-    buscarConexoes(
-      topologia,
-      ponto.id
-    );
-
-  const pqts =
-    buscarPQTDoPonto(
-      topologia,
-      ponto.id
-    );
-
-  const transformadores =
-    buscarTransformadoresDoPonto(
-      topologia,
-      ponto.id
-    );
-
-  const equipamentos = [];
-
-  for (
-    const pqt of pqts
-  ) {
-    equipamentos.push(
-      ...(
-        buscarEquipamentosDaPQT(
-          topologia,
-          pqt.id
-        ) || []
+      (
+        item.alimentadorA ===
+          b &&
+        item.alimentadorB ===
+          a
       )
-    );
-  }
-
-  for (
-    const transformador of
-      transformadores
-  ) {
-    equipamentos.push(
-      ...(
-        buscarEquipamentosDoTransformador(
-          topologia,
-          transformador.id
-        ) || []
-      )
-    );
-  }
-
-  return {
-    ponto,
-
-    quantidadeConexoes:
-      conexoes.length,
-
-    conexoes,
-
-    quantidadePQT:
-      pqts.length,
-
-    pqts,
-
-    quantidadeTransformadores:
-      transformadores.length,
-
-    transformadores,
-
-    quantidadeEquipamentos:
-      equipamentos.length,
-
-    equipamentos
-  };
-}
-
-
-// ==========================================================
-// RESUMO DO TRECHO
-// ==========================================================
-
-export function obterResumoTrecho(
-  topologia,
-  trechoId
-) {
-  const trecho =
-    buscarTrechoBDGD(
-      topologia,
-      trechoId
-    );
-
-  if (!trecho) {
-    return null;
-  }
-
-  return {
-    trecho,
-
-    pontoInicial:
-      buscarPonto(
-        topologia,
-        trecho.pontoInicial
-      ),
-
-    pontoFinal:
-      buscarPonto(
-        topologia,
-        trecho.pontoFinal
-      ),
-
-    comprimento:
-      trecho.comprimento,
-
-    alimentador:
-      trecho.alimentador,
-
-    circuito:
-      trecho.circuito,
-
-    subestacao:
-      trecho.subestacao,
-
-    fases:
-      trecho.fases,
-
-    condutor:
-      trecho.condutor,
-
-    situacao:
-      trecho.situacao
-  };
+  );
 }
 
 
@@ -6251,17 +8765,23 @@ export function obterContagemEquipamentos(
   topologia
 ) {
   const resultado = {
-    CHAVE_LAMINA: 0,
+    CHAVE_LAMINA:
+      0,
 
-    CHAVE_FUSIVEL: 0,
+    CHAVE_FUSIVEL:
+      0,
 
-    CHAVE_SECCIONADORA: 0,
+    CHAVE_SECCIONADORA:
+      0,
 
-    RELIGADOR: 0,
+    RELIGADOR:
+      0,
 
-    TRANSFORMADOR: 0,
+    TRANSFORMADOR:
+      0,
 
-    OUTRO: 0
+    OUTRO:
+      0,
   };
 
   if (!topologia) {
@@ -6270,11 +8790,11 @@ export function obterContagemEquipamentos(
 
   for (
     const unidade of
-      Object.values(
-        topologia
-          .unidadesSeccionadoras ||
-        {}
-      )
+    Object.values(
+      topologia
+        .unidadesSeccionadoras ||
+      {}
+    )
   ) {
     const tipo =
       unidade.tipoEquipamento;
@@ -6285,23 +8805,26 @@ export function obterContagemEquipamentos(
         tipo
       )
     ) {
-      resultado[tipo] += 1;
+      resultado[
+        tipo
+      ] +=
+        1;
     } else {
-      resultado.OUTRO += 1;
+      resultado.OUTRO +=
+        1;
     }
   }
 
   for (
     const transformador of
-      Object.values(
-        topologia
-          .transformadores ||
-        {}
-      )
+    Object.values(
+      topologia
+        .transformadores ||
+      {}
+    )
   ) {
     if (
-      transformador
-        .tipoEquipamento ===
+      transformador.tipoEquipamento ===
       "TRANSFORMADOR"
     ) {
       resultado.TRANSFORMADOR +=
@@ -6334,17 +8857,37 @@ export {
 
   obterNomeTipoEquipamento,
 
-  obterAlimentador,
-
-  obterCircuito,
-
-  obterSubestacao,
-
   criarMapaEquipamentosEQSE,
 
   criarMapaUnidadesSeccionadoras,
 
   criarMapaUnidadesTransformadores,
 
-  criarCatalogoEquipamentosOperacionais
+  criarMapaEquipamentosTransformadores,
+
+  criarIndiceTransformadoresPorPonto,
+
+  criarIndicePQTPorPonto,
+
+  criarIndiceAlimentadores,
+
+  criarMapaCircuitoAlimentador,
+
+  criarIndicePontosPorAlimentador,
+
+  criarIndicePontosNormalizados,
+
+  descobrirInterligacoes,
+
+  enriquecerInterligacoesComEquipamentos,
+
+  normalizarCircuito,
+
+  extrairCircuitoDoIdPAC,
+
+  normalizarIdBasePAC,
+
+  normalizarAlimentador,
+
+  obterCoordenadasEquipamento,
 };

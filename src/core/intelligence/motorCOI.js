@@ -1,150 +1,630 @@
-// =====================================================
+// ==========================================================
 // MOTOR DE INTELIGÊNCIA COI
-// Responsável pelas decisões operacionais
-// =====================================================
+// POWER GRID MONITOR
+// ==========================================================
+//
+// Responsável pela inteligência operacional de recomposição.
+//
+// ARQUITETURA ATUAL:
+//
+// Controlador informa:
+//   - equipamento do desarme
+//   - corrente do trecho no momento do desarme
+//   - corrente atual do trecho receptor/suporte
+//
+// O operador NÃO precisa informar:
+//   - equipamento de interligação
+//   - alimentador de destino
+//
+// O motor:
+//   1. Valida o equipamento do desarme na BDGD.
+//   2. Identifica a área afetada.
+//   3. Descobre equipamentos reais de recuperação.
+//   4. Analisa PACs e conectividade física.
+//   5. Simula a manobra.
+//   6. Verifica o caminho elétrico.
+//   7. Verifica estado operacional.
+//   8. Verifica capacidade do trecho receptor.
+//   9. Classifica as alternativas.
+//  10. Seleciona a melhor alternativa.
+//  11. Gera recomendação operacional.
+//
+// PRINCÍPIOS:
+//
+// NÃO inventar corrente.
+// NÃO transformar campo vazio em 0 A.
+// NÃO criar interligação sintética.
+// NÃO aceitar equipamento inexistente na BDGD.
+// NÃO transformar equipamento do desarme em interligação.
+// NÃO exigir que o operador descubra a interligação.
+// NÃO recomendar equipamento indisponível.
+// NÃO recomendar equipamento fechado como candidato de
+// recuperação automática.
+// ==========================================================
+
 
 import {
+    buscarEquipamento,
+    validarEquipamentoBDGD,
+    consultarEstadoEquipamento,
 
+    // Novo motor de recomposição
+    descobrirCandidatosRecomposicao,
+    analisarRecomposicaoOcorrencia,
+
+    // APIs legadas mantidas para compatibilidade
     buscarInterligacoes,
-
-    analisarTransferencia,
-
-    buscarEquipamento
-
+    buscarInterligacoesAlimentador
 } from "../modelo/modeloRede";
 
-import { 
-    trechos
-} from "../database/trechos";
-
 
 import {
-
     clientesCriticos
-
 } from "../database/clientesCriticos";
 
 
+// ==========================================================
+// UTILITÁRIOS
+// ==========================================================
 
 
+function normalizarId(valor) {
 
-// =====================================================
-// CLIENTES CRÍTICOS
-// =====================================================
+    if (
+        valor === null ||
+        valor === undefined
+    ) {
+        return "";
+    }
 
-export function buscarClientesAfetados(trecho){
-
-    return clientesCriticos.filter(
-
-        cliente =>
-            cliente.trecho === trecho
-
-    );
-
+    return String(valor)
+        .trim();
 }
 
 
+function normalizarTexto(valor) {
 
-// =====================================================
-// IMPACTO OPERACIONAL
-// =====================================================
-
-export function calcularImpacto(ocorrencia){
+    return normalizarId(valor)
+        .toUpperCase();
+}
 
 
-    const clientes =
+function normalizarCodigo(valor) {
 
-        buscarClientesAfetados(
-            ocorrencia.trecho
+    return normalizarTexto(valor)
+        .replace(
+            /[^A-Z0-9]/g,
+            ""
+        );
+}
+
+
+// ==========================================================
+// NORMALIZAR CÓDIGO DE EQUIPAMENTO
+// ==========================================================
+//
+// Exemplos:
+//
+// G02722
+// 10060794M
+// 10060794M-154
+//
+// A normalização preserva códigos alfanuméricos como G02722,
+// mas remove o sufixo operacional M dos identificadores BDGD.
+//
+// ==========================================================
+
+function normalizarCodigoEquipamento(valor) {
+
+    let codigo =
+        normalizarTexto(valor);
+
+    if (!codigo) {
+        return "";
+    }
+
+    codigo =
+        codigo.replace(
+            /[^A-Z0-9]/g,
+            ""
         );
 
+    const correspondencia =
+        codigo.match(
+            /^([0-9]+)M[0-9]*$/
+        );
+
+    if (
+        correspondencia &&
+        correspondencia[1]
+    ) {
+
+        return correspondencia[1];
+    }
+
+    return codigo;
+}
+
+
+// ==========================================================
+// CONVERTER CORRENTE
+// ==========================================================
+//
+// Regras:
+//
+// null / undefined / vazio -> null
+// texto inválido -> null
+// negativo -> null
+//
+// Nunca converter ausência de corrente para 0.
+//
+// ==========================================================
+
+function converterCorrente(valor) {
+
+    if (
+        valor === null ||
+        valor === undefined
+    ) {
+
+        return null;
+    }
+
+    const texto =
+        String(valor)
+            .trim()
+            .replace(
+                ",",
+                "."
+            );
+
+    if (!texto) {
+        return null;
+    }
+
+    const numero =
+        Number(texto);
+
+    if (
+        !Number.isFinite(
+            numero
+        )
+    ) {
+
+        return null;
+    }
+
+    if (
+        numero < 0
+    ) {
+
+        return null;
+    }
+
+    return numero;
+}
+
+
+// ==========================================================
+// ARREDONDAR
+// ==========================================================
+
+function arredondar(
+    valor,
+    casas = 2
+) {
+
+    const numero =
+        Number(
+            valor
+        );
+
+    if (
+        !Number.isFinite(
+            numero
+        )
+    ) {
+        return null;
+    }
+
+    const fator =
+        10 ** casas;
+
+    return Math.round(
+        numero * fator
+    ) / fator;
+}
+
+
+// ==========================================================
+// OBTER EQUIPAMENTO
+// ==========================================================
+
+function obterIdEquipamento(
+    item
+) {
+
+    if (!item) {
+        return null;
+    }
+
+    return (
+        item?.equipamentoInterligacao ??
+        item?.equipamentoIdInterligacao ??
+        item?.equipamento?.id ??
+        item?.equipamento?.COD_ID ??
+        item?.equipamento?.codId ??
+        item?.equipamento ??
+        item?.id ??
+        item?.COD_ID ??
+        item?.codId ??
+        null
+    );
+}
+
+
+function obterPlaquetaEquipamento(
+    item
+) {
+
+    if (!item) {
+        return null;
+    }
+
+    return (
+        item?.plaqueta ??
+        item?.PLAQUETA ??
+        item?.plaquetaIPT ??
+        item?.PLAQUETA_IPT ??
+        item?.equipamento?.plaqueta ??
+        item?.equipamento?.PLAQUETA ??
+        item?.equipamento?.plaquetaIPT ??
+        item?.equipamento?.PLAQUETA_IPT ??
+        item?.id ??
+        item?.COD_ID ??
+        null
+    );
+}
+
+
+function obterTipoEquipamento(
+    item
+) {
+
+    if (!item) {
+        return null;
+    }
+
+    return (
+        item?.tipoEquipamento ??
+        item?.tipo ??
+        item?.classificacao ??
+        item?.equipamento?.tipoEquipamento ??
+        item?.equipamento?.tipo ??
+        null
+    );
+}
+
+
+function obterTipUnid(
+    item
+) {
+
+    if (!item) {
+        return null;
+    }
+
+    const candidatos = [
+
+        item?.tipUnid,
+
+        item?.TIP_UNID,
+
+        item?.tip_unid,
+
+        item?.equipamento?.tipUnid,
+
+        item?.equipamento?.TIP_UNID,
+
+        item?.equipamento?.tip_unid
+
+    ];
+
+    for (
+        const valor of candidatos
+    ) {
+
+        if (
+            valor !== null &&
+            valor !== undefined &&
+            String(valor).trim() !== ""
+        ) {
+
+            const numero =
+                Number(
+                    valor
+                );
+
+            if (
+                Number.isFinite(
+                    numero
+                )
+            ) {
+
+                return numero;
+            }
+
+            return valor;
+        }
+    }
+
+    return null;
+}
+
+
+// ==========================================================
+// ALIMENTADORES
+// ==========================================================
+
+function obterAlimentador(
+    item
+) {
+
+    if (!item) {
+        return null;
+    }
+
+    return (
+        item?.alimentador ??
+        item?.alimentadorOrigem ??
+        item?.origem ??
+        item?.alimentadorEquipamento ??
+        item?.equipamento?.alimentador ??
+        item?.equipamento?.alimentadorOrigem ??
+        null
+    );
+}
+
+
+function obterAlimentadorDestino(
+    item
+) {
+
+    if (!item) {
+        return null;
+    }
+
+    return (
+        item?.alimentadorDestino ??
+        item?.destino ??
+        item?.alimentadorReceptor ??
+        item?.equipamento?.alimentadorDestino ??
+        item?.equipamento?.alimentadorReceptor ??
+        null
+    );
+}
+
+
+// ==========================================================
+// ESTADO
+// ==========================================================
+
+function normalizarEstado(
+    valor
+) {
+
+    const estado =
+        normalizarTexto(
+            valor
+        );
+
+    if (!estado) {
+        return null;
+    }
+
+    if (
+        estado === "FECHADO"
+    ) {
+        return "FECHADO";
+    }
+
+    if (
+        estado === "ABERTO"
+    ) {
+        return "ABERTO";
+    }
+
+    if (
+        estado === "INDISPONIVEL"
+    ) {
+        return "INDISPONIVEL";
+    }
+
+    if (
+        estado === "BYPASSADO"
+    ) {
+        return "BYPASSADO";
+    }
+
+    return estado;
+}
+
+
+function obterEstadoEquipamento(
+    item
+) {
+
+    if (!item) {
+        return null;
+    }
+
+    const id =
+        normalizarId(
+            obterIdEquipamento(
+                item
+            )
+        );
+
+    if (id) {
+
+        try {
+
+            const resultado =
+                consultarEstadoEquipamento(
+                    id
+                );
+
+            if (
+                resultado?.estado
+            ) {
+
+                return normalizarEstado(
+                    resultado.estado
+                );
+            }
+
+        } catch (erro) {
+
+            console.warn(
+                "[Motor COI] Não foi possível consultar estado operacional:",
+                erro
+            );
+        }
+    }
+
+    return normalizarEstado(
+        item?.estado ??
+        item?.estadoOperacional ??
+        item?.status ??
+        item?.situacao ??
+        item?.equipamento?.estado ??
+        item?.equipamento?.estadoOperacional ??
+        item?.equipamento?.status ??
+        null
+    );
+}
+
+
+// ==========================================================
+// CLIENTES CRÍTICOS
+// ==========================================================
+
+export function buscarClientesAfetados(
+    trecho
+) {
+
+    const alvo =
+        normalizarId(
+            trecho
+        );
+
+    if (!alvo) {
+        return [];
+    }
+
+    return clientesCriticos.filter(
+        cliente =>
+
+            normalizarId(
+                cliente?.trecho
+            ) === alvo
+    );
+}
+
+
+// ==========================================================
+// IMPACTO OPERACIONAL
+// ==========================================================
+
+export function calcularImpacto(
+    ocorrencia
+) {
+
+    const clientes =
+        buscarClientesAfetados(
+            ocorrencia?.trecho
+        );
 
     let pontuacao =
-
-        ocorrencia.clientesAfetados || 0;
-
-
+        Number(
+            ocorrencia?.clientesAfetados
+        ) || 0;
 
     let hospitais = 0;
     let grupoA = 0;
     let escolas = 0;
     let saneamento = 0;
 
+    clientes.forEach(
+        cliente => {
 
+            switch (
+                normalizarTexto(
+                    cliente?.tipo
+                )
+            ) {
 
-    clientes.forEach(cliente=>{
+                case "HOSPITAL":
 
+                    hospitais++;
 
-        switch(cliente.tipo){
+                    pontuacao += 40;
 
+                    break;
 
-            case "HOSPITAL":
+                case "GRUPO_A":
 
-                hospitais++;
-                pontuacao +=40;
+                    grupoA++;
 
-            break;
+                    pontuacao += 25;
 
+                    break;
 
+                case "SANEAMENTO":
 
-            case "GRUPO_A":
+                    saneamento++;
 
-                grupoA++;
-                pontuacao +=25;
+                    pontuacao += 30;
 
-            break;
+                    break;
 
+                case "ESCOLA":
 
+                    escolas++;
 
-            case "SANEAMENTO":
+                    pontuacao += 10;
 
-                saneamento++;
-                pontuacao +=30;
+                    break;
 
-            break;
+                default:
 
-
-
-            case "ESCOLA":
-
-                escolas++;
-                pontuacao +=10;
-
-            break;
-
-
+                    break;
+            }
         }
+    );
 
+    let classificacao =
+        "NORMAL";
 
-    });
+    if (
+        hospitais > 0 ||
+        pontuacao >= 80
+    ) {
 
+        classificacao =
+            "CRÍTICA";
 
+    } else if (
+        pontuacao >= 40
+    ) {
 
-    let classificacao="NORMAL";
-
-
-    if(
-        hospitais>0 ||
-        pontuacao>=80
-    ){
-
-        classificacao="CRÍTICA";
-
+        classificacao =
+            "ALTA";
     }
-
-    else if(pontuacao>=40){
-
-        classificacao="ALTA";
-
-    }
-
-
-
 
     return {
 
         classificacao,
-
 
         pontuacao:
             Math.min(
@@ -152,432 +632,2665 @@ export function calcularImpacto(ocorrencia){
                 100
             ),
 
-
-        dados:{
-
+        dados: {
 
             clientes:
-                ocorrencia.clientesAfetados || 0,
-
+                Number(
+                    ocorrencia?.clientesAfetados
+                ) || 0,
 
             hospitais,
 
-
             grupoA,
-
 
             escolas,
 
-
             saneamento,
 
-
             dec:
-                ocorrencia.dec || 0
-
-
+                Number(
+                    ocorrencia?.dec
+                ) || 0
         }
-
-
-    };
-
-
-}
-
-
-// =====================================================
-// BUSCAR ALTERNATIVAS DE MANOBRA
-// =====================================================
-
-export function buscarAlternativas(alimentador){
-
-
-    return buscarInterligacoes()
-
-    .filter(
-
-        equipamento =>
-
-            equipamento.alimentador === alimentador &&
-
-            equipamento.interligacao?.ativa === true
-
-    )
-
-    .map(equipamento=>{
-
-
-        return {
-
-            equipamentoId:
-                equipamento.id,
-
-
-            plaqueta:
-                equipamento.plaqueta,
-
-
-            origem:
-                equipamento.alimentador,
-
-
-            destino:
-                equipamento.interligacao.alimentadorDestino,
-
-
-            tipo:
-                equipamento.tipo,
-
-
-            trecho:
-                equipamento.trecho,
-
-
-            equipamento
-
-
-
-        };
-
-
-    });
-
-
-}
-
-// =====================================================
-// ANALISAR MANOBRA 
-// =====================================================
-export function analisarManobra({
-    alimentador,
-    correnteTransferida,
-    correnteDestino = 0
-}){
-    const alternativas = buscarAlternativas(alimentador);
-
-    // Fallback de segurança: se o banco de rede não achar interligação, cria uma genérica para não travar a tela
-  if (alternativas.length === 0) {
-    return {
-        aprovado: false,
-        alternativas: [],
-        melhorAlternativa: null,
-        motivo: "Nenhum equipamento de interligação encontrado."
     };
 }
 
-const listaAlternativas = alternativas;
 
-    const resultados = listaAlternativas.map(alternativa => {
-        let analise = { permitido: true, carregamento: 0, motivo: "" };
-        
-        try {
-            analise = analisarTransferencia(
-                alternativa.origem,
-                alternativa.destino,
-                correnteTransferida,
-                correnteDestino
-            ) || analise;
-        } catch (e) {
-            // Ignora exceções do modelo externo e segue com o cálculo matemático direto
-        }
+// ==========================================================
+// VALIDAR EQUIPAMENTO DO DESARME
+// ==========================================================
 
-        const cargaFalta = Number(correnteTransferida) || 0;
-        const cargaDest = Number(correnteDestino) || 0;
-        const somaCorrentes = cargaFalta + cargaDest;
+function validarEquipamentoDesarme(
+    equipamentoDesarme,
+    alimentador
+) {
 
-        // Se o modelo externo retornou 0 ou vazio, calcula estimativa baseada em capacidade padrão de cabo (250A)
-        let percentualCarga = analise.carregamento;
-        if (!percentualCarga || percentualCarga === 0) {
-            percentualCarga = somaCorrentes > 0 ? Math.round((somaCorrentes / 250) * 100) : 50;
-        }
+    const codigo =
+        normalizarId(
+            equipamentoDesarme
+        );
 
-        const requerAlerta = percentualCarga > 80 && percentualCarga <= 100;
-        const permitidoFinal = percentualCarga <= 100; // Só bloqueia se ultrapassar 100% da capacidade
+    if (!codigo) {
 
         return {
-            ...alternativa,
-            permitido: permitidoFinal,
-            motivo: !permitidoFinal 
-                ? `Bloqueio: Carga final projetada em ${percentualCarga}% excede o limite máximo suportado.`
-                : requerAlerta 
-                ? `Carga em ${percentualCarga}% (>80%). Manobra permitida com monitoramento ativo.` 
-                : (analise.motivo || "Transferência dentro dos limites operacionais seguros."),
-            detalhes: analise.detalhe || "OK",
-            correnteFinal: somaCorrentes,
-            carregamento: percentualCarga,
-            requerAlerta,
-            interligacao: analise.interligacao || {}
-        };
-    });
 
-    const melhorAlternativa = resultados.find(r => r.permitido) || resultados[0];
+            informado:
+                false,
 
-    return {
-        aprovado: resultados.some(item => item.permitido),
-        alternativas: resultados,
-        melhorAlternativa
-    };
-}
+            valido:
+                true,
 
-// =====================================================
-// RECOMENDAÇÃO (RESOLUÇÃO REVERSA INTELIGENTE - RN05)
-// =====================================================
-export function gerarRecomendacao(analise, ocorrencia){
-    const melhor = analise.melhorAlternativa || analise.alternativas?.find(item => item.permitido);
+            existeBDGD:
+                false,
 
-    if(!analise.aprovado || !melhor || !melhor.permitido){
-        const alternativaFalha = analise.alternativas?.find(item => !item.permitido) || analise.alternativas?.[0] || {};
-        const alimentadorAlvo = ocorrencia?.alimentador || alternativaFalha.origem || "CMG-01C4";
-        
-        // 1. Pegamos a bitola e capacidade (que sabemos que estão chegando corretamente da análise)
-        const bitolaCabo = alternativaFalha.trechoLimitante?.bitola || alternativaFalha.bitola || "240 mm²";
-        const capacidadeCabo = alternativaFalha.trechoLimitante?.capacidade || alternativaFalha.capacidade || 500;
+            inconsistente:
+                false,
 
-        // 2. BUSCA REVERSA NO BANCO (trechos.js)
-        // Ignora o nome genérico "trecho-1" gerado pela análise e busca o trecho REAL
-        // cruzando o alimentador, a bitola e a capacidade.
-        let idVindoDaAnalise = alternativaFalha.trechoLimitante?.id;
-        if (idVindoDaAnalise === "trecho-1") idVindoDaAnalise = null; // Anula o mock
+            equipamento:
+                null,
 
-        const trechoRealDb = (trechos || []).find(t => 
-            t.id === idVindoDaAnalise || 
-            (t.alimentador === alimentadorAlvo && t.bitola === bitolaCabo && t.capacidade == capacidadeCabo)
-        ) || trechos?.[0] || {}; 
+            ficha:
+                null,
 
-        // 3. Monta o nome perfeito usando os dados reais do seu banco!
-        // Resultado esperado: "T001 (De: SE-CMG para P123456)"
-        const trechoProblema = trechoRealDb.id 
-            ? `${trechoRealDb.id} (De: ${trechoRealDb.origem} para ${trechoRealDb.destino})`
-            : `Trecho Restritivo (${alimentadorAlvo})`;
-
-        const motivoRN05 = `RN05: Impossível realizar a transferência. O trecho limitante [${trechoProblema}] possui cabo com bitola [${bitolaCabo}] (capacidade máxima de ${capacidadeCabo}A), que é insuficiente para suportar a corrente total projetada.`;
-
-        return {
-            permitido: false,
-            classificacao: "NÃO RECOMENDADA",
-            motivo: motivoRN05,
-            justificativas: [
-                `RN05 - Ponto restritivo identificado: ${trechoProblema}.`,
-                `RN05 - Restrição de Bitola: Cabo ${bitolaCabo} atingiu o limite térmico de capacidade (${capacidadeCabo}A).`,
-                "A transferência de carga foi impedida para proteger a integridade física da rede."
-            ],
-            restricoes: analise.alternativas || []
+            motivo:
+                "Equipamento do desarme não informado na ocorrência."
         };
     }
 
-    const emAtencao = melhor.requerAlerta || false;
+    let validacao;
+
+    try {
+
+        validacao =
+            validarEquipamentoBDGD(
+                codigo,
+                alimentador
+            );
+
+    } catch (erro) {
+
+        console.error(
+            "[Motor COI] Erro ao validar equipamento do desarme:",
+            erro
+        );
+
+        return {
+
+            informado:
+                true,
+
+            valido:
+                false,
+
+            existeBDGD:
+                false,
+
+            inconsistente:
+                true,
+
+            equipamento:
+                null,
+
+            ficha:
+                null,
+
+            motivo:
+                "Erro ao validar o equipamento do desarme na BDGD."
+        };
+    }
 
     return {
-        permitido: true,
-        classificacao: emAtencao ? "ATENÇÃO" : "RECOMENDADA",
-        nota: emAtencao ? 75 : 95,
-        motivo: emAtencao 
-            ? `Manobra permitida, mas exige monitoramento ativo devido ao carregamento de ${melhor.carregamento}% (RN01).`
-            : "Manobra operacionalmente segura.",
-        recomposicao: {
-            equipamento: melhor.equipamento?.plaqueta || melhor.plaqueta,
-            alimentadorDestino: melhor.destino,
-            trecho: melhor.trecho,
-            carregamento: melhor.carregamento || 0
-        },
-        justificativas: [
-            `Equipamento de interligação ${melhor.equipamento?.plaqueta || melhor.plaqueta} validado.`,
-            `Capacidade do trecho e bitola verificadas com sucesso.`,
-            emAtencao ? "Aviso RN01: Carga acima de 80% requer atenção do operador." : "Transferência dentro da faixa ideal."
-        ],
-        sequencia: [
-            `1. Isolar o trecho faltoso no alimentador de origem`,
-            `2. Fechar o equipamento de interligação ${melhor.equipamento?.plaqueta || melhor.plaqueta}`,
-            `3. Transferir a carga para o alimentador ${melhor.destino}`,
-            emAtencao ? "4. ⚠️ Monitorar evolução da carga pós-manobra (>80%)" : "4. Confirmar estabilização térmica e normalização dos clientes"
-        ]
+
+        informado:
+            true,
+
+        ...validacao
     };
 }
 
-// =====================================================
-// ANALISE COMPLETA
-// =====================================================
-export function executarAnaliseCOI(ocorrencia){
-    const impacto = calcularImpacto(ocorrencia);
 
-    const analise = analisarManobra({
-        alimentador: ocorrencia.alimentador,
-        equipamentoAlvo: ocorrencia.equipamento,
-        correnteTransferida: ocorrencia.manobra?.correnteDesligado || 0,
-        correnteDestino: ocorrencia.manobra?.correnteDestino || 0
-    });
+// ==========================================================
+// FILTRAR EQUIPAMENTO DO DESARME
+// ==========================================================
+//
+// Regra crítica:
+//
+// O equipamento que provocou o desarme NUNCA pode aparecer
+// como equipamento de interligação da recomendação.
+//
+// ==========================================================
 
-    // Passando a ocorrência para a geração da recomendação
-    const recomendacao = gerarRecomendacao(analise, ocorrencia);
+function equipamentoEhDesarme(
+    candidato,
+    ocorrencia
+) {
+
+    const idDesarme =
+        normalizarCodigoEquipamento(
+
+            ocorrencia?.equipamentoDesarme ??
+            ocorrencia?.equipamentoDesarmeId ??
+            ocorrencia?.equipamentoProtecao ??
+            ocorrencia?.equipamentoQueDesarmou ??
+            ocorrencia?.manobra?.equipamentoDesarme ??
+
+            null
+        );
+
+    if (!idDesarme) {
+        return false;
+    }
+
+    const ids = [
+
+        candidato?.equipamentoInterligacao,
+
+        candidato?.equipamentoIdInterligacao,
+
+        candidato?.equipamentoId,
+
+        candidato?.id,
+
+        candidato?.plaqueta
+
+    ]
+        .filter(Boolean)
+        .map(
+            normalizarCodigoEquipamento
+        )
+        .filter(Boolean);
+
+    return ids.includes(
+        idDesarme
+    );
+}
+
+
+// ==========================================================
+// FILTRAR CANDIDATOS
+// ==========================================================
+
+function filtrarCandidatosValidos(
+    candidatos,
+    ocorrencia
+) {
+
+    if (
+        !Array.isArray(
+            candidatos
+        )
+    ) {
+        return [];
+    }
+
+    const mapa =
+        new Map();
+
+    candidatos.forEach(
+        candidato => {
+
+            if (!candidato) {
+                return;
+            }
+
+            if (
+                equipamentoEhDesarme(
+                    candidato,
+                    ocorrencia
+                )
+            ) {
+
+                return;
+            }
+
+            const id =
+                normalizarCodigoEquipamento(
+
+                    candidato?.equipamentoInterligacao ??
+
+                    candidato?.equipamentoIdInterligacao ??
+
+                    candidato?.equipamentoId ??
+
+                    candidato?.id ??
+
+                    candidato?.plaqueta
+
+                );
+
+            if (!id) {
+                return;
+            }
+
+            const chave =
+                `${id}|` +
+                `${normalizarCodigo(obterAlimentador(candidato))}|` +
+                `${normalizarCodigo(obterAlimentadorDestino(candidato))}`;
+
+            if (
+                !mapa.has(
+                    chave
+                )
+            ) {
+
+                mapa.set(
+                    chave,
+                    candidato
+                );
+            }
+        }
+    );
+
+    return [
+        ...mapa.values()
+    ];
+}
+
+
+// ==========================================================
+// BUSCAR ALTERNATIVAS - COMPATIBILIDADE
+// ==========================================================
+//
+// Essa função permanece porque partes antigas do sistema
+// podem utilizá-la.
+//
+// IMPORTANTE:
+//
+// Ela NÃO decide qual equipamento deve ser usado.
+// A decisão automática é feita por:
+//     descobrirCandidatosRecomposicao()
+//
+// Quando a ocorrência está disponível, damos prioridade ao
+// novo mecanismo.
+//
+// ==========================================================
+
+export function buscarAlternativas(
+    alimentador,
+    ocorrencia = null
+) {
+
+    const origem =
+        normalizarId(
+            alimentador
+        );
+
+    if (!origem) {
+        return [];
+    }
+
+    // ------------------------------------------------------
+    // NOVO CAMINHO
+    // ------------------------------------------------------
+
+    if (
+        ocorrencia
+    ) {
+
+        try {
+
+            const candidatos =
+                descobrirCandidatosRecomposicao(
+                    {
+                        ...ocorrencia,
+                        alimentador:
+                            ocorrencia?.alimentador ??
+                            origem
+                    }
+                );
+
+            return filtrarCandidatosValidos(
+                candidatos,
+                {
+                    ...ocorrencia,
+                    alimentador:
+                        ocorrencia?.alimentador ??
+                        origem
+                }
+            );
+
+        } catch (erro) {
+
+            console.warn(
+                "[Motor COI] Falha ao descobrir candidatos pela nova arquitetura:",
+                erro
+            );
+        }
+    }
+
+    // ------------------------------------------------------
+    // FALLBACK LEGADO
+    // ------------------------------------------------------
+
+    let interligacoes = [];
+
+    try {
+
+        const resultado =
+            buscarInterligacoesAlimentador(
+                origem
+            );
+
+        if (
+            Array.isArray(
+                resultado
+            )
+        ) {
+
+            interligacoes =
+                resultado;
+        }
+
+    } catch (erro) {
+
+        console.warn(
+            "[Motor COI] Não foi possível utilizar buscarInterligacoesAlimentador:",
+            erro
+        );
+    }
+
+    if (
+        interligacoes.length === 0
+    ) {
+
+        try {
+
+            const oficiais =
+                buscarInterligacoes();
+
+            if (
+                Array.isArray(
+                    oficiais
+                )
+            ) {
+
+                const alvo =
+                    normalizarCodigo(
+                        origem
+                    );
+
+                interligacoes =
+                    oficiais.filter(
+                        item => {
+
+                            const origemItem =
+                                normalizarCodigo(
+                                    obterAlimentador(
+                                        item
+                                    )
+                                );
+
+                            const destinoItem =
+                                normalizarCodigo(
+                                    obterAlimentadorDestino(
+                                        item
+                                    )
+                                );
+
+                            return (
+
+                                origemItem === alvo ||
+
+                                destinoItem === alvo
+                            );
+                        }
+                    );
+            }
+
+        } catch (erro) {
+
+            console.warn(
+                "[Motor COI] Falha ao consultar interligações oficiais:",
+                erro
+            );
+        }
+    }
+
+    return filtrarCandidatosValidos(
+        interligacoes,
+        ocorrencia || {}
+    );
+}
+
+
+// ==========================================================
+// RESOLVER EQUIPAMENTO DA RECOMENDAÇÃO
+// ==========================================================
+
+function resolverEquipamento(
+    item
+) {
+
+    if (!item) {
+        return null;
+    }
+
+    const ids = [
+
+        item?.equipamentoInterligacao,
+
+        item?.equipamentoIdInterligacao,
+
+        item?.equipamentoId,
+
+        item?.equipamento?.id,
+
+        item?.equipamento?.COD_ID,
+
+        item?.equipamento?.codId,
+
+        item?.id,
+
+        item?.plaqueta
+
+    ]
+        .filter(Boolean);
+
+    for (
+        const id
+        of ids
+    ) {
+
+        const equipamento =
+            buscarEquipamento(
+                id
+            );
+
+        if (
+            equipamento
+        ) {
+
+            return equipamento;
+        }
+    }
+
+    if (
+        item?.equipamento &&
+        typeof item.equipamento ===
+            "object"
+    ) {
+
+        return item.equipamento;
+    }
+
+    return null;
+}
+
+
+// ==========================================================
+// CRIAR DESCRIÇÃO DO CANDIDATO
+// ==========================================================
+
+function normalizarCandidato(
+    candidato
+) {
+
+    if (!candidato) {
+        return null;
+    }
+
+    const equipamento =
+        resolverEquipamento(
+            candidato
+        );
+
+    const equipamentoId =
+        normalizarId(
+
+            candidato?.equipamentoInterligacao ??
+
+            candidato?.equipamentoIdInterligacao ??
+
+            candidato?.equipamentoId ??
+
+            candidato?.id ??
+
+            equipamento?.id ??
+
+            equipamento?.COD_ID ??
+
+            equipamento?.codId ??
+
+            null
+        );
+
+    const plaqueta =
+        normalizarId(
+
+            candidato?.plaqueta ??
+
+            candidato?.PLAQUETA ??
+
+            equipamento?.plaqueta ??
+
+            equipamento?.PLAQUETA ??
+
+            equipamento?.plaquetaIPT ??
+
+            equipamento?.PLAQUETA_IPT ??
+
+            equipamentoId
+
+        ) || null;
+
+    const estado =
+        obterEstadoEquipamento(
+            candidato
+        );
 
     return {
-        impacto,
-        analise,
+
+        ...candidato,
+
+        equipamento,
+
+        equipamentoId,
+
+        equipamentoInterligacao:
+            equipamentoId,
+
+        equipamentoIdInterligacao:
+            equipamentoId,
+
+        plaqueta,
+
+        tipo:
+            candidato?.tipo ??
+            candidato?.tipoEquipamento ??
+            equipamento?.tipo ??
+            equipamento?.tipoEquipamento ??
+            null,
+
+        tipUnid:
+            candidato?.tipUnid ??
+            obterTipUnid(
+                candidato
+            ),
+
+        origem:
+            candidato?.origem ??
+            candidato?.alimentador ??
+            null,
+
+        destino:
+            candidato?.destino ??
+            candidato?.alimentadorDestino ??
+            null,
+
+        alimentador:
+            candidato?.alimentador ??
+            candidato?.origem ??
+            null,
+
+        alimentadorDestino:
+            candidato?.alimentadorDestino ??
+            candidato?.destino ??
+            null,
+
+        estado
+    };
+}
+
+
+// ==========================================================
+// CORRENTES
+// ==========================================================
+
+function obterCorrenteDesligado(
+    ocorrencia,
+    opcoes = {}
+) {
+
+    return converterCorrente(
+
+        opcoes?.correnteDesligado ??
+
+        opcoes?.correnteTrechoOcorrencia ??
+
+        ocorrencia?.correnteTrechoOcorrencia ??
+
+        ocorrencia?.correnteDesligado ??
+
+        ocorrencia?.manobra?.correnteDesligado ??
+
+        null
+    );
+}
+
+
+function obterCorrenteDestino(
+    ocorrencia,
+    opcoes = {}
+) {
+
+    return converterCorrente(
+
+        opcoes?.correnteDestino ??
+
+        opcoes?.correnteTrechoRecuperacao ??
+
+        opcoes?.correnteAtualDestino ??
+
+        ocorrencia?.correnteTrechoRecuperacao ??
+
+        ocorrencia?.correnteAtualDestino ??
+
+        ocorrencia?.manobra?.correnteDestino ??
+
+        null
+    );
+}
+
+
+// ==========================================================
+// NORMALIZAR RESULTADO DA ANÁLISE
+// ==========================================================
+
+function normalizarAnalise(
+    resultado
+) {
+
+    if (!resultado) {
+
+        return {
+
+            aprovado:
+                false,
+
+            permitido:
+                false,
+
+            status:
+                "ERRO_ANALISE",
+
+            candidatos: [],
+
+            alternativas: [],
+
+            recomendacao:
+                null,
+
+            motivo:
+                "O motor não retornou resultado de análise."
+        };
+    }
+
+    const candidatosBrutos =
+        Array.isArray(
+            resultado?.candidatos
+        )
+            ? resultado.candidatos
+            : (
+                Array.isArray(
+                    resultado?.alternativas
+                )
+                    ? resultado.alternativas
+                    : []
+            );
+
+    const candidatos =
+        candidatosBrutos
+            .map(
+                normalizarCandidato
+            )
+            .filter(Boolean);
+
+    const recomendacao =
+        resultado?.recomendacao ??
+        null;
+
+    const melhor =
+        recomendacao?.equipamentoInterligacao
+            ? candidatos.find(
+                candidato =>
+                    normalizarCodigoEquipamento(
+                        candidato?.equipamentoInterligacao
+                    ) ===
+                    normalizarCodigoEquipamento(
+                        recomendacao.equipamentoInterligacao
+                    )
+              ) ??
+              null
+            : (
+                candidatos.find(
+                    candidato =>
+                        normalizarCodigoEquipamento(
+                            candidato?.equipamentoId
+                        ) ===
+                        normalizarCodigoEquipamento(
+                            recomendacao?.equipamentoId
+                        )
+                ) ??
+                null
+            );
+
+    const melhorCandidato =
+        resultado?.melhorAlternativa ??
+        resultado?.melhorCandidato ??
+        melhor ??
+        (
+            recomendacao?.equipamentoId
+                ? normalizarCandidato(
+                    recomendacao
+                )
+                : null
+        );
+
+    return {
+
+        ...resultado,
+
+        aprovado:
+            resultado?.aprovado ??
+            resultado?.permitido ??
+            Boolean(
+                recomendacao?.permitido
+            ),
+
+        permitido:
+            resultado?.permitido ??
+            resultado?.aprovado ??
+            Boolean(
+                recomendacao?.permitido
+            ),
+
+        status:
+            resultado?.status ??
+            (
+                resultado?.aprovado
+                    ? "LIBERADA"
+                    : "BLOQUEADA"
+            ),
+
+        candidatos,
+
+        alternativas:
+            candidatos,
+
+        melhorAlternativa:
+            normalizarCandidato(
+                melhorCandidato
+            ),
+
         recomendacao
     };
 }
 
 
-// =====================================================
-// MOTOR PRINCIPAL
-// =====================================================
+// ==========================================================
+// ANALISAR MANOBRA - NOVA ARQUITETURA
+// ==========================================================
+//
+// Compatibilidade com chamadas antigas.
+//
+// O equipamentoInterligacao recebido por versões antigas
+// NÃO é utilizado para selecionar o candidato.
+//
+// Isso impede que G02722 seja interpretado como interligação.
+//
+// ==========================================================
 
-export function executarMotorCOI(entrada){
+export function analisarManobra(
+    parametros = {}
+) {
+
+    const {
+
+        alimentador,
+
+        correnteDesligado,
+
+        correnteAtualDestino,
+
+        correnteTransferida,
+
+        correnteTrechoOcorrencia,
+
+        correnteTrechoRecuperacao,
+
+        alimentadorDestino,
+
+        equipamento,
+
+        equipamentoDesarme,
+
+        equipamentoInterligacao,
+
+        equipamentoIdInterligacao,
+
+        plaqueta,
+
+        interligacao
+
+    } = parametros;
 
 
+    const origem =
+        normalizarId(
+            alimentador
+        );
 
-    const ocorrencia={
+
+    // ======================================================
+    // CORRENTES
+    // ======================================================
+
+    const correnteOcorrencia =
+        converterCorrente(
+
+            correnteTrechoOcorrencia ??
+
+            correnteDesligado ??
+
+            correnteTransferida ??
+
+            null
+
+        );
 
 
-        ...entrada,
+    const correnteRecuperacao =
+        converterCorrente(
 
+            correnteTrechoRecuperacao ??
+
+            correnteAtualDestino ??
+
+            null
+
+        );
+
+
+    // ======================================================
+    // EQUIPAMENTO DO DESARME
+    // ======================================================
+    //
+    // ATENÇÃO:
+    //
+    // equipamentoInterligacao é deliberadamente ignorado
+    // como fonte de decisão.
+    //
+    // O novo motor descobre a interligação.
+    //
+    // ======================================================
+
+    const codigoDesarme =
+        normalizarId(
+            equipamentoDesarme
+        );
+
+
+    // ======================================================
+    // VALIDAR ALIMENTADOR
+    // ======================================================
+
+    if (!origem) {
+
+        return {
+
+            aprovado:
+                false,
+
+            permitido:
+                false,
+
+            status:
+                "DADO_INVALIDO",
+
+            alternativas: [],
+
+            candidatos: [],
+
+            melhorAlternativa:
+                null,
+
+            recomendacao:
+                null,
+
+            correnteConhecida:
+                false,
+
+            motivo:
+                "Alimentador da ocorrência não informado."
+        };
+    }
+
+
+    // ======================================================
+    // VALIDAR EQUIPAMENTO DO DESARME
+    // ======================================================
+
+    const validacaoDesarme =
+        validarEquipamentoDesarme(
+            codigoDesarme,
+            origem
+        );
+
+
+    if (
+        validacaoDesarme.informado &&
+        !validacaoDesarme.valido
+    ) {
+
+        return {
+
+            aprovado:
+                false,
+
+            permitido:
+                false,
+
+            status:
+
+                validacaoDesarme.existeBDGD
+
+                    ? "EQUIPAMENTO_DESARME_INCONSISTENTE"
+
+                    : "EQUIPAMENTO_DESARME_NAO_ENCONTRADO",
+
+            alternativas: [],
+
+            candidatos: [],
+
+            melhorAlternativa:
+                null,
+
+            recomendacao:
+                null,
+
+            correnteConhecida:
+
+                correnteOcorrencia !== null &&
+
+                correnteRecuperacao !== null,
+
+            correnteTransferida:
+                correnteOcorrencia,
+
+            correnteBaseDestino:
+                correnteRecuperacao,
+
+            correnteProjetada:
+
+                correnteOcorrencia !== null &&
+
+                correnteRecuperacao !== null
+
+                    ? correnteOcorrencia +
+                      correnteRecuperacao
+
+                    : null,
+
+            equipamentoDesarme:
+                validacaoDesarme,
+
+            motivo:
+                validacaoDesarme.motivo
+        };
+    }
+
+
+    // ======================================================
+    // VALIDAR CORRENTES
+    // ======================================================
+
+    if (
+        correnteOcorrencia === null ||
+        correnteRecuperacao === null
+    ) {
+
+        return {
+
+            aprovado:
+                false,
+
+            permitido:
+                false,
+
+            status:
+                "CORRENTE_INDISPONIVEL",
+
+            alternativas: [],
+
+            candidatos: [],
+
+            melhorAlternativa:
+                null,
+
+            recomendacao:
+                null,
+
+            correnteConhecida:
+                false,
+
+            correnteTransferida:
+                correnteOcorrencia,
+
+            correnteBaseDestino:
+                correnteRecuperacao,
+
+            correnteProjetada:
+                null,
+
+            equipamentoDesarme:
+                validacaoDesarme,
+
+            motivo:
+                "Informe a corrente do trecho no momento do desarme e a corrente atual do trecho receptor/suporte antes de analisar a recomposição."
+        };
+    }
+
+
+    // ======================================================
+    // MONTAR OCORRÊNCIA PARA O NOVO MOTOR
+    // ======================================================
+
+    const ocorrencia = {
+
+        alimentador:
+            origem,
+
+        alimentadorOrigem:
+            origem,
+
+        equipamentoDesarme:
+            codigoDesarme ||
+
+            null,
+
+        equipamentoDesarmeId:
+            codigoDesarme ||
+
+            null,
+
+        // --------------------------------------------------
+        // IMPORTANTE:
+        //
+        // Não transportar equipamentoInterligacao para a
+        // ocorrência como decisão do operador.
+        //
+        // --------------------------------------------------
+
+        equipamentoInterligacao:
+            null,
+
+        equipamentoIdInterligacao:
+            null,
+
+        alimentadorDestino:
+            alimentadorDestino ??
+
+            null,
 
         trecho:
-
-            entrada.trecho ?? null,
-
-
+            parametros?.trecho ??
+            null,
 
         clientesAfetados:
+            parametros?.clientesAfetados ??
+            0,
 
-            entrada.clientesAfetados ?? 0,
-
-
-
-        corrente:
-
-            entrada.manobra?.correnteDesligado ?? 0,
-
-
-
-        manobra:{
-
+        manobra: {
 
             correnteDesligado:
-
-                entrada.manobra?.correnteDesligado ?? 0,
-
-
+                correnteOcorrencia,
 
             correnteDestino:
+                correnteRecuperacao,
 
-                entrada.manobra?.correnteDestino ?? 0
-
+            equipamentoInterligacao:
+                null
 
         }
-
 
     };
 
 
+    // ======================================================
+    // EXECUTAR NOVA ANÁLISE
+    // ======================================================
+
+    let resultado;
 
 
+    try {
+
+        resultado =
+            analisarRecomposicaoOcorrencia(
+
+                ocorrencia,
+
+                {
+
+                    correnteDesligado:
+                        correnteOcorrencia,
+
+                    correnteDestino:
+                        correnteRecuperacao
+
+                }
+
+            );
+
+    } catch (erro) {
+
+        console.error(
+            "[Motor COI] Erro no motor de recomposição:",
+            erro
+        );
+
+        return {
+
+            aprovado:
+                false,
+
+            permitido:
+                false,
+
+            status:
+                "ERRO_MOTOR",
+
+            alternativas: [],
+
+            candidatos: [],
+
+            melhorAlternativa:
+                null,
+
+            recomendacao:
+                null,
+
+            correnteConhecida:
+                true,
+
+            correnteTransferida:
+                correnteOcorrencia,
+
+            correnteBaseDestino:
+                correnteRecuperacao,
+
+            correnteProjetada:
+                correnteOcorrencia +
+                correnteRecuperacao,
+
+            equipamentoDesarme:
+                validacaoDesarme,
+
+            motivo:
+                "O motor encontrou um erro ao executar a análise automática de recomposição."
+        };
+    }
+
+
+    // ======================================================
+    // NORMALIZAR
+    // ======================================================
+
+    const analise =
+        normalizarAnalise(
+            resultado
+        );
+
+
+    return {
+
+        ...analise,
+
+        equipamentoDesarme:
+            validacaoDesarme,
+
+        correnteConhecida:
+            true,
+
+        correnteTransferida:
+            correnteOcorrencia,
+
+        correnteBaseDestino:
+            correnteRecuperacao,
+
+        correnteProjetada:
+            correnteOcorrencia +
+            correnteRecuperacao,
+
+        // Mantém referência apenas informativa.
+        //
+        // NÃO influencia a decisão.
+        equipamentoInformadoAntigo:
+            equipamentoInterligacao ??
+            equipamentoIdInterligacao ??
+            equipamento ??
+            plaqueta ??
+            null,
+
+        interligacaoInformadaAntiga:
+            interligacao ??
+            null
+    };
+}
+
+
+// ==========================================================
+// GERAR RECOMENDAÇÃO
+// ==========================================================
+
+export function gerarRecomendacao(
+    analise,
+    ocorrencia
+) {
+
+    if (!analise) {
+
+        return {
+
+            permitido:
+                false,
+
+            classificacao:
+                "NÃO RECOMENDADA",
+
+            motivo:
+                "Análise COI não disponível.",
+
+            justificativas: [],
+
+            recomposicao:
+                null,
+
+            sequencia: []
+        };
+    }
+
+
+    const melhor =
+        normalizarCandidato(
+
+            analise?.melhorAlternativa ??
+
+            analise?.melhorCandidato ??
+
+            analise?.recomendacao ??
+
+            null
+
+        );
+
+
+    const recomendacaoModelo =
+        analise?.recomendacao ??
+        null;
+
+
+    const permitido =
+        Boolean(
+
+            analise?.permitido ??
+
+            analise?.aprovado ??
+
+            recomendacaoModelo?.permitido
+
+        );
+
+
+    // ======================================================
+    // SEM ALTERNATIVA
+    // ======================================================
+
+    if (
+        !permitido ||
+        !melhor
+    ) {
+
+        const candidatos =
+            Array.isArray(
+                analise?.candidatos
+            )
+                ? analise.candidatos
+                : (
+                    Array.isArray(
+                        analise?.alternativas
+                    )
+                        ? analise.alternativas
+                        : []
+                );
+
+
+        const bloqueada =
+            candidatos.find(
+                candidato =>
+
+                    candidato?.permitido === false
+
+            ) ||
+
+            candidatos[0] ||
+
+            null;
+
+
+        const alimentador =
+            ocorrencia?.alimentador ||
+
+            analise?.alimentador ||
+
+            "NÃO INFORMADO";
+
+
+        const motivo =
+            bloqueada?.motivo ||
+
+            recomendacaoModelo?.motivo ||
+
+            analise?.motivo ||
+
+            "Nenhuma alternativa de recomposição atende aos critérios operacionais.";
+
+
+        return {
+
+            permitido:
+                false,
+
+            classificacao:
+                "NÃO RECOMENDADA",
+
+            motivo:
+                `Nenhuma recomposição automática foi aprovada para ${alimentador}. ${motivo}`,
+
+            nota:
+                0,
+
+            justificativas: [
+
+                `Alimentador da ocorrência: ${alimentador}.`,
+
+                ocorrencia?.equipamentoDesarme
+
+                    ? `Equipamento do desarme: ${ocorrencia.equipamentoDesarme}.`
+
+                    : "Equipamento do desarme não informado.",
+
+                "Nenhum equipamento de interligação foi selecionado manualmente.",
+
+                "A busca de alternativas foi realizada pela topologia BDGD e pelo estado operacional dos equipamentos.",
+
+                motivo
+
+            ],
+
+            recomposicao:
+                null,
+
+            sequencia: [],
+
+            restricoes:
+                candidatos
+
+        };
+    }
+
+
+    // ======================================================
+    // DADOS DA ALTERNATIVA
+    // ======================================================
+
+    const equipamentoId =
+        normalizarId(
+
+            melhor?.equipamentoId ??
+
+            melhor?.equipamentoInterligacao ??
+
+            melhor?.id ??
+
+            null
+
+        );
+
+
+    const plaqueta =
+        normalizarId(
+
+            melhor?.plaqueta ??
+
+            melhor?.PLAQUETA ??
+
+            obterPlaquetaEquipamento(
+                melhor
+            ) ??
+
+            equipamentoId ??
+
+            "-"
+
+        );
+
+
+    const origem =
+        melhor?.origem ??
+
+        melhor?.alimentador ??
+
+        ocorrencia?.alimentador ??
+
+        null;
+
+
+    const destino =
+        melhor?.destino ??
+
+        melhor?.alimentadorDestino ??
+
+        recomendacaoModelo?.alimentadorDestino ??
+
+        null;
+
+
+    const estado =
+        obterEstadoEquipamento(
+            melhor
+        );
+
+
+    const correnteTransferida =
+        converterCorrente(
+
+            melhor?.correnteTransferida ??
+
+            analise?.correnteTransferida ??
+
+            null
+
+        );
+
+
+    const correnteBaseDestino =
+        converterCorrente(
+
+            melhor?.correnteBaseDestino ??
+
+            analise?.correnteBaseDestino ??
+
+            null
+
+        );
+
+
+    const correnteProjetada =
+        converterCorrente(
+
+            melhor?.correnteProjetada ??
+
+            analise?.correnteProjetada ??
+
+            null
+
+        );
+
+
+    const carregamento =
+        Number.isFinite(
+            Number(
+                melhor?.carregamento
+            )
+        )
+            ? arredondar(
+                melhor.carregamento,
+                0
+            )
+            : null;
+
+
+    const capacidade =
+        Number.isFinite(
+            Number(
+                melhor?.capacidade
+            )
+        )
+            ? Number(
+                melhor.capacidade
+            )
+            : null;
+
+
+    const limiteOperacional =
+        Number.isFinite(
+            Number(
+                melhor?.limiteOperacional
+            )
+        )
+            ? Number(
+                melhor.limiteOperacional
+            )
+            : null;
+
+
+    const trechoLimitante =
+        melhor?.trechoLimitante ??
+        null;
+
+
+    const emAtencao =
+        melhor?.requerAlerta === true ||
+
+        normalizarTexto(
+            melhor?.status
+        ) === "ATENCAO";
+
+
+    // ======================================================
+    // CLASSIFICAÇÃO
+    // ======================================================
+
+    let classificacao =
+        "RECOMENDADA";
+
+
+    if (
+        emAtencao
+    ) {
+
+        classificacao =
+            "ATENÇÃO";
+    }
+
+
+    // ======================================================
+    // NOTA
+    // ======================================================
+
+    let nota =
+        null;
+
+
+    if (
+        carregamento !== null
+    ) {
+
+        nota =
+            carregamento >= 100
+
+                ? 0
+
+                : Math.max(
+                    0,
+                    100 -
+                    carregamento
+                );
+    }
+
+
+    // ======================================================
+    // JUSTIFICATIVAS
+    // ======================================================
+
+    const justificativas = [];
+
+
+    justificativas.push(
+        `Equipamento de interligação ${plaqueta} identificado automaticamente pela topologia BDGD.`
+    );
+
+
+    if (
+        equipamentoId &&
+        equipamentoId !== plaqueta
+    ) {
+
+        justificativas.push(
+            `Código operacional/BDGD da interligação: ${equipamentoId}.`
+        );
+    }
+
+
+    if (
+        estado
+    ) {
+
+        justificativas.push(
+            `Estado operacional atual: ${estado}.`
+        );
+    }
+
+
+    if (
+        origem
+    ) {
+
+        justificativas.push(
+            `Alimentador da ocorrência: ${origem}.`
+        );
+    }
+
+
+    if (
+        destino
+    ) {
+
+        justificativas.push(
+            `Alimentador de apoio identificado: ${destino}.`
+        );
+    }
+
+
+    if (
+        correnteTransferida !== null
+    ) {
+
+        justificativas.push(
+            `Corrente transferida considerada: ${correnteTransferida} A.`
+        );
+    }
+
+
+    if (
+        correnteBaseDestino !== null
+    ) {
+
+        justificativas.push(
+            `Corrente existente no trecho receptor: ${correnteBaseDestino} A.`
+        );
+    }
+
+
+    if (
+        correnteProjetada !== null
+    ) {
+
+        justificativas.push(
+            `Corrente projetada após a manobra: ${correnteProjetada} A.`
+        );
+    }
+
+
+    if (
+        carregamento !== null
+    ) {
+
+        justificativas.push(
+            `Carregamento projetado do trecho limitante: ${carregamento}%.`
+        );
+    }
+
+
+    if (
+        capacidade !== null
+    ) {
+
+        justificativas.push(
+            `Capacidade do trecho limitante: ${capacidade} A.`
+        );
+    }
+
+
+    if (
+        limiteOperacional !== null
+    ) {
+
+        justificativas.push(
+            `Limite operacional considerado: ${limiteOperacional} A.`
+        );
+    }
+
+
+    if (
+        trechoLimitante?.id
+    ) {
+
+        justificativas.push(
+            `Trecho limitante identificado: ${trechoLimitante.id}.`
+        );
+    }
+
+
+    if (
+        emAtencao
+    ) {
+
+        justificativas.push(
+            "RN01: carregamento acima do limite recomendado de 80%, exigindo monitoramento ativo."
+        );
+
+    } else {
+
+        justificativas.push(
+            "Transferência dentro do limite operacional recomendado."
+        );
+    }
+
+
+    // ======================================================
+    // SEQUÊNCIA
+    // ======================================================
+
+    const sequencia = [];
+
+
+    sequencia.push(
+        `1. Confirmar o isolamento do trecho faltoso no alimentador ${origem || ocorrencia?.alimentador || "-"}.`
+    );
+
+
+    sequencia.push(
+        `2. Confirmar a disponibilidade do equipamento de interligação ${plaqueta}.`
+    );
+
+
+    sequencia.push(
+        `3. Fechar a interligação ${plaqueta}.`
+    );
+
+
+    if (
+        destino
+    ) {
+
+        sequencia.push(
+            `4. Confirmar a transferência da carga para o alimentador ${destino}.`
+        );
+
+    } else {
+
+        sequencia.push(
+            "4. Confirmar a estabilização da rede após a manobra."
+        );
+    }
+
+
+    if (
+        emAtencao
+    ) {
+
+        sequencia.push(
+            "5. Monitorar continuamente a corrente e o carregamento pós-manobra."
+        );
+
+    } else {
+
+        sequencia.push(
+            "5. Confirmar estabilização da rede e normalização dos clientes."
+        );
+    }
+
+
+    // ======================================================
+    // RESULTADO
+    // ======================================================
+
+    return {
+
+        permitido:
+            true,
+
+        classificacao,
+
+        nota,
+
+        motivo:
+
+            emAtencao
+
+                ? `Manobra ${plaqueta} permitida, mas exige monitoramento ativo devido ao carregamento projetado de ${carregamento ?? "-"}%.`
+
+                : `Manobra ${plaqueta} operacionalmente recomendada.`,
+
+        recomposicao: {
+
+            equipamento:
+                plaqueta,
+
+            equipamentoId:
+                equipamentoId ||
+
+                null,
+
+            tipo:
+                obterTipoEquipamento(
+                    melhor
+                ),
+
+            tipUnid:
+                obterTipUnid(
+                    melhor
+                ),
+
+            estado,
+
+            alimentadorOrigem:
+                origem,
+
+            alimentadorDestino:
+                destino,
+
+            correnteTransferida,
+
+            correnteBaseDestino,
+
+            correnteProjetada,
+
+            carregamento,
+
+            capacidade,
+
+            limiteOperacional,
+
+            trechoLimitante,
+
+            caminho:
+                melhor?.caminho ??
+                melhor?.caminhoEletrico ??
+                melhor?.path ??
+                null,
+
+            manobra:
+                melhor?.manobra ??
+                {
+
+                    equipamento:
+                        equipamentoId,
+
+                    acao:
+                        "FECHAR"
+
+                }
+
+        },
+
+        justificativas,
+
+        sequencia
+    };
+}
+
+
+// ==========================================================
+// EXECUTAR ANÁLISE COMPLETA DO COI
+// ==========================================================
+
+export function executarAnaliseCOI(
+    ocorrencia,
+    opcoes = {}
+) {
+
+    const ocorrenciaNormalizada = {
+
+        ...(
+            ocorrencia ||
+            {}
+        ),
+
+        alimentador:
+            ocorrencia?.alimentador ??
+
+            ocorrencia?.alimentadorOrigem ??
+
+            null,
+
+        equipamentoDesarme:
+
+            ocorrencia?.equipamentoDesarme ??
+
+            ocorrencia?.equipamentoDesarmeId ??
+
+            ocorrencia?.equipamentoProtecao ??
+
+            ocorrencia?.equipamentoQueDesarmou ??
+
+            ocorrencia?.manobra?.equipamentoDesarme ??
+
+            null,
+
+        // --------------------------------------------------
+        // NÃO CARREGAR EQUIPAMENTO DE INTERLIGAÇÃO
+        // --------------------------------------------------
+
+        equipamentoInterligacao:
+            null,
+
+        equipamentoIdInterligacao:
+            null,
+
+        alimentadorDestino:
+            null,
+
+        manobra: {
+
+            ...(
+                ocorrencia?.manobra ||
+                {}
+            ),
+
+            equipamentoInterligacao:
+                null,
+
+            correnteDesligado:
+
+                opcoes?.correnteDesligado ??
+
+                ocorrencia?.correnteTrechoOcorrencia ??
+
+                ocorrencia?.manobra?.correnteDesligado ??
+
+                null,
+
+            correnteDestino:
+
+                opcoes?.correnteDestino ??
+
+                ocorrencia?.correnteTrechoRecuperacao ??
+
+                ocorrencia?.manobra?.correnteDestino ??
+
+                null
+
+        }
+
+    };
+
+
+    // ======================================================
+    // IMPACTO
+    // ======================================================
+
+    const impacto =
+        calcularImpacto(
+            ocorrenciaNormalizada
+        );
+
+
+    // ======================================================
+    // ANÁLISE
+    // ======================================================
+
+    const analise =
+        analisarManobra({
+
+            alimentador:
+                ocorrenciaNormalizada.alimentador,
+
+            correnteDesligado:
+
+                ocorrenciaNormalizada
+                    ?.manobra
+                    ?.correnteDesligado,
+
+            correnteAtualDestino:
+
+                ocorrenciaNormalizada
+                    ?.manobra
+                    ?.correnteDestino,
+
+            correnteTrechoOcorrencia:
+
+                ocorrenciaNormalizada
+                    ?.manobra
+                    ?.correnteDesligado,
+
+            correnteTrechoRecuperacao:
+
+                ocorrenciaNormalizada
+                    ?.manobra
+                    ?.correnteDestino,
+
+            alimentadorDestino:
+                null,
+
+            equipamento:
+                null,
+
+            equipamentoInterligacao:
+                null,
+
+            equipamentoIdInterligacao:
+                null,
+
+            plaqueta:
+                null,
+
+            equipamentoDesarme:
+
+                ocorrenciaNormalizada
+                    .equipamentoDesarme,
+
+            trecho:
+                ocorrenciaNormalizada.trecho,
+
+            clientesAfetados:
+                ocorrenciaNormalizada.clientesAfetados
+
+        });
+
+
+    // ======================================================
+    // RECOMENDAÇÃO
+    // ======================================================
+
+    const recomendacao =
+        gerarRecomendacao(
+            analise,
+            ocorrenciaNormalizada
+        );
+
+
+    return {
+
+        impacto,
+
+        analise,
+
+        recomendacao,
+
+        ocorrencia:
+            ocorrenciaNormalizada
+    };
+}
+
+
+// ==========================================================
+// MOTOR PRINCIPAL
+// ==========================================================
+//
+// Entrada:
+//
+// ocorrência + correntes.
+//
+// O operador NÃO precisa informar a interligação.
+//
+// ==========================================================
+
+export function executarMotorCOI(
+    entrada = {}
+) {
+
+    const alimentador =
+        normalizarId(
+
+            entrada?.alimentador ??
+
+            entrada?.alimentadorOrigem ??
+
+            null
+
+        );
+
+
+    const equipamentoDesarme =
+        normalizarId(
+
+            entrada?.equipamentoDesarme ??
+
+            entrada?.equipamentoDesarmeId ??
+
+            entrada?.equipamentoProtecao ??
+
+            entrada?.equipamentoQueDesarmou ??
+
+            entrada?.manobra?.equipamentoDesarme ??
+
+            null
+
+        );
+
+
+    const correnteDesligado =
+        converterCorrente(
+
+            entrada?.correnteTrechoOcorrencia ??
+
+            entrada?.correnteDesligado ??
+
+            entrada?.manobra?.correnteDesligado ??
+
+            null
+
+        );
+
+
+    const correnteDestino =
+        converterCorrente(
+
+            entrada?.correnteTrechoRecuperacao ??
+
+            entrada?.correnteAtualDestino ??
+
+            entrada?.manobra?.correnteDestino ??
+
+            null
+
+        );
+
+
+    // ======================================================
+    // OCORRÊNCIA NORMALIZADA
+    // ======================================================
+
+    const ocorrencia = {
+
+        ...entrada,
+
+        alimentador,
+
+        alimentadorOrigem:
+            alimentador,
+
+        equipamentoDesarme,
+
+        equipamentoDesarmeId:
+            equipamentoDesarme,
+
+        // --------------------------------------------------
+        // CRÍTICO:
+        //
+        // Nenhum campo antigo pode transformar G02722 em
+        // equipamento de interligação.
+        // --------------------------------------------------
+
+        equipamentoInterligacao:
+            null,
+
+        equipamentoIdInterligacao:
+            null,
+
+        alimentadorDestino:
+            null,
+
+        trecho:
+            entrada?.trecho ??
+            null,
+
+        clientesAfetados:
+            entrada?.clientesAfetados ??
+            0,
+
+        clientesInterrompidos:
+            entrada?.clientesInterrompidos ??
+            entrada?.clientesAfetados ??
+            0,
+
+        clientesRecuperados:
+            0,
+
+        clientesRemanescentes:
+            entrada?.clientesRemanescentes ??
+            entrada?.clientesAfetados ??
+            0,
+
+        manobra: {
+
+            ...(
+                entrada?.manobra ||
+                {}
+            ),
+
+            equipamentoInterligacao:
+                null,
+
+            correnteDesligado,
+
+            correnteDestino,
+
+            alimentadorDestino:
+                null,
+
+            equipamentoDesarme
+
+        }
+
+    };
+
+
+    // ======================================================
+    // EXECUTAR
+    // ======================================================
 
     const resultado =
-
         executarAnaliseCOI(
             ocorrencia
         );
 
 
+    const analise =
+        resultado?.analise ??
+        null;
 
 
+    const recomendacao =
+        resultado?.recomendacao ??
+        null;
 
-    const alternativa =
 
+    const melhor =
+        normalizarCandidato(
 
-        resultado.analise.alternativas?.find(
+            analise?.melhorAlternativa ??
 
-            item=>
+            analise?.melhorCandidato ??
 
-                item.permitido
+            recomendacao?.recomposicao ??
+
+            null
 
         );
 
 
+    // ======================================================
+    // CORRENTE PROJETADA
+    // ======================================================
+
+    const correnteProjetada =
+        correnteDesligado !== null &&
+
+        correnteDestino !== null
+
+            ? correnteDesligado +
+              correnteDestino
+
+            : null;
 
 
+    const correnteFinal =
+        converterCorrente(
 
-    const correnteTotal =
+            melhor?.correnteProjetada ??
+
+            recomendacao
+                ?.recomposicao
+                ?.correnteProjetada ??
+
+            analise?.correnteProjetada ??
+
+            null
+
+        );
 
 
-        ocorrencia.manobra.correnteDesligado +
+    // ======================================================
+    // EQUIPAMENTO DA INTERLIGAÇÃO
+    // ======================================================
 
-        ocorrencia.manobra.correnteDestino;
+    const equipamentoInterligacaoId =
+        normalizarId(
+
+            melhor?.equipamentoId ??
+
+            melhor?.equipamentoInterligacao ??
+
+            recomendacao
+                ?.recomposicao
+                ?.equipamentoId ??
+
+            null
+
+        );
 
 
+    const equipamentoInterligacaoPlaqueta =
+        normalizarId(
+
+            melhor?.plaqueta ??
+
+            recomendacao
+                ?.recomposicao
+                ?.equipamento ??
+
+            equipamentoInterligacaoId ??
+
+            null
+
+        );
 
 
+    // ======================================================
+    // ALIMENTADOR DESTINO
+    // ======================================================
+
+    const alimentadorDestino =
+        normalizarId(
+
+            melhor?.alimentadorDestino ??
+
+            melhor?.destino ??
+
+            recomendacao
+                ?.recomposicao
+                ?.alimentadorDestino ??
+
+            null
+
+        );
+
+
+    // ======================================================
+    // CLIENTES
+    // ======================================================
+
+    const clientesAfetados =
+        Number(
+            entrada?.clientesAfetados
+        ) || 0;
+
+
+    const clientesRecuperados =
+        Number.isFinite(
+            Number(
+                analise?.clientesRecuperados
+            )
+        )
+            ? Number(
+                analise.clientesRecuperados
+            )
+            : (
+                Number.isFinite(
+                    Number(
+                        recomendacao
+                            ?.recomposicao
+                            ?.clientesRecuperados
+                    )
+                )
+                    ? Number(
+                        recomendacao
+                            .recomposicao
+                            .clientesRecuperados
+                    )
+                    : null
+            );
+
+
+    const clientesRemanescentes =
+        clientesRecuperados !== null
+
+            ? Math.max(
+                0,
+                clientesAfetados -
+                clientesRecuperados
+            )
+
+            : null;
+
+
+    // ======================================================
+    // RETORNO UNIFICADO
+    // ======================================================
 
     return {
 
-
-
         permitido:
 
-            resultado.recomendacao.permitido,
+            Boolean(
+                recomendacao?.permitido ??
+                analise?.permitido ??
+                analise?.aprovado
+            ),
 
+
+        aprovado:
+
+            Boolean(
+                analise?.aprovado ??
+                analise?.permitido ??
+                recomendacao?.permitido
+            ),
 
 
         nivel:
 
-            resultado.recomendacao.classificacao,
+            recomendacao?.classificacao ??
+
+            "NÃO RECOMENDADA",
+
+
+        status:
+
+            analise?.status ??
+
+            (
+                recomendacao?.permitido
+                    ? "LIBERADA"
+                    : "BLOQUEADA"
+            ),
 
 
         carregamento:
-            alternativa?.carregamento || 0,
 
+            melhor?.carregamento ??
+
+            recomendacao
+                ?.recomposicao
+                ?.carregamento ??
+
+            null,
 
 
         motivo:
 
-            resultado.recomendacao.motivo,
+            recomendacao?.motivo ??
 
+            analise?.motivo ??
+
+            "Motor COI não retornou justificativa.",
 
 
         justificativas:
 
-            resultado.recomendacao.justificativas,
+            recomendacao?.justificativas ??
+
+            analise?.justificativas ??
+
+            [],
 
 
+        // --------------------------------------------------
+        // EQUIPAMENTO DE INTERLIGAÇÃO
+        // --------------------------------------------------
 
-        equipamento:{
+        equipamento: {
 
+            id:
+                equipamentoInterligacaoId,
 
             plaqueta:
+                equipamentoInterligacaoPlaqueta,
 
-                alternativa?.equipamento?.plaqueta
+            tipo:
 
-                ||
+                melhor?.tipo ??
 
-                entrada.equipamento
+                melhor?.tipoEquipamento ??
+
+                recomendacao
+                    ?.recomposicao
+                    ?.tipo ??
+
+                null,
+
+            tipUnid:
+
+                melhor?.tipUnid ??
+
+                obterTipUnid(
+                    melhor
+                ),
+
+            estado:
+
+                melhor?.estado ??
+
+                null
 
         },
 
 
+        // --------------------------------------------------
+        // EQUIPAMENTO DO DESARME
+        // --------------------------------------------------
 
-        correnteTotal,
+        equipamentoDesarme:
+
+            analise?.equipamentoDesarme ??
+
+            validarEquipamentoDesarme(
+                equipamentoDesarme,
+                alimentador
+            ),
 
 
+        // --------------------------------------------------
+        // CORRENTES
+        // --------------------------------------------------
+
+        correnteTransferida:
+            correnteDesligado,
+
+        correnteBaseDestino:
+            correnteDestino,
+
+        correnteTotal:
+            correnteProjetada,
+
+        correnteFinal:
+            correnteFinal,
+
+        correnteProjetada:
+
+            correnteFinal ??
+
+            correnteProjetada ??
+
+            null,
+
+        correnteConhecida:
+
+            correnteDesligado !== null &&
+
+            correnteDestino !== null,
+
+
+        // --------------------------------------------------
+        // ALIMENTADORES
+        // --------------------------------------------------
+
+        alimentadorOrigem:
+            alimentador,
 
         alimentadorDestino:
-
-            alternativa?.destino || null,
-
+            alimentadorDestino,
 
 
-        recomendacao:
+        // --------------------------------------------------
+        // TRECHO LIMITANTE
+        // --------------------------------------------------
 
-            resultado.recomendacao,
+        trechoLimitante:
+
+            melhor?.trechoLimitante ??
+
+            recomendacao
+                ?.recomposicao
+                ?.trechoLimitante ??
+
+            null,
 
 
+        // --------------------------------------------------
+        // CAMINHO
+        // --------------------------------------------------
+
+        caminho:
+
+            melhor?.caminho ??
+
+            melhor?.caminhoEletrico ??
+
+            recomendacao
+                ?.recomposicao
+                ?.caminho ??
+
+            null,
+
+
+        // --------------------------------------------------
+        // RECOMENDAÇÃO
+        // --------------------------------------------------
+
+        recomendacao,
+
+
+        // --------------------------------------------------
+        // ALTERNATIVAS
+        // --------------------------------------------------
 
         alternativas:
 
-            resultado.analise.alternativas
+            analise?.candidatos ??
+
+            analise?.alternativas ??
+
+            [],
 
 
+        candidatos:
 
+            analise?.candidatos ??
+
+            analise?.alternativas ??
+
+            [],
+
+
+        melhorAlternativa:
+            melhor,
+
+
+        // --------------------------------------------------
+        // IMPACTO
+        // --------------------------------------------------
+
+        impacto:
+            resultado?.impacto ??
+            null,
+
+
+        // --------------------------------------------------
+        // CLIENTES
+        // --------------------------------------------------
+
+        clientesAfetados,
+
+        clientesRecuperados,
+
+        clientesRemanescentes,
+
+
+        // --------------------------------------------------
+        // OCORRÊNCIA
+        // --------------------------------------------------
+
+        ocorrencia
     };
-
 }
+
+
+// ==========================================================
+// EXPORTAÇÃO
+// ==========================================================
+
+export const motorCOI = {
+
+    buscarClientesAfetados,
+
+    calcularImpacto,
+
+    buscarAlternativas,
+
+    analisarManobra,
+
+    gerarRecomendacao,
+
+    executarAnaliseCOI,
+
+    executarMotorCOI
+
+};
+
+
+export default motorCOI;

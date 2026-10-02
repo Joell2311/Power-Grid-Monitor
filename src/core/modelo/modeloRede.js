@@ -1,36 +1,51 @@
-// src/core/modelo/modeloRede.js
-
 // ==========================================================
-// MODELO CENTRALIZADO DA REDE ELÉTRICA
+// src/core/modelo/modeloRede.js
 // POWER GRID MONITOR
 // ==========================================================
 //
-// Responsável por manter:
+// MODELO CENTRALIZADO DA REDE ELÉTRICA
+//
+// Responsável por:
 //
 // - Subestações
 // - Alimentadores
 // - Trechos
 // - Equipamentos
 // - Estado operacional
+// - Correntes operacionais
 // - Topologia BDGD
 // - Manobras
 // - Interligações
-// - Análises operacionais
+// - Descoberta automática de recomposição
 //
-// IMPORTANTE:
+// PRINCÍPIOS:
 //
-// A topologia física continua sendo construída em:
-//
-//     topologiaBDGD.js
-//
-// Este módulo funciona como uma FACHADA OPERACIONAL.
-//
-// A BDGD representa a rede física/cadastral.
-// estadoRede.operacao representa o estado atual
-// utilizado pelo sistema durante a operação.
-//
+// 1. TIP_UNID é a autoridade para classificação.
+// 2. Não inventar corrente.
+// 3. Não transformar ausência em 0 A.
+// 4. Não criar equipamento sintético.
+// 5. Equipamento de desarme não é automaticamente
+//    equipamento de interligação.
+// 6. PAC_1/PAC_2 completos não são obrigatórios para
+//    delimitar a área afetada.
+// 7. A delimitação pode usar conexões reais da BDGD.
+// 8. Recomposição pode atravessar alimentadores/circuitos.
+// 9. Equipamentos ABERTOS podem ser candidatos a fechamento.
+// 10. Equipamentos INDISPONIVEIS/BYPASSADOS não podem ser
+//     candidatos.
+// 11. ID/PLAQUETA dos equipamentos devem ser preservados.
+// 12. A topologia deve suportar múltiplos alimentadores.
+// 13. Interligações devem ser avaliadas pela BDGD real.
+// 14. Nunca criar interligação artificial.
+// 15. Equipamento só pode ser candidato se existir
+//     fisicamente na BDGD.
+// 16. Não assumir equipamento FECHADO como candidato.
+// 17. Estado operacional explícito tem prioridade.
+// 18. Estado da própria interligação BDGD pode complementar
+//     o estado operacional quando disponível.
+// 19. Ausência de estado NÃO significa FECHADO.
+// 20. Ausência de estado NÃO significa ABERTO.
 // ==========================================================
-
 
 import SubestacoesRepository from "../repositories/subestacoesRepository";
 import AlimentadoresRepository from "../repositories/alimentadoresRepository";
@@ -38,24 +53,23 @@ import TrechosRepository from "../repositories/trechosRepository";
 import EquipamentosRepository from "../repositories/equipamentosRepository";
 
 import {
-    buscarRedeAMontante as buscarRedeAMontanteBDGD,
-    buscarRedeAJusante as buscarRedeAJusanteBDGD,
-    buscarCaminho as buscarCaminhoBDGD,
     buscarPonto as buscarPontoBDGD,
     buscarTrechoBDGD,
     buscarConexoes as buscarConexoesBDGD,
 } from "./topologiaBDGD";
 
+import {
+    navegarAJusante,
+    navegarAMontante,
+    buscarRedeConectada as buscarRedeConectadaNavegador,
+    buscarCaminho as buscarCaminhoNavegador,
+} from "./navegadorRede";
 
 // ==========================================================
-// ESTADO GLOBAL DA REDE
+// ESTADO
 // ==========================================================
 
-const estadoRede = {
-
-    // ------------------------------------------------------
-    // DADOS CADASTRAIS
-    // ------------------------------------------------------
+export const estadoRede = {
 
     subestacoes: [],
 
@@ -65,41 +79,29 @@ const estadoRede = {
 
     equipamentos: [],
 
-
-    // ------------------------------------------------------
-    // TOPOLOGIA BDGD
-    // ------------------------------------------------------
-
     topologiaBDGD: null,
-
-
-    // ------------------------------------------------------
-    // ESTADO OPERACIONAL
-    // ------------------------------------------------------
 
     operacao: {
 
         ultimaAtualizacao: null,
 
-        // Lista compatível com versões anteriores
-        equipamentosDesligados: [],
-
-        // Estado individual por equipamento
         equipamentos: {},
 
-        // Alimentadores fora de serviço
+        equipamentosDesligados: [],
+
+        correntesAlimentadores: {},
+
+        correntesTrechos: {},
+
         alimentadoresDesenergizados: [],
 
-        // Histórico operacional
-        historico: []
-    }
+        historico: [],
+    },
 };
-
 
 // ==========================================================
 // UTILITÁRIOS
 // ==========================================================
-
 
 function normalizarId(valor) {
 
@@ -110,10 +112,8 @@ function normalizarId(valor) {
         return "";
     }
 
-    return String(valor)
-        .trim();
+    return String(valor).trim();
 }
-
 
 function normalizarTexto(valor) {
 
@@ -121,19 +121,42 @@ function normalizarTexto(valor) {
         .toUpperCase();
 }
 
-
 function normalizarCodigo(valor) {
 
     return normalizarTexto(valor)
         .replace(/[^A-Z0-9]/g, "");
 }
 
-
-function clonarDados(dados, fallback = []) {
+function numero(valor) {
 
     if (
-        dados === null ||
-        dados === undefined
+        valor === null ||
+        valor === undefined ||
+        valor === ""
+    ) {
+        return null;
+    }
+
+    const n =
+        Number(
+            String(valor)
+                .replace(",", ".")
+                .trim()
+        );
+
+    return Number.isFinite(n)
+        ? n
+        : null;
+}
+
+function clonar(
+    valor,
+    fallback = null
+) {
+
+    if (
+        valor === null ||
+        valor === undefined
     ) {
         return fallback;
     }
@@ -141,26 +164,24 @@ function clonarDados(dados, fallback = []) {
     try {
 
         return JSON.parse(
-            JSON.stringify(dados)
+            JSON.stringify(valor)
         );
 
-    } catch (erro) {
+    } catch {
 
-        console.warn(
-            "[modeloRede] Não foi possível clonar os dados.",
-            erro
-        );
-
-        if (Array.isArray(dados)) {
-            return [...dados];
+        if (
+            Array.isArray(valor)
+        ) {
+            return [
+                ...valor
+            ];
         }
 
         if (
-            typeof dados === "object" &&
-            dados !== null
+            typeof valor === "object"
         ) {
             return {
-                ...dados
+                ...valor
             };
         }
 
@@ -168,11 +189,107 @@ function clonarDados(dados, fallback = []) {
     }
 }
 
+function lista(valor) {
+
+    if (!valor) {
+        return [];
+    }
+
+    if (
+        Array.isArray(valor)
+    ) {
+        return valor;
+    }
+
+    if (
+        valor instanceof Map
+    ) {
+        return [
+            ...valor.values()
+        ];
+    }
+
+    if (
+        typeof valor === "object"
+    ) {
+        return Object.values(
+            valor
+        );
+    }
+
+    return [];
+}
+
+function primeiro(
+    item,
+    campos
+) {
+
+    const fontes = [
+
+        item,
+
+        item?.properties,
+
+        item?.propriedades,
+
+        item?.props,
+
+    ].filter(Boolean);
+
+    for (
+        const fonte of fontes
+    ) {
+
+        for (
+            const campo of campos
+        ) {
+
+            const valor =
+                fonte?.[campo];
+
+            if (
+                valor !== null &&
+                valor !== undefined &&
+                String(valor).trim() !== ""
+            ) {
+                return valor;
+            }
+        }
+    }
+
+    return null;
+}
 
 // ==========================================================
-// OBTENÇÃO DE IDENTIFICADORES
+// NORMALIZAÇÃO DE ID DE EQUIPAMENTO
 // ==========================================================
 
+function normalizarCodigoEquipamento(
+    valor
+) {
+
+    let codigo =
+        normalizarCodigo(
+            valor
+        );
+
+    if (!codigo) {
+        return "";
+    }
+
+    codigo =
+        codigo.replace(
+            /M\d*$/,
+            ""
+        );
+
+    return codigo;
+}
+
+// ==========================================================
+// IDS DOS EQUIPAMENTOS
+// ==========================================================
 
 export function obterIdentificadoresEquipamento(
     equipamento
@@ -182,204 +299,628 @@ export function obterIdentificadoresEquipamento(
         return [];
     }
 
-    const propriedades =
-        equipamento?.properties ||
-        equipamento?.propriedades ||
-        {};
+    const fontes = [
 
-    const ids = [
+        equipamento,
 
-        equipamento?.id,
+        equipamento?.properties,
 
-        equipamento?.COD_ID,
+        equipamento?.propriedades,
 
-        equipamento?.codId,
+        equipamento?.props,
 
-        equipamento?.codigo,
+        equipamento?.unidadeSeccionadora,
 
-        equipamento?.plaqueta,
+        equipamento?.unidade,
 
-        equipamento?.plaquetaIPT,
+        equipamento?.transformador,
 
-        equipamento?.PLAQUETA,
+    ].filter(Boolean);
 
-        equipamento?.PLAQUETA_IPT,
+    const ids = [];
 
-        equipamento?.patrimonio,
+    const campos = [
 
-        equipamento?.unidadeId,
+        "id",
+        "ID",
 
-        equipamento?.ID,
+        "COD_ID",
+        "codId",
 
-        propriedades?.id,
+        "codigo",
+        "CODIGO",
 
-        propriedades?.COD_ID,
+        "plaqueta",
+        "PLAQUETA",
 
-        propriedades?.codId,
+        "idOperacional",
+        "ID_OPERACIONAL",
 
-        propriedades?.CODIGO,
+        "plaquetaIPT",
+        "PLAQUETA_IPT",
 
-        propriedades?.PLAQUETA,
+        "patrimonio",
+        "PATRIMONIO",
 
-        propriedades?.PLAQUETA_IPT,
+        "idPatrimonial",
+        "ID_PATRIMONIAL",
 
-        propriedades?.IPT,
+        "eqseId",
+        "EQSE_ID",
 
-        propriedades?.PATRIMONIO,
+        "idEQSE",
+        "ID_EQSE",
 
-        propriedades?.UNIDADE_ID
+        "codIdEQSE",
+        "COD_ID_EQSE",
+
+        "unidadeId",
+        "UNIDADE_ID",
+
+        "unsemtId",
+        "UNSEMT_ID",
+
+        "codIdUNSEMT",
+        "COD_ID_UNSEMT",
+
+        "untrmtId",
+        "UNTRMT_ID",
+
+        "codIdUNTRMT",
+        "COD_ID_UNTRMT",
+
+        "PON_ID",
+
+        "UNSEMT",
+
+        "UNTRMT",
+
+        "UNTRAT",
     ];
+
+    for (
+        const fonte of fontes
+    ) {
+
+        for (
+            const campo of campos
+        ) {
+
+            const valor =
+                fonte?.[campo];
+
+            if (
+                valor !== null &&
+                valor !== undefined &&
+                String(valor).trim() !== ""
+            ) {
+
+                ids.push(
+                    String(valor).trim()
+                );
+            }
+        }
+    }
 
     return [
         ...new Set(
             ids
-                .filter(
-                    (valor) =>
-                        valor !== null &&
-                        valor !== undefined &&
-                        String(valor).trim() !== ""
-                )
-                .map(
-                    (valor) =>
-                        String(valor).trim()
-                )
         )
     ];
 }
 
-
 function equipamentoCorrespondeId(
     equipamento,
-    equipamentoId
+    codigo
 ) {
 
     const alvo =
-        normalizarId(
-            equipamentoId
+        normalizarCodigoEquipamento(
+            codigo
         );
 
     if (!alvo) {
         return false;
     }
 
-    const ids =
-        obterIdentificadoresEquipamento(
-            equipamento
-        );
-
-    return ids.some(
-        (id) =>
-            id === alvo
+    return obterIdentificadoresEquipamento(
+        equipamento
+    ).some(
+        id =>
+            normalizarCodigoEquipamento(
+                id
+            ) === alvo
     );
 }
 
-
 // ==========================================================
-// INICIALIZAÇÃO DO MODELO
+// INICIALIZAÇÃO
 // ==========================================================
-
 
 function inicializarRede() {
 
-    estadoRede.subestacoes =
-        clonarDados(
-            SubestacoesRepository.listar()
-        );
+    try {
 
-    estadoRede.alimentadores =
-        clonarDados(
-            AlimentadoresRepository.listar()
-        );
+        estadoRede.subestacoes =
+            clonar(
+                SubestacoesRepository.listar(),
+                []
+            );
 
-    estadoRede.trechos =
-        clonarDados(
-            TrechosRepository.listar()
-        );
+    } catch {
 
-    estadoRede.equipamentos =
-        clonarDados(
-            EquipamentosRepository.listar()
-        );
+        estadoRede.subestacoes = [];
 
-    estadoRede.operacao.ultimaAtualizacao =
+    }
+
+    try {
+
+        estadoRede.alimentadores =
+            clonar(
+                AlimentadoresRepository.listar(),
+                []
+            );
+
+    } catch {
+
+        estadoRede.alimentadores = [];
+
+    }
+
+    try {
+
+        estadoRede.trechos =
+            clonar(
+                TrechosRepository.listar(),
+                []
+            );
+
+    } catch {
+
+        estadoRede.trechos = [];
+
+    }
+
+    try {
+
+        estadoRede.equipamentos =
+            clonar(
+                EquipamentosRepository.listar(),
+                []
+            );
+
+    } catch {
+
+        estadoRede.equipamentos = [];
+
+    }
+
+    estadoRede.operacao
+        .ultimaAtualizacao =
         new Date();
-
-    return estadoRede;
 }
 
-
-// Inicialização automática.
 inicializarRede();
-
 
 // ==========================================================
 // GETTERS
 // ==========================================================
 
-
 export function getRede() {
     return estadoRede;
 }
-
 
 export function getSubestacoes() {
     return estadoRede.subestacoes;
 }
 
-
 export function getAlimentadores() {
     return estadoRede.alimentadores;
 }
-
 
 export function getTrechos() {
     return estadoRede.trechos;
 }
 
-
 export function getEquipamentos() {
     return estadoRede.equipamentos;
 }
 
+// ==========================================================
+// AUXILIAR PARA CONSOLIDAR COLEÇÕES
+// ==========================================================
+
+function identificarChaveItem(
+    item,
+    indice
+) {
+
+    if (
+        item === null ||
+        item === undefined
+    ) {
+        return `IDX_${indice}`;
+    }
+
+    const id =
+        primeiro(
+            item,
+            [
+                "id",
+                "ID",
+                "COD_ID",
+                "codId",
+                "codigo",
+                "CODIGO",
+                "PON_ID",
+                "PAC",
+                "pac",
+                "UNSEMT",
+                "UNTRMT",
+                "UNTRAT",
+            ]
+        );
+
+    if (id !== null) {
+
+        return (
+            normalizarCodigo(id) ||
+            `IDX_${indice}`
+        );
+    }
+
+    return `IDX_${indice}`;
+}
+
+function mesclarColecao(
+    existente,
+    nova
+) {
+
+    const resultado = [];
+
+    const mapa = new Map();
+
+    for (
+        const item of lista(existente)
+    ) {
+
+        const chave =
+            identificarChaveItem(
+                item,
+                mapa.size
+            );
+
+        mapa.set(
+            chave,
+            item
+        );
+    }
+
+    for (
+        const item of lista(nova)
+    ) {
+
+        const chave =
+            identificarChaveItem(
+                item,
+                mapa.size
+            );
+
+        if (
+            !mapa.has(chave)
+        ) {
+
+            mapa.set(
+                chave,
+                item
+            );
+
+        } else {
+
+            const anterior =
+                mapa.get(
+                    chave
+                );
+
+            if (
+                anterior &&
+                item &&
+                typeof anterior === "object" &&
+                typeof item === "object"
+            ) {
+
+                mapa.set(
+                    chave,
+                    {
+                        ...anterior,
+                        ...item,
+                    }
+                );
+            }
+        }
+    }
+
+    for (
+        const valor of mapa.values()
+    ) {
+
+        resultado.push(
+            valor
+        );
+    }
+
+    return resultado;
+}
 
 // ==========================================================
-// TOPOLOGIA BDGD
+// CONSOLIDAÇÃO DE TOPOLOGIAS
 // ==========================================================
 
+function consolidarTopologia(
+    anterior,
+    nova
+) {
+
+    if (!anterior) {
+
+        return clonar(
+            nova,
+            null
+        );
+    }
+
+    if (!nova) {
+        return anterior;
+    }
+
+    const resultado = {
+
+        ...anterior,
+
+        ...nova,
+
+    };
+
+    const colecoes = [
+
+        "pontos",
+
+        "listaPontos",
+
+        "trechos",
+
+        "listaTrechos",
+
+        "equipamentos",
+
+        "equipamentosOperacionais",
+
+        "unidadesSeccionadoras",
+
+        "transformadores",
+
+        "reguladores",
+
+        "capacitores",
+
+        "interligacoes",
+
+        "terminais",
+
+        "passagens",
+
+        "derivacoes",
+
+        "problemas",
+
+    ];
+
+    for (
+        const nome of colecoes
+    ) {
+
+        if (
+            anterior?.[nome] !== undefined ||
+            nova?.[nome] !== undefined
+        ) {
+
+            resultado[nome] =
+                mesclarColecao(
+                    anterior?.[nome],
+                    nova?.[nome]
+                );
+        }
+    }
+
+    const alimentadores =
+        new Set();
+
+    const adicionarAlimentador =
+        valor => {
+
+            if (
+                valor === null ||
+                valor === undefined
+            ) {
+                return;
+            }
+
+            const texto =
+                normalizarId(
+                    valor
+                );
+
+            if (texto) {
+
+                alimentadores.add(
+                    texto
+                );
+            }
+        };
+
+    [
+        ...lista(
+            anterior?.alimentadores
+        ),
+
+        ...lista(
+            nova?.alimentadores
+        ),
+
+        anterior?.alimentador,
+
+        nova?.alimentador,
+
+    ].forEach(
+        adicionarAlimentador
+    );
+
+    if (
+        alimentadores.size
+    ) {
+
+        resultado.alimentadores =
+            [
+                ...alimentadores
+            ];
+    }
+
+    const circuitos =
+        new Set();
+
+    [
+        ...lista(
+            anterior?.circuitos
+        ),
+
+        ...lista(
+            nova?.circuitos
+        ),
+
+        anterior?.circuito,
+
+        nova?.circuito,
+
+    ].forEach(
+        valor => {
+
+            if (
+                valor !== null &&
+                valor !== undefined
+            ) {
+
+                circuitos.add(
+                    normalizarId(
+                        valor
+                    )
+                );
+            }
+        }
+    );
+
+    if (
+        circuitos.size
+    ) {
+
+        resultado.circuitos =
+            [
+                ...circuitos
+            ];
+    }
+
+    resultado.diagnostico =
+        {
+
+            ...(anterior?.diagnostico || {}),
+
+            ...(nova?.diagnostico || {}),
+
+        };
+
+    return resultado;
+}
+
+// ==========================================================
+// TOPOLOGIA
+// ==========================================================
 
 export function registrarTopologiaBDGD(
     topologia
 ) {
 
+    if (!topologia) {
+
+        estadoRede.topologiaBDGD =
+            null;
+
+        return null;
+    }
+
     estadoRede.topologiaBDGD =
-        topologia || null;
+        consolidarTopologia(
+            estadoRede.topologiaBDGD,
+            topologia
+        );
 
     estadoRede.operacao
         .ultimaAtualizacao =
         new Date();
 
+    console.log(
+        "🧠 [Power Grid Monitor] TOPOLOGIA BDGD CONSOLIDADA:",
+        {
+            alimentador:
+                estadoRede.topologiaBDGD?.alimentador ??
+                null,
+
+            alimentadores:
+                lista(
+                    estadoRede.topologiaBDGD?.alimentadores
+                ),
+
+            pontos:
+                lista(
+                    estadoRede.topologiaBDGD?.pontos
+                ).length,
+
+            trechos:
+                lista(
+                    estadoRede.topologiaBDGD?.trechos
+                ).length,
+
+            equipamentos:
+                lista(
+                    estadoRede.topologiaBDGD?.equipamentos
+                ).length,
+
+            equipamentosOperacionais:
+                lista(
+                    estadoRede.topologiaBDGD?.equipamentosOperacionais
+                ).length,
+
+            interligacoes:
+                lista(
+                    estadoRede.topologiaBDGD?.interligacoes
+                ).length,
+        }
+    );
+
     return estadoRede.topologiaBDGD;
 }
-
 
 export function limparTopologiaBDGD() {
 
     estadoRede.topologiaBDGD =
         null;
 
-    estadoRede.operacao
-        .ultimaAtualizacao =
-        new Date();
-
     return null;
 }
-
 
 export function getTopologiaBDGD() {
 
     return estadoRede.topologiaBDGD;
 }
-
 
 export function possuiTopologiaBDGD() {
 
@@ -388,40 +929,49 @@ export function possuiTopologiaBDGD() {
     );
 }
 
-
 // ==========================================================
-// BUSCAR EQUIPAMENTO NA TOPOLOGIA BDGD
+// BUSCA DE EQUIPAMENTOS
 // ==========================================================
 
-
-function buscarEquipamentoBDGDLocal(
-    topologia,
-    equipamentoId
+function buscarNaColecao(
+    colecao,
+    id
 ) {
 
-    if (
-        !topologia ||
-        equipamentoId === null ||
-        equipamentoId === undefined
-    ) {
-        return null;
-    }
-
-    const id =
+    const alvo =
         normalizarId(
-            equipamentoId
+            id
         );
 
-    if (!id) {
+    if (!alvo) {
         return null;
     }
 
+    return lista(
+        colecao
+    ).find(
+        item =>
+            equipamentoCorrespondeId(
+                item,
+                alvo
+            )
+    ) || null;
+}
 
-    // ------------------------------------------------------
-    // Coleções possíveis
-    // ------------------------------------------------------
+function buscarEquipamentoBDGD(
+    id
+) {
+
+    const topologia =
+        estadoRede.topologiaBDGD;
+
+    if (!topologia) {
+        return null;
+    }
 
     const colecoes = [
+
+        topologia.equipamentosOperacionais,
 
         topologia.equipamentos,
 
@@ -431,428 +981,288 @@ function buscarEquipamentoBDGDLocal(
 
         topologia.reguladores,
 
-        topologia.capacitores
-    ];
+        topologia.capacitores,
 
+    ];
 
     for (
         const colecao of colecoes
     ) {
 
-        if (!colecao) {
-            continue;
-        }
-
-
-        // --------------------------------------------------
-        // Caso seja objeto indexado por ID
-        // --------------------------------------------------
-
-        if (
-            !Array.isArray(colecao) &&
-            colecao[id]
-        ) {
-
-            return colecao[id];
-        }
-
-
-        // --------------------------------------------------
-        // Caso seja array
-        // --------------------------------------------------
-
-        const lista =
-            Array.isArray(colecao)
-                ? colecao
-                : Object.values(
-                    colecao
-                );
-
-
-        const encontrado =
-            lista.find(
-                (item) =>
-                    equipamentoCorrespondeId(
-                        item,
-                        id
-                    )
+        const resultado =
+            buscarNaColecao(
+                colecao,
+                id
             );
 
+        if (
+            resultado
+        ) {
 
-        if (encontrado) {
-            return encontrado;
+            return resultado;
         }
     }
-
 
     return null;
 }
 
-
-// ==========================================================
-// FICHA BDGD
-// ==========================================================
-
-
-function obterFichaBDGDLocal(
-    topologia,
-    equipamentoId
+export function buscarEquipamento(
+    id
 ) {
-
-    const equipamento =
-        buscarEquipamentoBDGDLocal(
-            topologia,
-            equipamentoId
-        );
-
-    if (!equipamento) {
-        return null;
-    }
-
-    const propriedades =
-        equipamento?.properties ||
-        equipamento?.propriedades ||
-        {};
-
-
-    const id =
-        equipamento?.id ??
-        equipamento?.COD_ID ??
-        equipamento?.codId ??
-        equipamento?.codigo ??
-        equipamento?.plaqueta ??
-        equipamentoId;
-
-
-    const pontoAssociado =
-        equipamento?.pontoAssociado ??
-        equipamento?.pontoId ??
-        equipamento?.unidadeId ??
-        equipamento?.PON_ID ??
-        propriedades?.pontoAssociado ??
-        propriedades?.pontoId ??
-        propriedades?.PON_ID ??
-        propriedades?.PAC_1 ??
-        propriedades?.PAC_2 ??
-        null;
-
-
-    return {
-
-        equipamento,
-
-        id,
-
-        ids:
-            obterIdentificadoresEquipamento(
-                equipamento
-            ),
-
-        tipo:
-            equipamento?.tipo ??
-            equipamento?.tipoEquipamento ??
-            equipamento?.TIP_UNID ??
-            propriedades?.tipo ??
-            propriedades?.tipoEquipamento ??
-            propriedades?.TIP_UNID ??
-            null,
-
-        descricao:
-            equipamento?.descricao ??
-            equipamento?.DESCR ??
-            equipamento?.DESCRICAO ??
-            propriedades?.descricao ??
-            propriedades?.DESCR ??
-            propriedades?.DESCRICAO ??
-            null,
-
-        situacao:
-            equipamento?.situacao ??
-            equipamento?.status ??
-            equipamento?.estado ??
-            propriedades?.situacao ??
-            propriedades?.SIT_ATIV ??
-            propriedades?.STATUS ??
-            null,
-
-        pontoAssociado,
-
-        pac1:
-            equipamento?.pac1 ??
-            equipamento?.PAC_1 ??
-            propriedades?.PAC_1 ??
-            null,
-
-        pac2:
-            equipamento?.pac2 ??
-            equipamento?.PAC_2 ??
-            propriedades?.PAC_2 ??
-            null,
-
-        alimentador:
-            equipamento?.alimentador ??
-            equipamento?.ctmt ??
-            equipamento?.CTMT ??
-            propriedades?.alimentador ??
-            propriedades?.CTMT ??
-            null,
-
-        circuito:
-            equipamento?.circuito ??
-            equipamento?.CIRCUITO ??
-            propriedades?.circuito ??
-            propriedades?.CIRCUITO ??
-            null,
-
-        plaqueta:
-            equipamento?.plaqueta ??
-            equipamento?.PLAQUETA ??
-            propriedades?.PLAQUETA ??
-            equipamento?.plaquetaIPT ??
-            equipamento?.PLAQUETA_IPT ??
-            propriedades?.PLAQUETA_IPT ??
-            null,
-
-        patrimonio:
-            equipamento?.patrimonio ??
-            equipamento?.PATRIMONIO ??
-            propriedades?.PATRIMONIO ??
-            null,
-
-        dados:
-            propriedades
-    };
-}
-
-
-// ==========================================================
-// FILTRO DE TOPOLOGIA POR ALIMENTADOR
-// ==========================================================
-
-
-function itemPertenceAoAlimentador(
-    item,
-    alimentador
-) {
-
-    if (!item) {
-        return false;
-    }
 
     const alvo =
-        normalizarCodigo(
-            alimentador
+        normalizarId(
+            id
         );
 
     if (!alvo) {
-        return true;
-    }
-
-    const propriedades =
-        item?.properties ||
-        item?.propriedades ||
-        {};
-
-
-    const valores = [
-
-        item?.alimentador,
-
-        item?.alimentadorId,
-
-        item?.alimentadorDestino,
-
-        item?.ctmt,
-
-        item?.CTMT,
-
-        item?.COD_ID_ALIMENTADOR,
-
-        item?.circuito,
-
-        propriedades?.alimentador,
-
-        propriedades?.alimentadorId,
-
-        propriedades?.alimentadorDestino,
-
-        propriedades?.CTMT,
-
-        propriedades?.COD_ID_ALIMENTADOR,
-
-        propriedades?.circuito
-    ];
-
-
-    return valores.some(
-        (valor) =>
-            normalizarCodigo(valor) ===
-            alvo
-    );
-}
-
-
-function filtrarColecaoPorAlimentador(
-    colecao,
-    alimentador
-) {
-
-    if (!colecao) {
-        return [];
-    }
-
-    const lista =
-        Array.isArray(colecao)
-            ? colecao
-            : Object.values(colecao);
-
-
-    return lista.filter(
-        (item) =>
-            itemPertenceAoAlimentador(
-                item,
-                alimentador
-            )
-    );
-}
-
-
-function filtrarTopologiaPorAlimentadorLocal(
-    topologia,
-    alimentador
-) {
-
-    if (!topologia) {
         return null;
     }
 
+    const cadastrado =
+        estadoRede
+            .equipamentos
+            .find(
+                item =>
+                    equipamentoCorrespondeId(
+                        item,
+                        alvo
+                    )
+            );
 
-    const pontos =
-        filtrarColecaoPorAlimentador(
-            topologia.pontos,
-            alimentador
-        );
-
-
-    const trechos =
-        filtrarColecaoPorAlimentador(
-            topologia.trechos,
-            alimentador
-        );
-
-
-    const unidadesSeccionadoras =
-        filtrarColecaoPorAlimentador(
-            topologia.unidadesSeccionadoras,
-            alimentador
-        );
-
-
-    const transformadores =
-        filtrarColecaoPorAlimentador(
-            topologia.transformadores,
-            alimentador
-        );
-
-
-    const equipamentos =
-        filtrarColecaoPorAlimentador(
-            topologia.equipamentos,
-            alimentador
-        );
-
-
-    const reguladores =
-        filtrarColecaoPorAlimentador(
-            topologia.reguladores,
-            alimentador
-        );
-
-
-    const capacitores =
-        filtrarColecaoPorAlimentador(
-            topologia.capacitores,
-            alimentador
-        );
-
-
-    const terminais =
-        filtrarColecaoPorAlimentador(
-            topologia.terminais,
-            alimentador
-        );
-
-
-    const passagens =
-        filtrarColecaoPorAlimentador(
-            topologia.passagens,
-            alimentador
-        );
-
-
-    const derivacoes =
-        filtrarColecaoPorAlimentador(
-            topologia.derivacoes,
-            alimentador
-        );
-
-
-    const circuito =
-        topologia.circuitosPorAlimentador?.[
-            alimentador
-        ]?.[0] ??
-        null;
-
-
-    return {
-
-        alimentador:
-            alimentador || null,
-
-        circuito,
-
-        pontos,
-
-        trechos,
-
-        unidadesSeccionadoras,
-
-        transformadores,
-
-        equipamentos,
-
-        reguladores,
-
-        capacitores,
-
-        terminais,
-
-        passagens,
-
-        derivacoes,
-
-        quantidadePontos:
-            pontos.length,
-
-        quantidadeTrechos:
-            trechos.length,
-
-        quantidadeEquipamentos:
-            unidadesSeccionadoras.length +
-            transformadores.length +
-            equipamentos.length +
-            reguladores.length +
-            capacitores.length
-    };
+    return (
+        cadastrado ||
+        buscarEquipamentoBDGD(
+            alvo
+        ) ||
+        null
+    );
 }
 
+export function buscarEquipamentoRede(
+    id
+) {
+
+    return buscarEquipamento(
+        id
+    );
+}
+
+export function existeEquipamento(
+    id
+) {
+
+    return Boolean(
+        buscarEquipamento(
+            id
+        )
+    );
+}
 
 // ==========================================================
-// ESTADOS OPERACIONAIS
+// BUSCAS BÁSICAS
 // ==========================================================
 
+export function buscarSubestacao(
+    id
+) {
 
-const ESTADOS_EQUIPAMENTO_VALIDOS = [
+    const alvo =
+        normalizarId(
+            id
+        );
+
+    return estadoRede
+        .subestacoes
+        .find(
+            item =>
+                normalizarId(
+                    item?.id
+                ) === alvo ||
+                normalizarId(
+                    item?.codigo
+                ) === alvo
+        ) || null;
+}
+
+export function buscarAlimentador(
+    id
+) {
+
+    const alvo =
+        normalizarId(
+            id
+        );
+
+    return estadoRede
+        .alimentadores
+        .find(
+            item =>
+                normalizarId(
+                    item?.id
+                ) === alvo ||
+                normalizarId(
+                    item?.codigo
+                ) === alvo ||
+                normalizarId(
+                    item?.CTMT
+                ) === alvo ||
+                normalizarId(
+                    item?.ctmt
+                ) === alvo
+        ) || null;
+}
+
+export function buscarTrecho(
+    id
+) {
+
+    const alvo =
+        normalizarId(
+            id
+        );
+
+    const cadastro =
+        estadoRede
+            .trechos
+            .find(
+                item =>
+                    normalizarId(
+                        item?.id
+                    ) === alvo ||
+                    normalizarId(
+                        item?.COD_ID
+                    ) === alvo ||
+                    normalizarId(
+                        item?.codId
+                    ) === alvo
+            );
+
+    return (
+        cadastro ||
+        buscarTrechoBDGD(
+            estadoRede.topologiaBDGD,
+            alvo
+        ) ||
+        null
+    );
+}
+
+export function existeTrecho(
+    id
+) {
+
+    return Boolean(
+        buscarTrecho(
+            id
+        )
+    );
+}
+
+// ==========================================================
+// TOPOLOGIA - PONTO / TRECHO
+// ==========================================================
+
+export function buscarPontoRede(
+    id
+) {
+
+    if (
+        !estadoRede.topologiaBDGD
+    ) {
+        return null;
+    }
+
+    return buscarPontoBDGD(
+        estadoRede.topologiaBDGD,
+        id
+    );
+}
+
+export function buscarTrechoRede(
+    id
+) {
+
+    return buscarTrecho(
+        id
+    );
+}
+
+export function buscarConexoesRede(
+    id
+) {
+
+    if (
+        !estadoRede.topologiaBDGD
+    ) {
+        return [];
+    }
+
+    return buscarConexoesBDGD(
+        estadoRede.topologiaBDGD,
+        id
+    ) || [];
+}
+
+export function buscarConexoesEquipamento(
+    id
+) {
+
+    const equipamento =
+        buscarEquipamento(
+            id
+        );
+
+    if (!equipamento) {
+        return [];
+    }
+
+    const pac1 =
+        primeiro(
+            equipamento,
+            [
+                "pac1",
+                "PAC_1"
+            ]
+        );
+
+    const pac2 =
+        primeiro(
+            equipamento,
+            [
+                "pac2",
+                "PAC_2"
+            ]
+        );
+
+    const resultado = [];
+
+    for (
+        const ponto of [
+            pac1,
+            pac2
+        ]
+    ) {
+
+        if (!ponto) {
+            continue;
+        }
+
+        resultado.push(
+            ...buscarConexoesRede(
+                ponto
+            )
+        );
+    }
+
+    return resultado;
+}
+
+// ==========================================================
+// ESTADO OPERACIONAL
+// ==========================================================
+
+const ESTADOS_VALIDOS = [
 
     "FECHADO",
 
@@ -860,9 +1270,9 @@ const ESTADOS_EQUIPAMENTO_VALIDOS = [
 
     "INDISPONIVEL",
 
-    "BYPASSADO"
-];
+    "BYPASSADO",
 
+];
 
 export function normalizarEstadoEquipamento(
     estado
@@ -873,7 +1283,6 @@ export function normalizarEstadoEquipamento(
             estado
         );
 
-
     const aliases = {
 
         FECHADO:
@@ -882,17 +1291,34 @@ export function normalizarEstadoEquipamento(
         FECHADA:
             "FECHADO",
 
+        F:
+            "FECHADO",
+
         CLOSED:
             "FECHADO",
 
         CLOSE:
             "FECHADO",
 
+        LIGADO:
+            "FECHADO",
+
+        LIGADA:
+            "FECHADO",
+
+        ON:
+            "FECHADO",
+
+        "1":
+            "FECHADO",
 
         ABERTO:
             "ABERTO",
 
         ABERTA:
+            "ABERTO",
+
+        A:
             "ABERTO",
 
         OPEN:
@@ -901,6 +1327,11 @@ export function normalizarEstadoEquipamento(
         OPENED:
             "ABERTO",
 
+        OFF:
+            "ABERTO",
+
+        "0":
+            "ABERTO",
 
         INDISPONIVEL:
             "INDISPONIVEL",
@@ -911,9 +1342,8 @@ export function normalizarEstadoEquipamento(
         FORA:
             "INDISPONIVEL",
 
-        DESLIGADO:
+        INOPERANTE:
             "INDISPONIVEL",
-
 
         BYPASSADO:
             "BYPASSADO",
@@ -921,44 +1351,170 @@ export function normalizarEstadoEquipamento(
         BYPASS:
             "BYPASSADO",
 
-        BYPASSED:
-            "BYPASSADO"
     };
 
-
-    return aliases[valor] || null;
-}
-
-
-// ==========================================================
-// ESTADO CADASTRAL DO EQUIPAMENTO
-// ==========================================================
-
-
-function obterEstadoCadastralEquipamento(
-    equipamento
-) {
-
-    if (!equipamento) {
-        return null;
-    }
-
-    return normalizarEstadoEquipamento(
-
-        equipamento?.estado ??
-        equipamento?.status ??
-        equipamento?.situacao ??
-        equipamento?.SIT_ATIV ??
-        equipamento?.situacaoOperacional ??
-        equipamento?.estadoOperacional
+    return (
+        aliases[valor] ||
+        null
     );
 }
 
-
 // ==========================================================
-// CONSULTAR ESTADO OPERACIONAL
+// ESTADO EXPLÍCITO
+// ==========================================================
+//
+// Procura somente evidência real de estado.
+//
+// Ausência de informação não vira FECHADO.
+//
 // ==========================================================
 
+function obterEstadoExplicito(
+    item
+) {
+
+    if (!item) {
+        return null;
+    }
+
+    const fontes = [
+
+        item,
+
+        item?.properties,
+
+        item?.propriedades,
+
+        item?.props,
+
+        item?.unidadeSeccionadora,
+
+        item?.unidade,
+
+        item?.transformador,
+
+        item?.equipamento,
+
+        item?.equipamentoOperacional,
+
+        item?.equipamentoInterligacao,
+
+        item?.dispositivo,
+
+    ].filter(Boolean);
+
+    const camposEstado = [
+
+        "estado",
+        "estadoOperacional",
+        "estadoDispositivo",
+
+        "status",
+        "STATUS",
+
+        "situacao",
+        "SITUACAO",
+
+        "posicao",
+        "POSICAO",
+        "POS",
+
+        "SIT_ATIV",
+        "SITCONT",
+
+        "posicaoOperacional",
+        "POSICAO_OPERACIONAL",
+
+        "estadoChave",
+        "ESTADO_CHAVE",
+
+        "estadoEletrico",
+        "ESTADO_ELETRICO",
+
+    ];
+
+    for (
+        const fonte of fontes
+    ) {
+
+        for (
+            const campo of camposEstado
+        ) {
+
+            const valor =
+                fonte?.[campo];
+
+            const estado =
+                normalizarEstadoEquipamento(
+                    valor
+                );
+
+            if (
+                estado
+            ) {
+
+                return {
+
+                    estado,
+
+                    origemCampo:
+                        campo,
+
+                };
+            }
+        }
+    }
+
+    for (
+        const fonte of fontes
+    ) {
+
+        if (
+            fonte?.aberto === true ||
+            fonte?.isOpen === true ||
+            fonte?.open === true
+        ) {
+
+            return {
+
+                estado:
+                    "ABERTO",
+
+                origemCampo:
+                    "BOOLEAN_ABERTO",
+
+            };
+        }
+
+        if (
+            fonte?.fechado === true ||
+            fonte?.isClosed === true ||
+            fonte?.closed === true
+        ) {
+
+            return {
+
+                estado:
+                    "FECHADO",
+
+                origemCampo:
+                    "BOOLEAN_FECHADO",
+
+            };
+        }
+    }
+
+    return null;
+}
+
+function obterChaveEstadoEquipamento(
+    equipamentoId
+) {
+
+    return normalizarCodigoEquipamento(
+        equipamentoId
+    );
+}
 
 export function consultarEstadoEquipamento(
     equipamentoId
@@ -973,35 +1529,68 @@ export function consultarEstadoEquipamento(
         return null;
     }
 
+    const chave =
+        obterChaveEstadoEquipamento(
+            id
+        );
 
-    const registro =
-        estadoRede.operacao
-            .equipamentos?.[id];
+    const operacional =
+        estadoRede
+            .operacao
+            .equipamentos?.[
+                chave
+            ] ??
+        estadoRede
+            .operacao
+            .equipamentos?.[
+                id
+            ];
 
+    if (
+        operacional
+    ) {
 
-    if (registro) {
         return {
-            ...registro
+            ...operacional,
         };
     }
-
-
-    // ------------------------------------------------------
-    // Se ainda não existe estado operacional,
-    // tentar descobrir o estado cadastral.
-    // ------------------------------------------------------
 
     const equipamento =
         buscarEquipamento(
             id
         );
 
-
-    const estadoCadastral =
-        obterEstadoCadastralEquipamento(
+    const estadoExplicito =
+        obterEstadoExplicito(
             equipamento
         );
 
+    if (
+        estadoExplicito?.estado
+    ) {
+
+        return {
+
+            equipamentoId:
+                id,
+
+            estado:
+                estadoExplicito.estado,
+
+            origem:
+                "CADASTRO",
+
+            origemCampo:
+                estadoExplicito
+                    .origemCampo,
+
+            atualizadoEm:
+                null,
+
+            observacao:
+                null,
+        };
+    }
 
     return {
 
@@ -1009,27 +1598,18 @@ export function consultarEstadoEquipamento(
             id,
 
         estado:
-            estadoCadastral ||
             "FECHADO",
 
         origem:
-            estadoCadastral
-                ? "CADASTRO"
-                : "PADRAO",
+            "PADRAO",
 
         atualizadoEm:
             null,
 
         observacao:
-            null
+            "Estado físico não informado explicitamente.",
     };
 }
-
-
-// ==========================================================
-// LISTAR ESTADOS
-// ==========================================================
-
 
 export function listarEstadosEquipamentos() {
 
@@ -1043,45 +1623,6 @@ export function listarEstadosEquipamentos() {
     };
 }
 
-
-// ==========================================================
-// REGISTRAR HISTÓRICO
-// ==========================================================
-
-
-function registrarHistorico(
-    acao,
-    dados = {}
-) {
-
-    estadoRede.operacao
-        .historico
-        .push({
-
-            data:
-                new Date(),
-
-            acao,
-
-            dados:
-                clonarDados(
-                    dados,
-                    {}
-                )
-        });
-
-
-    estadoRede.operacao
-        .ultimaAtualizacao =
-        new Date();
-}
-
-
-// ==========================================================
-// ATUALIZAR ESTADO DO EQUIPAMENTO
-// ==========================================================
-
-
 export function atualizarEstadoEquipamento(
     equipamentoId,
     estado,
@@ -1093,239 +1634,175 @@ export function atualizarEstadoEquipamento(
             equipamentoId
         );
 
-
     if (!id) {
 
         return {
 
-            sucesso: false,
+            sucesso:
+                false,
 
             mensagem:
-                "Código do equipamento não informado."
+                "Equipamento não informado.",
+
         };
     }
 
-
-    // ------------------------------------------------------
-    // Verificar se equipamento existe
-    // ------------------------------------------------------
-
-    const equipamento =
-        buscarEquipamento(
+    if (
+        !buscarEquipamento(
             id
-        );
-
-
-    if (!equipamento) {
+        )
+    ) {
 
         return {
 
-            sucesso: false,
+            sucesso:
+                false,
 
             mensagem:
-                `Equipamento ${id} não encontrado na rede.`
+                `Equipamento ${id} não encontrado na rede.`,
+
         };
     }
 
-
-    // ------------------------------------------------------
-    // Normalizar estado
-    // ------------------------------------------------------
-
-    const estadoNormalizado =
+    const novoEstado =
         normalizarEstadoEquipamento(
             estado
         );
 
-
     if (
-        !ESTADOS_EQUIPAMENTO_VALIDOS
-            .includes(
-                estadoNormalizado
-            )
+        !ESTADOS_VALIDOS.includes(
+            novoEstado
+        )
     ) {
 
         return {
 
-            sucesso: false,
+            sucesso:
+                false,
 
             mensagem:
-                "Estado inválido. Utilize FECHADO, ABERTO, INDISPONIVEL ou BYPASSADO."
+                "Estado operacional inválido.",
+
         };
     }
 
-
-    // ------------------------------------------------------
-    // Estado anterior
-    // ------------------------------------------------------
-
-    const estadoAtual =
-        consultarEstadoEquipamento(
+    const chave =
+        obterChaveEstadoEquipamento(
             id
         );
 
-
-    const estadoAnterior =
-        estadoAtual?.estado ||
-        "FECHADO";
-
-
-    // ------------------------------------------------------
-    // Garantir estrutura
-    // ------------------------------------------------------
-
-    if (
-        !estadoRede.operacao
-            .equipamentos
-    ) {
-
-        estadoRede.operacao
-            .equipamentos = {};
-    }
-
-
-    // ------------------------------------------------------
-    // Registrar novo estado
-    // ------------------------------------------------------
+    const anterior =
+        consultarEstadoEquipamento(
+            id
+        );
 
     const registro = {
 
         equipamentoId:
             id,
 
-        estado:
-            estadoNormalizado,
+        equipamentoIdNormalizado:
+            chave,
 
-        estadoAnterior,
+        estado:
+            novoEstado,
+
+        estadoAnterior:
+            anterior?.estado ??
+            null,
 
         origem:
-            normalizarTexto(
-                opcoes.origem ||
-                "OPERADOR"
-            ),
+            opcoes?.origem ??
+            "OPERADOR",
 
         observacao:
-            opcoes.observacao ||
+            opcoes?.observacao ??
             null,
 
         atualizadoEm:
-            new Date()
+            new Date(),
+
     };
 
-
-    estadoRede.operacao
-        .equipamentos[id] =
+    estadoRede
+        .operacao
+        .equipamentos[chave] =
         registro;
 
-
-    // ------------------------------------------------------
-    // Lista de equipamentos desligados
-    // ------------------------------------------------------
-
-    const desligado =
-        estadoNormalizado ===
-            "ABERTO" ||
-        estadoNormalizado ===
-            "INDISPONIVEL";
-
-
-    const lista =
-        Array.isArray(
-            estadoRede.operacao
-                .equipamentosDesligados
-        )
-            ? [
-                ...estadoRede.operacao
-                    .equipamentosDesligados
-            ]
-            : [];
-
-
-    if (desligado) {
+    if (
+        novoEstado === "ABERTO" ||
+        novoEstado === "INDISPONIVEL"
+    ) {
 
         if (
-            !lista.includes(id)
+            !estadoRede
+                .operacao
+                .equipamentosDesligados
+                .includes(
+                    chave
+                )
         ) {
 
-            lista.push(id);
+            estadoRede
+                .operacao
+                .equipamentosDesligados
+                .push(
+                    chave
+                );
         }
 
     } else {
 
-        estadoRede.operacao
+        estadoRede
+            .operacao
             .equipamentosDesligados =
-            lista.filter(
-                (item) =>
-                    item !== id
-            );
+
+            estadoRede
+                .operacao
+                .equipamentosDesligados
+                .filter(
+                    item =>
+                        item !== chave
+                );
     }
 
+    estadoRede
+        .operacao
+        .historico
+        .push({
 
-    if (desligado) {
+            data:
+                new Date(),
 
-        estadoRede.operacao
-            .equipamentosDesligados =
-            lista;
-    }
+            acao:
+                "ALTERACAO_ESTADO_EQUIPAMENTO",
 
+            dados:
+                registro,
 
-    // ------------------------------------------------------
-    // Registrar histórico
-    // ------------------------------------------------------
+        });
 
-    registrarHistorico(
-
-        "ALTERACAO_ESTADO_EQUIPAMENTO",
-
-        {
-
-            equipamento:
-                id,
-
-            estadoAnterior,
-
-            estadoNovo:
-                estadoNormalizado,
-
-            origem:
-                registro.origem,
-
-            observacao:
-                registro.observacao
-        }
-    );
-
+    estadoRede
+        .operacao
+        .ultimaAtualizacao =
+        new Date();
 
     return {
 
-        sucesso: true,
+        sucesso:
+            true,
 
         equipamentoId:
             id,
 
+        equipamentoIdNormalizado:
+            chave,
+
         estado:
             registro,
 
-        equipamento
     };
 }
-
-
-// ==========================================================
-// EXECUTAR MANOBRA
-// ==========================================================
-//
-// Esta é a função que deve ser chamada pela interface
-// quando o operador clicar em ABRIR ou FECHAR.
-//
-// IMPORTANTE:
-//
-// A função altera o estado operacional do sistema.
-//
-// Ela NÃO envia comando físico para equipamento de campo.
-//
-// ==========================================================
-
 
 export function executarManobraEquipamento(
     equipamentoId,
@@ -1333,29 +1810,10 @@ export function executarManobraEquipamento(
     opcoes = {}
 ) {
 
-    const id =
-        normalizarId(
-            equipamentoId
-        );
-
-
-    if (!id) {
-
-        return {
-
-            sucesso: false,
-
-            mensagem:
-                "Equipamento não informado."
-        };
-    }
-
-
     const comando =
         normalizarTexto(
             acao
         );
-
 
     if (
         comando !== "ABRIR" &&
@@ -1364,125 +1822,112 @@ export function executarManobraEquipamento(
 
         return {
 
-            sucesso: false,
+            sucesso:
+                false,
 
             mensagem:
-                "Comando de manobra inválido. Utilize ABRIR ou FECHAR."
+                "Ação inválida.",
+
         };
     }
 
-
-    // ------------------------------------------------------
-    // Verificar equipamento
-    // ------------------------------------------------------
-
     const equipamento =
         buscarEquipamento(
-            id
+            equipamentoId
         );
-
 
     if (!equipamento) {
 
         return {
 
-            sucesso: false,
+            sucesso:
+                false,
 
             mensagem:
-                `Equipamento ${id} não encontrado na rede.`
+                `Equipamento ${equipamentoId} não encontrado na rede.`,
+
         };
     }
 
-
-    // ------------------------------------------------------
-    // Estado atual
-    // ------------------------------------------------------
-
     const estadoAtual =
         consultarEstadoEquipamento(
-            id
+            equipamentoId
         );
 
+    if (
+        estadoAtual?.estado ===
+        "INDISPONIVEL"
+    ) {
 
-    const estadoAtualNormalizado =
-        normalizarEstadoEquipamento(
-            estadoAtual?.estado
-        ) ||
-        "FECHADO";
+        return {
 
+            sucesso:
+                false,
+
+            bloqueada:
+                true,
+
+            mensagem:
+                "Equipamento indisponível.",
+
+        };
+    }
+
+    if (
+        estadoAtual?.estado ===
+        "BYPASSADO"
+    ) {
+
+        return {
+
+            sucesso:
+                false,
+
+            bloqueada:
+                true,
+
+            mensagem:
+                "Equipamento em BYPASSADO não pode ser manobrado.",
+
+        };
+    }
 
     const novoEstado =
         comando === "ABRIR"
             ? "ABERTO"
             : "FECHADO";
 
-
-    // ------------------------------------------------------
-    // Evitar comando redundante
-    // ------------------------------------------------------
-
     if (
-        estadoAtualNormalizado ===
+        estadoAtual?.estado ===
         novoEstado
     ) {
 
         return {
 
-            sucesso: false,
+            sucesso:
+                true,
 
-            repetido: true,
-
-            equipamentoId:
-                id,
-
-            comando,
-
-            estadoAnterior:
-                estadoAtualNormalizado,
-
-            estadoNovo:
-                novoEstado,
-
-            mensagem:
-                comando === "ABRIR"
-                    ? "O equipamento já está aberto."
-                    : "O equipamento já está fechado."
-        };
-    }
-
-
-    // ------------------------------------------------------
-    // Equipamento indisponível
-    // ------------------------------------------------------
-
-    if (
-        estadoAtualNormalizado ===
-        "INDISPONIVEL"
-    ) {
-
-        return {
-
-            sucesso: false,
-
-            bloqueada: true,
+            jaEstavaNoEstado:
+                true,
 
             equipamentoId:
-                id,
+                normalizarId(
+                    equipamentoId
+                ),
+
+            estado:
+                estadoAtual,
 
             mensagem:
-                "Manobra bloqueada: equipamento indisponível."
+                `Equipamento já se encontra ${novoEstado}.`,
+
         };
     }
-
-
-    // ------------------------------------------------------
-    // Executar alteração
-    // ------------------------------------------------------
 
     const resultado =
         atualizarEstadoEquipamento(
 
-            id,
+            equipamentoId,
 
             novoEstado,
 
@@ -1491,11 +1936,12 @@ export function executarManobraEquipamento(
                 ...opcoes,
 
                 origem:
-                    opcoes.origem ||
-                    "MANOBRA_OPERADOR"
-            }
-        );
+                    opcoes?.origem ??
+                    "MANOBRA_OPERADOR",
 
+            }
+
+        );
 
     if (
         !resultado?.sucesso
@@ -1504,232 +1950,330 @@ export function executarManobraEquipamento(
         return resultado;
     }
 
-
-    // ------------------------------------------------------
-    // Registrar manobra
-    // ------------------------------------------------------
-
-    registrarHistorico(
-
-        "MANOBRA_EQUIPAMENTO",
-
-        {
-
-            equipamento:
-                id,
-
-            comando,
-
-            estadoAnterior:
-                estadoAtualNormalizado,
-
-            estadoNovo:
-                novoEstado,
-
-            observacao:
-                opcoes.observacao ||
-                null
-        }
-    );
-
+    const estadoFinal =
+        consultarEstadoEquipamento(
+            equipamentoId
+        );
 
     return {
 
-        sucesso: true,
-
-        equipamentoId:
-            id,
-
-        comando,
+        ...resultado,
 
         estadoAnterior:
-            estadoAtualNormalizado,
+            estadoAtual,
 
-        estadoNovo:
-            novoEstado,
-
-        equipamento,
+        estadoAtual:
+            estadoFinal,
 
         estado:
-            resultado.estado,
+            estadoFinal,
 
-        mensagem:
-            comando === "ABRIR"
-                ? "Manobra de abertura realizada no modelo operacional."
-                : "Manobra de fechamento realizada no modelo operacional."
+        acao:
+            comando,
+
     };
 }
 
+export function desligarEquipamento(
+    equipamentoId,
+    opcoes = {}
+) {
 
-// ==========================================================
-// RESETAR ESTADOS DOS EQUIPAMENTOS
-// ==========================================================
+    return executarManobraEquipamento(
+        equipamentoId,
+        "ABRIR",
+        opcoes
+    );
+}
 
+export function ligarEquipamento(
+    equipamentoId,
+    opcoes = {}
+) {
+
+    return executarManobraEquipamento(
+        equipamentoId,
+        "FECHAR",
+        opcoes
+    );
+}
+
+export function equipamentoEstaAberto(
+    equipamentoId
+) {
+
+    return (
+        consultarEstadoEquipamento(
+            equipamentoId
+        )?.estado ===
+        "ABERTO"
+    );
+}
+
+export function equipamentoEstaFechado(
+    equipamentoId
+) {
+
+    return (
+        consultarEstadoEquipamento(
+            equipamentoId
+        )?.estado ===
+        "FECHADO"
+    );
+}
+
+export function equipamentoEstaDisponivel(
+    equipamentoId
+) {
+
+    const estado =
+        consultarEstadoEquipamento(
+            equipamentoId
+        )?.estado;
+
+    return (
+        estado !==
+        "INDISPONIVEL" &&
+        estado !==
+        "BYPASSADO"
+    );
+}
+
+export function obterMapaEstadosEquipamentos() {
+
+    return listarEstadosEquipamentos();
+}
+
+export function consultarEstadoOperacional() {
+
+    return {
+
+        equipamentos:
+            listarEstadosEquipamentos(),
+
+        equipamentosDesligados:
+            [
+                ...(
+                    estadoRede
+                        .operacao
+                        .equipamentosDesligados ||
+                    []
+                )
+            ],
+
+        ultimaAtualizacao:
+            estadoRede
+                .operacao
+                .ultimaAtualizacao,
+
+    };
+}
 
 export function resetarEstadosEquipamentos() {
 
-    estadoRede.operacao
+    estadoRede
+        .operacao
         .equipamentos = {};
 
-    estadoRede.operacao
+    estadoRede
+        .operacao
         .equipamentosDesligados = [];
 
-
-    registrarHistorico(
-        "RESET_ESTADOS_EQUIPAMENTOS",
-        {}
-    );
-
+    estadoRede
+        .operacao
+        .ultimaAtualizacao =
+        new Date();
 
     return {
 
-        sucesso: true
+        sucesso:
+            true,
+
     };
 }
 
+export function restaurarEstadoInicial() {
 
-// ==========================================================
-// BUSCAS BÁSICAS
-// ==========================================================
-
-
-export function buscarSubestacao(
-    id
-) {
-
-    const alvo =
-        normalizarId(id);
-
-    return estadoRede
-        .subestacoes
-        .find(
-            (se) =>
-                normalizarId(
-                    se?.id
-                ) === alvo ||
-                normalizarId(
-                    se?.codigo
-                ) === alvo
-        );
+    return resetarEstadosEquipamentos();
 }
 
-
-export function buscarAlimentador(
-    id
-) {
-
-    const alvo =
-        normalizarId(id);
-
-
-    return estadoRede
-        .alimentadores
-        .find(
-            (alimentador) =>
-
-                normalizarId(
-                    alimentador?.id
-                ) === alvo ||
-
-                normalizarId(
-                    alimentador?.codigo
-                ) === alvo ||
-
-                normalizarId(
-                    alimentador?.ctmt
-                ) === alvo ||
-
-                normalizarId(
-                    alimentador?.CTMT
-                ) === alvo
-        );
-}
-
-
-export function buscarTrecho(
-    id
-) {
-
-    const alvo =
-        normalizarId(id);
-
-
-    return estadoRede
-        .trechos
-        .find(
-            (trecho) =>
-
-                normalizarId(
-                    trecho?.id
-                ) === alvo ||
-
-                normalizarId(
-                    trecho?.COD_ID
-                ) === alvo ||
-
-                normalizarId(
-                    trecho?.codId
-                ) === alvo
-        );
-}
-
-
 // ==========================================================
-// BUSCAR EQUIPAMENTO
+// CORRENTES
 // ==========================================================
 
-
-export function buscarEquipamento(
-    id
+export function consultarCorrenteAlimentador(
+    alimentador
 ) {
 
-    const equipamentoId =
-        normalizarId(id);
+    const id =
+        normalizarId(
+            alimentador
+        );
 
-
-    if (!equipamentoId) {
-        return null;
-    }
-
-
-    // ------------------------------------------------------
-    // Primeiro: repository
-    // ------------------------------------------------------
-
-    const encontrado =
+    const valor =
         estadoRede
-            .equipamentos
-            .find(
-                (equipamento) =>
-                    equipamentoCorrespondeId(
-                        equipamento,
-                        equipamentoId
-                    )
-            );
+            .operacao
+            .correntesAlimentadores?.[
+                id
+            ];
 
+    return valor !== undefined
+        ? valor
+        : null;
+}
 
-    if (encontrado) {
-        return encontrado;
-    }
+export function obterCorrenteAlimentador(
+    alimentador
+) {
 
-
-    // ------------------------------------------------------
-    // Segundo: BDGD
-    // ------------------------------------------------------
-
-    return buscarEquipamentoBDGDLocal(
-
-        estadoRede.topologiaBDGD,
-
-        equipamentoId
+    return consultarCorrenteAlimentador(
+        alimentador
     );
 }
 
+export function atualizarCorrenteAlimentador(
+    alimentador,
+    corrente
+) {
+
+    const id =
+        normalizarId(
+            alimentador
+        );
+
+    const valor =
+        numero(
+            corrente
+        );
+
+    if (
+        !id ||
+        valor === null
+    ) {
+
+        return {
+
+            sucesso:
+                false,
+
+            mensagem:
+                "Alimentador ou corrente inválidos.",
+
+        };
+    }
+
+    estadoRede
+        .operacao
+        .correntesAlimentadores[id] =
+        valor;
+
+    estadoRede
+        .operacao
+        .ultimaAtualizacao =
+        new Date();
+
+    return {
+
+        sucesso:
+            true,
+
+        alimentador:
+            id,
+
+        corrente:
+            valor,
+
+    };
+}
+
+export function consultarCorrenteTrecho(
+    trecho
+) {
+
+    const id =
+        normalizarId(
+            trecho
+        );
+
+    const valor =
+        estadoRede
+            .operacao
+            .correntesTrechos?.[
+                id
+            ];
+
+    return valor !== undefined
+        ? valor
+        : null;
+}
+
+export function obterCorrenteTrecho(
+    trecho
+) {
+
+    return consultarCorrenteTrecho(
+        trecho
+    );
+}
+
+export function atualizarCorrenteTrecho(
+    trecho,
+    corrente
+) {
+
+    const id =
+        normalizarId(
+            trecho
+        );
+
+    const valor =
+        numero(
+            corrente
+        );
+
+    if (
+        !id ||
+        valor === null
+    ) {
+
+        return {
+
+            sucesso:
+                false,
+
+            mensagem:
+                "Trecho ou corrente inválidos.",
+
+        };
+    }
+
+    estadoRede
+        .operacao
+        .correntesTrechos[id] =
+        valor;
+
+    estadoRede
+        .operacao
+        .ultimaAtualizacao =
+        new Date();
+
+    return {
+
+        sucesso:
+            true,
+
+        trecho:
+            id,
+
+        corrente:
+            valor,
+
+    };
+}
 
 // ==========================================================
-// BUSCAS POR ALIMENTADOR
+// TRECHOS / EQUIPAMENTOS
 // ==========================================================
-
 
 export function buscarTrechosAlimentador(
     alimentador
@@ -1740,36 +2284,26 @@ export function buscarTrechosAlimentador(
             alimentador
         );
 
-
     return estadoRede
         .trechos
         .filter(
-            (trecho) => {
-
-                const valores = [
-
+            trecho =>
+                [
                     trecho?.alimentador,
-
-                    trecho?.alimentadorId,
-
-                    trecho?.ctmt,
-
+                    trecho?.ALIMENTADOR,
                     trecho?.CTMT,
-
-                    trecho?.COD_ID_ALIMENTADOR
-                ];
-
-
-                return valores.some(
-                    (valor) =>
-                        normalizarCodigo(
-                            valor
-                        ) === alvo
-                );
-            }
+                    trecho?.ctmt,
+                    trecho?.circuito,
+                    trecho?.CIRCUITO,
+                ]
+                    .some(
+                        valor =>
+                            normalizarCodigo(
+                                valor
+                            ) === alvo
+                    )
         );
 }
-
 
 export function buscarEquipamentosAlimentador(
     alimentador
@@ -1780,479 +2314,110 @@ export function buscarEquipamentosAlimentador(
             alimentador
         );
 
-
     return estadoRede
         .equipamentos
         .filter(
-            (equipamento) => {
-
-                const valores = [
-
+            equipamento =>
+                [
                     equipamento?.alimentador,
-
-                    equipamento?.alimentadorId,
-
-                    equipamento?.ctmt,
-
+                    equipamento?.ALIMENTADOR,
                     equipamento?.CTMT,
-
-                    equipamento?.alimentadorDestino
-                ];
-
-
-                return valores.some(
-                    (valor) =>
-                        normalizarCodigo(
-                            valor
-                        ) === alvo
-                );
-            }
+                    equipamento?.ctmt,
+                    equipamento?.circuito,
+                    equipamento?.CIRCUITO,
+                ]
+                    .some(
+                        valor =>
+                            normalizarCodigo(
+                                valor
+                            ) === alvo
+                    )
         );
 }
-
 
 export function buscarEquipamentosTelecomandados(
-    alimentador
+    alimentador = null
 ) {
 
-    return buscarEquipamentosAlimentador(
+    let equipamentos =
+        estadoRede.equipamentos;
+
+    if (
         alimentador
-    ).filter(
-        (equipamento) =>
-
-            equipamento?.telecomandado ===
-                true ||
-
-            equipamento?.telecomando ===
-                true ||
-
-            equipamento?.telecontrolado ===
-                true
-    );
-}
-
-
-// ==========================================================
-// INTERLIGAÇÕES
-// ==========================================================
-
-
-export function buscarInterligacoes() {
-
-    return estadoRede
-        .equipamentos
-        .filter(
-            (equipamento) =>
-
-                equipamento?.interligacao ===
-                    true ||
-
-                equipamento?.interligação ===
-                    true
-        );
-}
-
-
-export function buscarInterligacoesAlimentador(
-    alimentador
-) {
-
-    const alvo =
-        normalizarCodigo(
-            alimentador
-        );
-
-
-    return buscarInterligacoes()
-        .filter(
-            (equipamento) => {
-
-                const origem =
-                    normalizarCodigo(
-                        equipamento?.alimentador
-                    );
-
-                const destino =
-                    normalizarCodigo(
-                        equipamento?.alimentadorDestino
-                    );
-
-
-                return (
-                    origem === alvo ||
-                    destino === alvo
-                );
-            }
-        );
-}
-
-
-// ==========================================================
-// CONSULTAS EXISTÊNCIA
-// ==========================================================
-
-
-export function existeAlimentador(
-    alimentador
-) {
-
-    return Boolean(
-        buscarAlimentador(
-            alimentador
-        )
-    );
-}
-
-
-export function existeTrecho(
-    id
-) {
-
-    return Boolean(
-        buscarTrecho(id)
-    );
-}
-
-
-export function existeEquipamento(
-    id
-) {
-
-    return Boolean(
-        buscarEquipamento(id)
-    );
-}
-
-
-// ==========================================================
-// CONEXÕES ENTRE EQUIPAMENTOS
-// ==========================================================
-
-
-export function buscarConexoesEquipamento(
-    equipamentoId
-) {
-
-    const equipamento =
-        buscarEquipamento(
-            equipamentoId
-        );
-
-
-    if (!equipamento) {
-        return [];
-    }
-
-
-    const ponto1 =
-        normalizarId(
-            equipamento?.pac1
-        );
-
-
-    const ponto2 =
-        normalizarId(
-            equipamento?.pac2
-        );
-
-
-    const unidade =
-        normalizarId(
-            equipamento?.unidadeId
-        );
-
-
-    const pontos =
-        [
-            ponto1,
-            ponto2,
-            unidade
-        ].filter(Boolean);
-
-
-    // ------------------------------------------------------
-    // Se houver topologia BDGD, utilizar conexões reais.
-    // ------------------------------------------------------
-
-    if (
-        estadoRede.topologiaBDGD &&
-        pontos.length > 0
     ) {
 
-        const resultado = [];
-
-        for (
-            const pontoId of pontos
-        ) {
-
-            const conexoes =
-                buscarConexoesBDGD(
-                    estadoRede.topologiaBDGD,
-                    pontoId
-                );
-
-
-            if (
-                Array.isArray(conexoes)
-            ) {
-
-                resultado.push(
-                    ...conexoes
-                );
-            }
-        }
-
-
-        const mapa =
-            new Map();
-
-
-        resultado.forEach(
-            (item) => {
-
-                const chave =
-                    normalizarId(
-                        item?.id ??
-                        item?.COD_ID ??
-                        item?.codId
-                    );
-
-
-                if (chave) {
-                    mapa.set(
-                        chave,
-                        item
-                    );
-                }
-            }
-        );
-
-
-        return [
-            ...mapa.values()
-        ];
+        equipamentos =
+            buscarEquipamentosAlimentador(
+                alimentador
+            );
     }
 
+    return equipamentos.filter(
+        equipamento =>
 
-    // ------------------------------------------------------
-    // Fallback: relacionamento por alimentador
-    // ------------------------------------------------------
+            numero(
+                primeiro(
+                    equipamento,
+                    [
+                        "TLCD",
+                        "tlcd"
+                    ]
+                )
+            ) > 0 ||
 
-    return estadoRede
-        .equipamentos
-        .filter(
-            (item) => {
-
-                if (
-                    equipamentoCorrespondeId(
-                        item,
-                        equipamentoId
-                    )
-                ) {
-                    return false;
-                }
-
-
-                return (
-
-                    item?.alimentador ===
-                        equipamento?.alimentador ||
-
-                    item?.alimentadorDestino ===
-                        equipamento?.alimentador
-                );
-            }
-        );
-}
-
-
-// ==========================================================
-// CAMINHO ENTRE ALIMENTADORES
-// ==========================================================
-
-
-export function buscarCaminhoAlimentadores(
-    origem,
-    destino
-) {
-
-    const origemNormalizada =
-        normalizarCodigo(
-            origem
-        );
-
-
-    const destinoNormalizado =
-        normalizarCodigo(
-            destino
-        );
-
-
-    if (
-        !origemNormalizada ||
-        !destinoNormalizado
-    ) {
-        return [];
-    }
-
-
-    const interligacoes =
-        buscarInterligacoes();
-
-
-    return interligacoes
-        .filter(
-            (equipamento) => {
-
-                const a =
-                    normalizarCodigo(
-                        equipamento?.alimentador
-                    );
-
-                const b =
-                    normalizarCodigo(
-                        equipamento?.alimentadorDestino
-                    );
-
-
-                return (
-
-                    (
-                        a ===
-                            origemNormalizada &&
-                        b ===
-                            destinoNormalizado
-                    ) ||
-
-                    (
-                        a ===
-                            destinoNormalizado &&
-                        b ===
-                            origemNormalizada
-                    )
-                );
-            }
-        )
-        .map(
-            (equipamento) => {
-
-                const a =
-                    normalizarCodigo(
-                        equipamento?.alimentador
-                    );
-
-                const b =
-                    normalizarCodigo(
-                        equipamento?.alimentadorDestino
-                    );
-
-
-                if (
-                    a ===
-                    origemNormalizada
-                ) {
-
-                    return {
-
-                        equipamento:
-                            equipamento?.id ??
-                            equipamento?.COD_ID ??
-                            equipamento?.codId ??
-                            equipamento?.plaqueta,
-
-                        origem,
-
-                        destino,
-
-                        equipamentoDados:
-                            equipamento
-                    };
-                }
-
-
-                return {
-
-                    equipamento:
-                        equipamento?.id ??
-                        equipamento?.COD_ID ??
-                        equipamento?.codId ??
-                        equipamento?.plaqueta,
-
-                    origem,
-
-                    destino,
-
-                    equipamentoDados:
-                        equipamento
-                };
-            }
-        );
-}
-
-
-export function possuiInterligacao(
-    origem,
-    destino
-) {
-
-    return (
-        buscarCaminhoAlimentadores(
-            origem,
-            destino
-        ).length > 0
+            Boolean(
+                primeiro(
+                    equipamento,
+                    [
+                        "telecomandado",
+                        "telecomando"
+                    ]
+                )
+            )
     );
 }
 
-
 // ==========================================================
-// CAPACIDADE DE CABOS
+// CAPACIDADE
 // ==========================================================
 
+const CAPACIDADES_BITOLA = {
 
-const tabelaCapacidadeCabos = {
+    240:
+        500,
 
-    "240": 500,
+    150:
+        300,
 
-    "150": 300,
+    95:
+        220,
 
-    "95": 220,
+    70:
+        150,
 
-    "70": 150,
+    35:
+        90,
 
-    "35": 90
 };
-
 
 export function capacidadePorBitola(
     bitola
 ) {
 
-    const valor =
-        normalizarId(
-            bitola
+    const chave =
+        String(
+            bitola ?? ""
         )
-            .replace(
-                /mm²|mm2|MM²|MM2/g,
-                ""
-            )
-            .replace(
-                /[^0-9]/g,
-                ""
-            );
-
+            .replace(",", ".")
+            .trim();
 
     return (
-        tabelaCapacidadeCabos[
-            valor
-        ] || 0
+        CAPACIDADES_BITOLA[
+            chave
+        ] ??
+        null
     );
 }
-
-
-// ==========================================================
-// CAPACIDADE DO TRECHO
-// ==========================================================
-
 
 export function calcularCapacidadeTrecho(
     trechoId
@@ -2263,1231 +2428,5265 @@ export function calcularCapacidadeTrecho(
             trechoId
         );
 
-
     if (!trecho) {
-        return 0;
+        return null;
     }
 
+    const direta =
+        numero(
+            primeiro(
+                trecho,
+                [
+                    "capacidade",
+                    "CAPACIDADE",
+                    "ampacidade",
+                    "AMPACIDADE",
+                    "capacidadeMaximaAmperes",
+                ]
+            )
+        );
 
-    const bitolas = [];
+    if (
+        direta !== null &&
+        direta > 0
+    ) {
 
+        return direta;
+    }
 
-    const adicionarBitola = (
-        valor
-    ) => {
+    const bitola =
+        primeiro(
+            trecho,
+            [
+                "bitola",
+                "BITOLA",
+                "secao",
+                "SECAO",
+                "condutor",
+                "CONDUTOR",
+            ]
+        );
+
+    if (
+        bitola !== null
+    ) {
+
+        const capacidade =
+            capacidadePorBitola(
+                bitola
+            );
 
         if (
-            valor !== null &&
-            valor !== undefined &&
-            String(valor).trim() !== ""
+            capacidade !== null
         ) {
 
-            bitolas.push(
-                valor
-            );
+            return capacidade;
         }
-    };
-
-
-    adicionarBitola(
-        trecho?.bitola
-    );
-
-
-    adicionarBitola(
-        trecho?.BITOLA
-    );
-
-
-    adicionarBitola(
-        trecho?.bitolaCondutor
-    );
-
-
-    if (
-        Array.isArray(
-            trecho?.condutores
-        )
-    ) {
-
-        trecho.condutores.forEach(
-            (cabo) => {
-
-                adicionarBitola(
-                    cabo?.bitola
-                );
-
-                adicionarBitola(
-                    cabo?.BITOLA
-                );
-            }
-        );
     }
 
-
-    if (
-        bitolas.length === 0
-    ) {
-        return 0;
-    }
-
-
-    const capacidades =
-        bitolas
-            .map(
-                (bitola) =>
-                    capacidadePorBitola(
-                        bitola
-                    )
-            )
-            .filter(
-                (capacidade) =>
-                    capacidade > 0
-            );
-
-
-    if (
-        capacidades.length === 0
-    ) {
-        return 0;
-    }
-
-
-    return Math.min(
-        ...capacidades
-    );
+    return null;
 }
-
-
-// ==========================================================
-// VALIDAR CARGA
-// ==========================================================
-
 
 export function validarCargaTrecho(
     trechoId,
-    correnteNova
+    corrente
 ) {
 
-    const capacidade =
-        calcularCapacidadeTrecho(
-            trechoId
+    const i =
+        numero(
+            corrente
         );
 
+    const capacidade =
+        numero(
+            calcularCapacidadeTrecho(
+                trechoId
+            )
+        );
 
-    if (!capacidade) {
+    if (
+        i === null
+    ) {
 
         return {
 
-            permitido: false,
+            conhecida:
+                false,
 
-            motivo:
-                "Trecho sem capacidade definida"
+            permitido:
+                false,
+
+            corrente:
+                null,
+
+            capacidade,
+
         };
     }
 
+    if (
+        capacidade === null ||
+        capacidade <= 0
+    ) {
 
-    const corrente =
-        Number(
-            correnteNova
-        ) || 0;
+        return {
 
+            conhecida:
+                true,
+
+            permitido:
+                false,
+
+            corrente:
+                i,
+
+            capacidade:
+                null,
+
+            limite:
+                null,
+
+            motivo:
+                "Capacidade não determinada.",
+
+        };
+    }
 
     const limite =
-        capacidade * 0.8;
-
+        capacidade *
+        0.8;
 
     return {
 
+        conhecida:
+            true,
+
         permitido:
-            corrente <= limite,
+            i <= limite,
+
+        corrente:
+            i,
 
         capacidade,
 
-        limiteOperacional:
-            limite,
+        limite,
 
-        correnteSolicitada:
-            corrente,
+        carregamento:
+            (
+                i /
+                capacidade
+            ) *
+            100,
 
-        excedido:
-            corrente > limite
     };
 }
 
-
 // ==========================================================
-// NORMALIZAÇÃO
+// VALIDAR EQUIPAMENTO BDGD
 // ==========================================================
 
-
-export function analisarNormalizacao(
-    trechoInterligacaoId,
-    correnteInformada
+export function validarEquipamentoBDGD(
+    codigoInformado,
+    alimentadorEsperado = null
 ) {
 
-    const trecho =
-        buscarTrecho(
-            trechoInterligacaoId
+    const codigo =
+        normalizarId(
+            codigoInformado
         );
 
-
-    if (!trecho) {
+    if (!codigo) {
 
         return {
 
-            sucesso: false,
+            informado:
+                false,
 
-            statusAnalise:
-                "ERRO",
+            valido:
+                false,
 
-            mensagem:
-                "Trecho de interligação não encontrado no modelo da rede.",
+            existeBDGD:
+                false,
 
-            passosManobra: []
+            inconsistente:
+                true,
+
+            equipamento:
+                null,
+
+            ficha:
+                null,
+
+            motivo:
+                "Código do equipamento não informado.",
+
         };
     }
 
-
-    const capacidadeSuportada =
-        trecho?.capacidade ||
-        trecho?.capacidadeMaximaAmperes ||
-        calcularCapacidadeTrecho(
-            trechoInterligacaoId
-        ) ||
-        250;
-
-
-    const corrente =
-        Number(
-            correnteInformada
-        ) || 0;
-
-
     if (
-        corrente >
-        capacidadeSuportada
+        !possuiTopologiaBDGD()
     ) {
 
         return {
 
-            sucesso: false,
+            informado:
+                true,
 
-            statusAnalise:
-                "SOBRECARGA",
+            valido:
+                false,
 
-            mensagem:
-                `Nenhuma transferência segura encontrada. A corrente informada (${corrente}A) excede a capacidade máxima suportada pelo trecho (${capacidadeSuportada}A).`,
+            existeBDGD:
+                false,
 
-            passosManobra: [],
+            inconsistente:
+                true,
 
-            detalhes: {
+            equipamento:
+                null,
 
-                correnteInformada:
-                    corrente,
+            ficha:
+                null,
 
-                capacidadeTrecho:
-                    capacidadeSuportada,
+            motivo:
+                "Topologia BDGD ainda não foi registrada.",
 
-                bitola:
-                    trecho?.bitola ||
-                    null
-            }
         };
     }
 
+    const equipamento =
+        buscarEquipamento(
+            codigo
+        );
 
-    const alimentadorOrigem =
-        trecho?.alimentador ||
-        null;
+    if (!equipamento) {
 
+        return {
+
+            informado:
+                true,
+
+            valido:
+                false,
+
+            existeBDGD:
+                false,
+
+            inconsistente:
+                false,
+
+            equipamento:
+                null,
+
+            ficha:
+                null,
+
+            motivo:
+                `Equipamento ${codigo} não encontrado na BDGD.`,
+
+        };
+    }
+
+    const ficha =
+        obterFichaCompletaEquipamento(
+            codigo
+        );
+
+    const alimentadorEquipamento =
+        obterAlimentadorEquipamento(
+            equipamento
+        );
+
+    const esperado =
+        normalizarCodigo(
+            alimentadorEsperado
+        );
+
+    const encontrado =
+        normalizarCodigo(
+            alimentadorEquipamento
+        );
+
+    if (
+        esperado &&
+        encontrado &&
+        esperado !== encontrado
+    ) {
+
+        return {
+
+            informado:
+                true,
+
+            valido:
+                false,
+
+            existeBDGD:
+                true,
+
+            inconsistente:
+                true,
+
+            equipamento,
+
+            ficha,
+
+            alimentadorEquipamento,
+
+            alimentadorEsperado,
+
+            motivo:
+                `O equipamento ${codigo} existe na BDGD, mas pertence ao alimentador ${alimentadorEquipamento}, enquanto a ocorrência está no alimentador ${alimentadorEsperado}.`,
+
+        };
+    }
 
     return {
 
-        sucesso: true,
+        informado:
+            true,
 
-        statusAnalise:
-            "VIABILIZADO",
+        valido:
+            true,
 
-        mensagem:
-            `Transferência e normalização viáveis. A carga informada (${corrente}A) está dentro da capacidade considerada (${capacidadeSuportada}A).`,
+        existeBDGD:
+            true,
 
-        passosManobra: [
+        inconsistente:
+            false,
 
-            {
+        equipamento,
 
-                ordem: 1,
+        ficha,
 
-                acao:
-                    "ABRIR",
+        alimentadorEquipamento,
 
-                elemento:
-                    null,
+        alimentadorEsperado:
+            alimentadorEsperado ?? null,
 
-                descricao:
-                    alimentadorOrigem
-                        ? `Realizar a abertura do equipamento/disjuntor do alimentador afetado (${alimentadorOrigem}).`
-                        : "Realizar a abertura do alimentador afetado."
-            },
+        motivo:
+            `Equipamento ${codigo} validado com sucesso na BDGD.`,
 
-            {
-
-                ordem: 2,
-
-                acao:
-                    "FECHAR",
-
-                elemento:
-                    null,
-
-                descricao:
-                    "Realizar o fechamento do equipamento de interligação correspondente."
-            },
-
-            {
-
-                ordem: 3,
-
-                acao:
-                    "NORMALIZAR",
-
-                elemento:
-                    trecho?.id,
-
-                descricao:
-                    "Transferir e normalizar a carga pelo caminho de interligação disponível."
-            },
-
-            {
-
-                ordem: 4,
-
-                acao:
-                    "CONFIRMAR",
-
-                elemento:
-                    null,
-
-                descricao:
-                    "Confirmar estabilização da rede e atendimento aos clientes."
-            }
-        ],
-
-        detalhes: {
-
-            correnteInformada:
-                corrente,
-
-            capacidadeTrecho:
-                capacidadeSuportada,
-
-            bitola:
-                trecho?.bitola ||
-                null
-        }
     };
 }
 
-
 // ==========================================================
-// TRANSFERÊNCIA ENTRE ALIMENTADORES
+// NAVEGAÇÃO
 // ==========================================================
 
-
-export function analisarTransferencia(
-    origem,
-    destino,
-    correnteOrigem,
-    correnteDestino
+export function buscarMontante(
+    pontoId,
+    opcoes = {}
 ) {
 
-    const resultado = {
+    if (
+        !estadoRede.topologiaBDGD
+    ) {
+        return null;
+    }
 
-        permitido:
-            false,
+    return navegarAMontante(
+        estadoRede.topologiaBDGD,
+        pontoId,
+        {
 
-        motivo:
-            null,
+            ...opcoes,
 
-        interligacao:
-            null,
+            estadosEquipamentos:
+                opcoes?.estadosEquipamentos ??
+                obterMapaEstadosEquipamentos(),
 
-        correnteFinal:
-            null
-    };
+            respeitarEstadoOperacional:
+                opcoes?.respeitarEstadoOperacional !== false,
 
+        }
+    );
+}
 
-    const caminho =
-        buscarCaminhoAlimentadores(
-            origem,
-            destino
-        );
-
+export function buscarJusante(
+    pontoId,
+    opcoes = {}
+) {
 
     if (
-        caminho.length === 0
+        !estadoRede.topologiaBDGD
+    ) {
+        return null;
+    }
+
+    return navegarAJusante(
+        estadoRede.topologiaBDGD,
+        pontoId,
+        {
+
+            ...opcoes,
+
+            estadosEquipamentos:
+                opcoes?.estadosEquipamentos ??
+                obterMapaEstadosEquipamentos(),
+
+            respeitarEstadoOperacional:
+                opcoes?.respeitarEstadoOperacional !== false,
+
+        }
+    );
+}
+
+export function buscarCaminhoEletrico(
+    origem,
+    destino,
+    opcoes = {}
+) {
+
+    if (
+        !estadoRede.topologiaBDGD
     ) {
 
-        resultado.motivo =
-            "Não existe interligação entre alimentadores";
+        return {
 
-        return resultado;
+            encontrado:
+                false,
+
+            pontos: [],
+
+            trechos: [],
+
+            motivo:
+                "TOPOLOGIA_NAO_DISPONIVEL",
+
+        };
     }
 
+    return buscarCaminhoNavegador(
+        estadoRede.topologiaBDGD,
+        origem,
+        destino,
+        {
 
-    resultado.interligacao =
-        caminho;
+            ...opcoes,
 
+            estadosEquipamentos:
+                opcoes?.estadosEquipamentos ??
+                obterMapaEstadosEquipamentos(),
 
-    const correnteTotal =
-        (
-            Number(
-                correnteOrigem
-            ) || 0
-        ) +
-        (
-            Number(
-                correnteDestino
-            ) || 0
-        );
+            respeitarEstadoOperacional:
+                opcoes?.respeitarEstadoOperacional !== false,
 
+        }
+    );
+}
 
-    resultado.correnteFinal =
-        correnteTotal;
+export function buscarRedeConectada(
+    pontoId,
+    opcoes = {}
+) {
 
-
-    const alimentadorDestino =
-        buscarAlimentador(
-            destino
-        );
-
-
-    if (!alimentadorDestino) {
-
-        resultado.motivo =
-            "Alimentador destino não encontrado";
-
-        return resultado;
+    if (
+        !estadoRede.topologiaBDGD
+    ) {
+        return null;
     }
 
+    return buscarRedeConectadaNavegador(
+        estadoRede.topologiaBDGD,
+        pontoId,
+        {
 
-    const trechosDestino =
-        buscarTrechosAlimentador(
-            destino
+            ...opcoes,
+
+            estadosEquipamentos:
+                opcoes?.estadosEquipamentos ??
+                obterMapaEstadosEquipamentos(),
+
+            respeitarEstadoOperacional:
+                opcoes?.respeitarEstadoOperacional !== false,
+
+        }
+    );
+}
+
+// ==========================================================
+// PAC
+// ==========================================================
+
+export function buscarPQTDoPontoRede(
+    pontoId
+) {
+
+    const ponto =
+        buscarPontoRede(
+            pontoId
         );
 
+    if (!ponto) {
+        return [];
+    }
+
+    return [
+        primeiro(
+            ponto,
+            [
+                "PAC",
+                "pac",
+                "COD_ID",
+                "id"
+            ]
+        )
+    ].filter(Boolean);
+}
+
+export function buscarTransformadoresDoPontoRede(
+    pontoId
+) {
+
+    const alvo =
+        normalizarCodigo(
+            pontoId
+        );
+
+    return lista(
+        estadoRede
+            .topologiaBDGD
+            ?.transformadores
+    ).filter(
+        transformador => {
+
+            const valores = [
+
+                transformador?.pontoAssociado,
+
+                transformador?.pontoId,
+
+                transformador?.PAC_1,
+
+                transformador?.PAC_2,
+
+            ];
+
+            return valores.some(
+                valor =>
+                    normalizarCodigo(
+                        valor
+                    ) === alvo
+            );
+        }
+    );
+}
+
+export function filtrarRedePorAlimentador(
+    alimentador
+) {
+
+    const alvo =
+        normalizarCodigo(
+            alimentador
+        );
+
+    const topologia =
+        estadoRede.topologiaBDGD;
+
+    return {
+
+        alimentador,
+
+        pontos:
+            lista(
+                topologia?.pontos
+            ).filter(
+                ponto =>
+                    normalizarCodigo(
+                        primeiro(
+                            ponto,
+                            [
+                                "alimentador",
+                                "ALIMENTADOR",
+                                "CTMT"
+                            ]
+                        )
+                    ) === alvo
+            ),
+
+        trechos:
+            lista(
+                topologia?.trechos
+            ).filter(
+                trecho =>
+                    normalizarCodigo(
+                        primeiro(
+                            trecho,
+                            [
+                                "alimentador",
+                                "ALIMENTADOR",
+                                "CTMT",
+                                "ctmt",
+                                "circuito",
+                                "CIRCUITO"
+                            ]
+                        )
+                    ) === alvo
+            ),
+
+        equipamentos:
+            lista(
+                topologia?.equipamentosOperacionais ??
+                topologia?.equipamentos
+            ).filter(
+                equipamento =>
+                    normalizarCodigo(
+                        obterAlimentadorEquipamento(
+                            equipamento
+                        )
+                    ) === alvo
+            ),
+
+    };
+}
+
+// ==========================================================
+// IDENTIDADE OPERACIONAL DO EQUIPAMENTO
+// ==========================================================
+
+function obterTipoUnidadeInterno(
+    equipamento
+) {
+
+    const valor =
+        primeiro(
+            equipamento,
+            [
+                "TIP_UNID",
+                "tipUnid",
+                "tipoUnidade"
+            ]
+        );
+
+    return numero(
+        valor
+    );
+}
+
+function obterIdOperacionalEquipamento(
+    equipamento
+) {
+
+    if (!equipamento) {
+        return "";
+    }
+
+    const tipo =
+        obterTipoUnidadeInterno(
+            equipamento
+        );
+
+    if (
+        [
+            19,
+            22,
+            32,
+            34
+        ].includes(
+            tipo
+        )
+    ) {
+
+        return normalizarId(
+            primeiro(
+                equipamento,
+                [
+                    "idOperacional",
+                    "plaqueta",
+                    "unsemtId",
+                    "codIdUNSEMT",
+                    "COD_ID_UNSEMT",
+                    "unidadeId",
+                    "id",
+                    "COD_ID",
+                    "codId",
+                ]
+            )
+        );
+    }
+
+    if (
+        tipo === 38
+    ) {
+
+        return normalizarId(
+            primeiro(
+                equipamento,
+                [
+                    "idOperacional",
+                    "plaqueta",
+                    "untrmtId",
+                    "codIdUNTRMT",
+                    "COD_ID_UNTRMT",
+                    "id",
+                    "COD_ID",
+                    "codId",
+                ]
+            )
+        );
+    }
+
+    return normalizarId(
+        primeiro(
+            equipamento,
+            [
+                "idOperacional",
+                "plaqueta",
+                "id",
+                "codigo",
+                "COD_ID",
+                "codId",
+            ]
+        )
+    );
+}
+
+// ==========================================================
+// FICHA OPERACIONAL
+// ==========================================================
+
+export function obterFichaOperacional(
+    equipamentoId
+) {
+
+    const equipamento =
+        buscarEquipamento(
+            equipamentoId
+        );
+
+    if (!equipamento) {
+        return null;
+    }
+
+    const id =
+        obterIdOperacionalEquipamento(
+            equipamento
+        );
+
+    const plaqueta =
+        obterPlaquetaEquipamento(
+            equipamento
+        );
+
+    const codId =
+        normalizarId(
+            primeiro(
+                equipamento,
+                [
+                    "COD_ID",
+                    "codId"
+                ]
+            )
+        );
+
+    return {
+
+        id,
+
+        plaqueta,
+
+        COD_ID:
+            codId ||
+            null,
+
+        codId:
+            codId ||
+            null,
+
+        equipamentoId:
+            id,
+
+        tipo:
+            classificarEquipamento(
+                equipamento
+            ),
+
+        tipUnid:
+            obterTIPUNID(
+                equipamento
+            ),
+
+        alimentador:
+            obterAlimentadorEquipamento(
+                equipamento
+            ),
+
+        pac1:
+            obterPac(
+                primeiro(
+                    equipamento,
+                    [
+                        "pac1",
+                        "PAC_1"
+                    ]
+                )
+            ),
+
+        pac2:
+            obterPac(
+                primeiro(
+                    equipamento,
+                    [
+                        "pac2",
+                        "PAC_2"
+                    ]
+                )
+            ),
+
+        estado:
+            consultarEstadoEquipamento(
+                equipamentoId
+            ),
+
+    };
+}
+
+export function obterFichaCompletaEquipamento(
+    equipamentoId
+) {
+
+    const ficha =
+        obterFichaOperacional(
+            equipamentoId
+        );
+
+    if (!ficha) {
+        return null;
+    }
+
+    const equipamento =
+        buscarEquipamento(
+            equipamentoId
+        );
+
+    const id =
+        obterIdOperacionalEquipamento(
+            equipamento
+        );
+
+    const plaqueta =
+        obterPlaquetaEquipamento(
+            equipamento
+        );
+
+    const codId =
+        normalizarId(
+            primeiro(
+                equipamento,
+                [
+                    "COD_ID",
+                    "codId"
+                ]
+            )
+        );
+
+    return {
+
+        ...ficha,
+
+        id:
+            id ||
+            ficha?.id ||
+            normalizarId(
+                equipamentoId
+            ),
+
+        equipamentoId:
+            id ||
+            ficha?.equipamentoId ||
+            normalizarId(
+                equipamentoId
+            ),
+
+        plaqueta:
+            plaqueta ||
+            ficha?.plaqueta ||
+            id ||
+            null,
+
+        COD_ID:
+            codId ||
+            ficha?.COD_ID ||
+            null,
+
+        codId:
+            codId ||
+            ficha?.codId ||
+            ficha?.COD_ID ||
+            null,
+
+        patrimonio:
+            primeiro(
+                equipamento,
+                [
+                    "patrimonio",
+                    "PATRIMONIO",
+                    "idPatrimonial",
+                    "ID_PATRIMONIAL"
+                ]
+            ),
+
+        circuito:
+            primeiro(
+                equipamento,
+                [
+                    "circuito",
+                    "CIRCUITO",
+                    "CTMT"
+                ]
+            ),
+
+        tipoUnidade:
+            obterTIPUNID(
+                equipamento
+            ),
+
+        telecomandado:
+            Boolean(
+                numero(
+                    primeiro(
+                        equipamento,
+                        [
+                            "TLCD",
+                            "tlcd"
+                        ]
+                    )
+                )
+            ),
+
+        equipamento,
+
+    };
+}
+
+// ==========================================================
+// AUXILIARES DE EQUIPAMENTO
+// ==========================================================
+
+function obterIdEquipamento(
+    equipamento
+) {
+
+    return obterIdOperacionalEquipamento(
+        equipamento
+    );
+}
+
+function obterPlaquetaEquipamento(
+    equipamento
+) {
+
+    if (!equipamento) {
+        return "";
+    }
+
+    const operacional =
+        obterIdOperacionalEquipamento(
+            equipamento
+        );
+
+    if (
+        operacional
+    ) {
+
+        return operacional;
+    }
+
+    const valor =
+        primeiro(
+            equipamento,
+            [
+
+                "plaqueta",
+                "PLAQUETA",
+
+                "plaquetaIPT",
+                "PLAQUETA_IPT",
+
+                "codigo",
+                "CODIGO",
+
+                "id",
+                "ID",
+
+                "COD_ID",
+                "codId",
+
+            ]
+        );
+
+    return normalizarId(
+        valor
+    );
+}
+
+function obterTIPUNID(
+    equipamento
+) {
+
+    const valor =
+        primeiro(
+            equipamento,
+            [
+                "TIP_UNID",
+                "tipUnid",
+                "tipoUnidade"
+            ]
+        );
+
+    return numero(
+        valor
+    );
+}
+
+function obterPac(
+    valor
+) {
+
+    if (
+        valor === null ||
+        valor === undefined
+    ) {
+        return null;
+    }
+
+    const texto =
+        String(
+            valor
+        ).trim();
+
+    if (!texto) {
+        return null;
+    }
+
+    const match =
+        texto.match(
+            /^(.+?)M(?:-[^- ]+)?$/i
+        );
+
+    return normalizarId(
+        match?.[1] ||
+        texto
+    );
+}
+
+function obterAlimentadorEquipamento(
+    equipamento
+) {
+
+    return normalizarId(
+        primeiro(
+            equipamento,
+            [
+                "alimentador",
+                "ALIMENTADOR",
+                "CT_COD_OP",
+                "CT_COD_OPER",
+                "CTMT",
+                "ctmt",
+                "circuito",
+                "CIRCUITO"
+            ]
+        )
+    );
+}
+
+// ==========================================================
+// CLASSIFICAÇÃO
+// ==========================================================
+
+export function classificarEquipamento(
+    equipamento
+) {
+
+    const tip =
+        obterTIPUNID(
+            equipamento
+        );
+
+    switch (
+        tip
+    ) {
+
+        case 19:
+            return "CHAVE_LAMINA";
+
+        case 22:
+            return "CHAVE_FUSIVEL";
+
+        case 32:
+            return "RELIGADOR";
+
+        case 34:
+            return "CHAVE_SECCIONADORA";
+
+        case 38:
+            return "TRANSFORMADOR";
+
+        default:
+            return null;
+    }
+}
+
+// ==========================================================
+// INTERLIGAÇÕES OFICIAIS
+// ==========================================================
+
+export function buscarInterligacoes() {
+
+    return lista(
+        estadoRede
+            .topologiaBDGD
+            ?.interligacoes
+    );
+}
+
+function obterAlimentadorInterligacaoA(
+    item
+) {
+
+    return normalizarId(
+
+        item?.alimentadorA ??
+        item?.alimentadorOrigem ??
+        item?.origem ??
+        item?.alimentador1 ??
+        item?.alimentador_1 ??
+        item?.CTMT_A ??
+        item?.ctmtA ??
+        item?.ctmt_1 ??
+        item?.circuitoA ??
+        item?.circuito1 ??
+        null
+
+    );
+}
+
+function obterAlimentadorInterligacaoB(
+    item
+) {
+
+    return normalizarId(
+
+        item?.alimentadorB ??
+        item?.alimentadorDestino ??
+        item?.destino ??
+        item?.alimentador2 ??
+        item?.alimentador_2 ??
+        item?.CTMT_B ??
+        item?.ctmtB ??
+        item?.ctmt_2 ??
+        item?.circuitoB ??
+        item?.circuito2 ??
+        null
+
+    );
+}
+
+// ==========================================================
+// EQUIPAMENTO DA INTERLIGAÇÃO
+// ==========================================================
+
+function obterEquipamentoInterligacao(
+    item
+) {
+
+    if (!item) {
+        return "";
+    }
+
+    const referencias = [
+
+        item?.equipamento,
+
+        item?.equipamentoId,
+
+        item?.idEquipamento,
+
+        item?.ID_EQUIPAMENTO,
+
+        item?.equipamentoOperacional,
+
+        item?.equipamentoInterligacao,
+
+        item?.idEquipamentoInterligacao,
+
+        item?.COD_EQUIPAMENTO,
+
+        item?.COD_EQUIP,
+
+        item?.codEquipamento,
+
+        item?.PQT,
+
+        item?.pqt,
+
+        item?.plaqueta,
+
+        item?.PLAQUETA,
+
+        item?.unsemtId,
+
+        item?.untrmtId,
+
+        item?.COD_ID,
+
+        item?.codId,
+
+        item?.id,
+
+    ];
 
     for (
-        const trecho of
-        trechosDestino
+        const referencia of
+        referencias
     ) {
 
-        const validacao =
-            validarCargaTrecho(
-                trecho?.id,
-                correnteTotal
-            );
-
-
         if (
-            !validacao.permitido
+            referencia &&
+            typeof referencia ===
+                "object"
         ) {
 
-            resultado.motivo =
-                "Capacidade do trecho insuficiente";
+            const interno =
+                primeiro(
+                    referencia,
+                    [
+                        "id",
+                        "ID",
+                        "COD_ID",
+                        "codId",
+                        "codigo",
+                        "CODIGO",
+                        "plaqueta",
+                        "PLAQUETA",
+                        "idOperacional",
+                        "unsemtId",
+                        "untrmtId",
+                    ]
+                );
 
-            resultado.detalhe =
-                validacao;
+            if (
+                interno !== null
+            ) {
 
-            return resultado;
+                return normalizarId(
+                    interno
+                );
+            }
+
+            continue;
+        }
+
+        const texto =
+            normalizarId(
+                referencia
+            );
+
+        if (
+            texto
+        ) {
+
+            return texto;
         }
     }
 
+    return "";
+}
 
-    resultado.permitido =
-        true;
+// ==========================================================
+// ESTADO DA INTERLIGAÇÃO
+// ==========================================================
 
+function obterEstadoInterligacao(
+    item
+) {
+
+    if (!item) {
+        return null;
+    }
+
+    const estadoDireto =
+        obterEstadoExplicito(
+            item
+        );
+
+    if (
+        estadoDireto?.estado
+    ) {
+
+        return estadoDireto.estado;
+    }
+
+    const fontes = [
+
+        item,
+
+        item?.properties,
+
+        item?.propriedades,
+
+        item?.props,
+
+    ].filter(Boolean);
+
+    for (
+        const fonte of fontes
+    ) {
+
+        if (
+            fonte?.normalmenteAberta === true ||
+            fonte?.normallyOpen === true ||
+            fonte?.NA === true ||
+            fonte?.N_A === true
+        ) {
+
+            return "ABERTO";
+        }
+
+        if (
+            fonte?.normalmenteFechada === true ||
+            fonte?.normallyClosed === true
+        ) {
+
+            return "FECHADO";
+        }
+    }
+
+    return null;
+}
+
+function interligacaoExplicitamenteAberta(
+    interligacao
+) {
+
+    const estado =
+        obterEstadoInterligacao(
+            interligacao
+        );
+
+    return (
+        estado ===
+        "ABERTO"
+    );
+}
+
+function interligacaoExplicitamenteFechada(
+    interligacao
+) {
+
+    const estado =
+        obterEstadoInterligacao(
+            interligacao
+        );
+
+    return (
+        estado ===
+        "FECHADO"
+    );
+}
+
+export function buscarInterligacoesAlimentador(
+    alimentador
+) {
+
+    const alvo =
+        normalizarCodigo(
+            alimentador
+        );
+
+    return buscarInterligacoes()
+        .filter(
+            item => {
+
+                const a =
+                    normalizarCodigo(
+                        obterAlimentadorInterligacaoA(
+                            item
+                        )
+                    );
+
+                const b =
+                    normalizarCodigo(
+                        obterAlimentadorInterligacaoB(
+                            item
+                        )
+                    );
+
+                return (
+                    a === alvo ||
+                    b === alvo
+                );
+            }
+        );
+}
+
+export function possuiInterligacao(
+    origem,
+    destino
+) {
+
+    const o =
+        normalizarCodigo(
+            origem
+        );
+
+    const d =
+        normalizarCodigo(
+            destino
+        );
+
+    return buscarInterligacoes()
+        .some(
+            item => {
+
+                const a =
+                    normalizarCodigo(
+                        obterAlimentadorInterligacaoA(
+                            item
+                        )
+                    );
+
+                const b =
+                    normalizarCodigo(
+                        obterAlimentadorInterligacaoB(
+                            item
+                        )
+                    );
+
+                return (
+                    (
+                        a === o &&
+                        b === d
+                    ) ||
+                    (
+                        a === d &&
+                        b === o
+                    )
+                );
+            }
+        );
+}
+
+export function buscarCaminhoAlimentadores(
+    origem,
+    destino
+) {
+
+    const o =
+        normalizarCodigo(
+            origem
+        );
+
+    const d =
+        normalizarCodigo(
+            destino
+        );
+
+    return buscarInterligacoes()
+        .filter(
+            item => {
+
+                const a =
+                    normalizarCodigo(
+                        obterAlimentadorInterligacaoA(
+                            item
+                        )
+                    );
+
+                const b =
+                    normalizarCodigo(
+                        obterAlimentadorInterligacaoB(
+                            item
+                        )
+                    );
+
+                return (
+                    (
+                        a === o &&
+                        b === d
+                    ) ||
+                    (
+                        a === d &&
+                        b === o
+                    )
+                );
+            }
+        );
+}
+
+// ==========================================================
+// PACS DA INTERLIGAÇÃO
+// ==========================================================
+
+function obterPacsInterligacao(
+    interligacao
+) {
+
+    if (
+        !interligacao
+    ) {
+        return [];
+    }
+
+    const resultado = [];
+
+    const fontes = [
+
+        interligacao,
+
+        interligacao?.equipamento,
+
+        interligacao?.equipamentoOperacional,
+
+        interligacao?.equipamentoInterligacao,
+
+        interligacao?.dispositivo,
+
+    ].filter(Boolean);
+
+    const campos = [
+
+        "pac1",
+        "PAC_1",
+
+        "pac2",
+        "PAC_2",
+
+        "ponto1",
+        "ponto2",
+
+        "pontoAssociado",
+        "pontoId",
+
+        "PAC",
+
+        "pac",
+
+        "PN_CON_1",
+        "PN_CON_2",
+
+        "pontoOrigem",
+        "pontoDestino",
+
+        "PAC_ORIGEM",
+        "PAC_DESTINO",
+
+    ];
+
+    for (
+        const fonte of fontes
+    ) {
+
+        for (
+            const campo of campos
+        ) {
+
+            const pac =
+                obterPac(
+                    fonte?.[campo]
+                );
+
+            if (
+                pac &&
+                !resultado.some(
+                    existente =>
+                        normalizarCodigo(
+                            existente
+                        ) ===
+                        normalizarCodigo(
+                            pac
+                        )
+                )
+            ) {
+
+                resultado.push(
+                    pac
+                );
+            }
+        }
+    }
 
     return resultado;
 }
 
-
 // ==========================================================
-// CORRENTE DOS ALIMENTADORES
+// LOCALIZAR EQUIPAMENTO DE INTERLIGAÇÃO REAL
 // ==========================================================
 
-
-export function atualizarCorrenteAlimentador(
-    alimentadorId,
-    corrente
+function localizarEquipamentoPorInterligacao(
+    interligacao
 ) {
-
-    const alimentador =
-        buscarAlimentador(
-            alimentadorId
-        );
-
-
-    if (!alimentador) {
-
-        return {
-
-            sucesso: false,
-
-            mensagem:
-                "Alimentador não encontrado"
-        };
-    }
-
-
-    alimentador.correnteAtual =
-        Number(
-            corrente
-        ) || 0;
-
-
-    registrarHistorico(
-
-        "ATUALIZACAO_CORRENTE",
-
-        {
-
-            alimentador:
-                alimentadorId,
-
-            corrente:
-                alimentador.correnteAtual
-        }
-    );
-
-
-    return {
-
-        sucesso: true,
-
-        alimentador
-    };
-}
-
-
-// ==========================================================
-// CORRENTE DO TRECHO
-// ==========================================================
-
-
-export function atualizarCorrenteTrecho(
-    trechoId,
-    corrente
-) {
-
-    const trecho =
-        buscarTrecho(
-            trechoId
-        );
-
-
-    if (!trecho) {
-
-        return {
-
-            sucesso: false,
-
-            mensagem:
-                "Trecho não encontrado"
-        };
-    }
-
-
-    trecho.correnteAtual =
-        Number(
-            corrente
-        ) || 0;
-
-
-    registrarHistorico(
-
-        "ATUALIZACAO_CORRENTE_TRECHO",
-
-        {
-
-            trecho:
-                trechoId,
-
-            corrente:
-                trecho.correnteAtual
-        }
-    );
-
-
-    return {
-
-        sucesso: true,
-
-        trecho
-    };
-}
-
-
-// ==========================================================
-// DESLIGAR EQUIPAMENTO
-// ==========================================================
-
-
-export function desligarEquipamento(
-    equipamentoId
-) {
-
-    return atualizarEstadoEquipamento(
-
-        equipamentoId,
-
-        "INDISPONIVEL",
-
-        {
-            origem:
-                "OPERADOR"
-        }
-    );
-}
-
-
-// ==========================================================
-// LIGAR EQUIPAMENTO
-// ==========================================================
-
-
-export function ligarEquipamento(
-    equipamentoId
-) {
-
-    return atualizarEstadoEquipamento(
-
-        equipamentoId,
-
-        "FECHADO",
-
-        {
-            origem:
-                "OPERADOR"
-        }
-    );
-}
-
-
-// ==========================================================
-// DESENERGIZAR ALIMENTADOR
-// ==========================================================
-
-
-export function desenergizarAlimentador(
-    alimentadorId
-) {
-
-    const alimentador =
-        buscarAlimentador(
-            alimentadorId
-        );
-
-
-    if (!alimentador) {
-
-        return {
-
-            sucesso: false,
-
-            mensagem:
-                "Alimentador não encontrado"
-        };
-    }
-
-
-    alimentador.estado =
-        "DESENERGIZADO";
-
-
-    const lista =
-        Array.isArray(
-            estadoRede.operacao
-                .alimentadoresDesenergizados
-        )
-            ? [
-                ...estadoRede.operacao
-                    .alimentadoresDesenergizados
-            ]
-            : [];
-
 
     if (
-        !lista.includes(
-            alimentadorId
+        !interligacao
+    ) {
+        return null;
+    }
+
+    const id =
+        obterEquipamentoInterligacao(
+            interligacao
+        );
+
+    if (
+        id
+    ) {
+
+        const equipamento =
+            buscarEquipamento(
+                id
+            );
+
+        if (
+            equipamento
+        ) {
+
+            return equipamento;
+        }
+    }
+
+    const possiveis = [
+
+        interligacao?.equipamento,
+
+        interligacao?.equipamentoOperacional,
+
+        interligacao?.equipamentoInterligacao,
+
+        interligacao?.dispositivo,
+
+        interligacao?.pqt,
+
+        interligacao?.PQT,
+
+    ].filter(Boolean);
+
+    for (
+        const referencia of possiveis
+    ) {
+
+        if (
+            typeof referencia !==
+            "object"
+        ) {
+
+            const equipamento =
+                buscarEquipamento(
+                    referencia
+                );
+
+            if (
+                equipamento
+            ) {
+
+                return equipamento;
+            }
+
+            continue;
+        }
+
+        const referenciaId =
+            primeiro(
+                referencia,
+                [
+                    "id",
+                    "ID",
+                    "COD_ID",
+                    "codId",
+                    "codigo",
+                    "CODIGO",
+                    "plaqueta",
+                    "PLAQUETA",
+                    "idOperacional",
+                    "unsemtId",
+                    "untrmtId",
+                ]
+            );
+
+        const equipamento =
+            buscarEquipamento(
+                referenciaId
+            );
+
+        if (
+            equipamento
+        ) {
+
+            return equipamento;
+        }
+    }
+
+    // ======================================================
+    // FALLBACK POR PAC
+    // ======================================================
+
+    const pacs =
+        obterPacsInterligacao(
+            interligacao
+        );
+
+    if (
+        pacs.length
+    ) {
+
+        const colecoes = [
+
+            estadoRede
+                .topologiaBDGD
+                ?.equipamentosOperacionais,
+
+            estadoRede
+                .topologiaBDGD
+                ?.equipamentos,
+
+            estadoRede
+                .topologiaBDGD
+                ?.unidadesSeccionadoras,
+
+        ];
+
+        for (
+            const colecao of colecoes
+        ) {
+
+            const encontrado =
+                lista(
+                    colecao
+                ).find(
+                    equipamento => {
+
+                        const pacsEquipamento =
+                            obterPacsEquipamento(
+                                equipamento
+                            );
+
+                        return pacs.some(
+                            pac =>
+                                pacsEquipamento.some(
+                                    pacEquip =>
+                                        normalizarCodigo(
+                                            pacEquip
+                                        ) ===
+                                        normalizarCodigo(
+                                            pac
+                                        )
+                                )
+                        );
+                    }
+                );
+
+            if (
+                encontrado
+            ) {
+
+                return encontrado;
+            }
+        }
+    }
+
+    return null;
+}
+
+// ==========================================================
+// PACS DOS EQUIPAMENTOS
+// ==========================================================
+
+function obterPacsEquipamento(
+    equipamento
+) {
+
+    const resultado = [];
+
+    const fontes = [
+
+        equipamento,
+
+        equipamento?.properties,
+
+        equipamento?.propriedades,
+
+        equipamento?.props,
+
+        equipamento?.unidadeSeccionadora,
+
+        equipamento?.unidade,
+
+        equipamento?.transformador,
+
+    ].filter(Boolean);
+
+    const campos = [
+
+        "pac1",
+        "PAC_1",
+
+        "pac2",
+        "PAC_2",
+
+        "pontoAssociado",
+        "pontoId",
+        "PONTO_ID",
+
+        "PAC",
+        "pac",
+
+        "PN_CON_1",
+        "PN_CON_2",
+
+    ];
+
+    for (
+        const fonte of fontes
+    ) {
+
+        for (
+            const campo of campos
+        ) {
+
+            const valor =
+                fonte?.[campo];
+
+            const pac =
+                obterPac(
+                    valor
+                );
+
+            if (
+                pac &&
+                !resultado.some(
+                    existente =>
+                        normalizarCodigo(
+                            existente
+                        ) ===
+                        normalizarCodigo(
+                            pac
+                        )
+                )
+            ) {
+
+                resultado.push(
+                    pac
+                );
+            }
+        }
+    }
+
+    return resultado;
+}
+
+// ==========================================================
+// ESTADO DO CANDIDATO
+// ==========================================================
+
+function equipamentoTemEstadoABERTO(
+    equipamento
+) {
+
+    const id =
+        obterIdEquipamento(
+            equipamento
+        );
+
+    if (!id) {
+        return false;
+    }
+
+    const estado =
+        consultarEstadoEquipamento(
+            id
+        );
+
+    return (
+        estado?.estado ===
+        "ABERTO" &&
+        estado?.origem !==
+        "PADRAO"
+    );
+}
+
+function equipamentoBloqueado(
+    equipamento
+) {
+
+    const id =
+        obterIdEquipamento(
+            equipamento
+        );
+
+    if (!id) {
+        return true;
+    }
+
+    const estado =
+        consultarEstadoEquipamento(
+            id
+        );
+
+    return (
+        estado?.estado === "INDISPONIVEL" ||
+        estado?.estado === "BYPASSADO"
+    );
+}
+
+// ==========================================================
+// CANDIDATO PODE SER FECHADO?
+// ==========================================================
+//
+// Regras:
+//
+// 1. Estado operacional explícito ABERTO -> sim
+// 2. Estado operacional explícito FECHADO -> não
+// 3. Estado operacional explícito INDISPONIVEL -> não
+// 4. Estado operacional explícito BYPASSADO -> não
+// 5. Estado BDGD da interligação ABERTO -> sim
+// 6. Estado BDGD da interligação FECHADO -> não
+// 7. Estado cadastro explicitamente ABERTO -> sim
+// 8. Estado cadastro explicitamente FECHADO -> não
+// 9. Ausência -> desconhecido
+//
+// ==========================================================
+
+function candidatoInterligacaoEstaAberto(
+    equipamento,
+    interligacao
+) {
+
+    const id =
+        obterIdEquipamento(
+            equipamento
+        );
+
+    if (!id) {
+
+        return {
+
+            aberto:
+                false,
+
+            conhecido:
+                false,
+
+            origem:
+                null,
+
+            estado:
+                null,
+
+        };
+    }
+
+    // ======================================================
+    // ESTADO OPERACIONAL REGISTRADO PELO SISTEMA
+    // ======================================================
+
+    const chave =
+        obterChaveEstadoEquipamento(
+            id
+        );
+
+    const estadoOperacionalRegistrado =
+        estadoRede
+            .operacao
+            .equipamentos?.[
+                chave
+            ] ??
+        estadoRede
+            .operacao
+            .equipamentos?.[
+                id
+            ] ??
+        null;
+
+    if (
+        estadoOperacionalRegistrado
+    ) {
+
+        const estado =
+            normalizarEstadoEquipamento(
+                estadoOperacionalRegistrado.estado
+            );
+
+        if (
+            estado
+        ) {
+
+            return {
+
+                aberto:
+                    estado ===
+                    "ABERTO",
+
+                conhecido:
+                    true,
+
+                origem:
+                    "ESTADO_OPERACIONAL",
+
+                estado,
+
+            };
+        }
+    }
+
+    // ======================================================
+    // ESTADO FÍSICO EXPLÍCITO DO EQUIPAMENTO
+    // ======================================================
+
+    const estadoEquipamentoExplicito =
+        obterEstadoExplicito(
+            equipamento
+        );
+
+    if (
+        estadoEquipamentoExplicito?.estado
+    ) {
+
+        const estado =
+            estadoEquipamentoExplicito
+                .estado;
+
+        return {
+
+            aberto:
+                estado === "ABERTO",
+
+            conhecido:
+                true,
+
+            origem:
+                "CADASTRO_EQUIPAMENTO",
+
+            origemCampo:
+                estadoEquipamentoExplicito
+                    .origemCampo,
+
+            estado,
+
+        };
+    }
+
+    // ======================================================
+    // ESTADO DA PRÓPRIA INTERLIGAÇÃO
+    // ======================================================
+
+    const estadoInterligacao =
+        obterEstadoInterligacao(
+            interligacao
+        );
+
+    if (
+        estadoInterligacao ===
+        "ABERTO"
+    ) {
+
+        return {
+
+            aberto:
+                true,
+
+            conhecido:
+                true,
+
+            origem:
+                "BDGD_INTERLIGACAO",
+
+            estado:
+                "ABERTO",
+
+        };
+    }
+
+    if (
+        estadoInterligacao ===
+        "FECHADO"
+    ) {
+
+        return {
+
+            aberto:
+                false,
+
+            conhecido:
+                true,
+
+            origem:
+                "BDGD_INTERLIGACAO",
+
+            estado:
+                "FECHADO",
+
+        };
+    }
+
+    if (
+        estadoInterligacao ===
+        "INDISPONIVEL" ||
+        estadoInterligacao ===
+        "BYPASSADO"
+    ) {
+
+        return {
+
+            aberto:
+                false,
+
+            conhecido:
+                true,
+
+            origem:
+                "BDGD_INTERLIGACAO",
+
+            estado:
+                estadoInterligacao,
+
+        };
+    }
+
+    // ======================================================
+    // AUSÊNCIA DE ESTADO
+    // ======================================================
+
+    return {
+
+        aberto:
+            false,
+
+        conhecido:
+            false,
+
+        origem:
+            "SEM_ESTADO_EXPLICITO",
+
+        estado:
+            null,
+
+    };
+}
+
+// ==========================================================
+// REDE DO PONTO
+// ==========================================================
+
+function obterRedeDoPonto(
+    pontoId,
+    opcoes = {}
+) {
+
+    if (!pontoId) {
+        return null;
+    }
+
+    try {
+
+        return buscarRedeConectada(
+            pontoId,
+            {
+
+                respeitarEstadoOperacional:
+                    opcoes?.respeitarEstadoOperacional !== false,
+
+                permitirTravessiaEntreAlimentadores:
+                    true,
+
+                permitirTravessiaEntreCircuitos:
+                    true,
+
+                ...(opcoes || {}),
+
+            }
+        );
+
+    } catch (
+        erro
+    ) {
+
+        console.warn(
+            "[Power Grid Monitor] Falha ao navegar pela rede:",
+            pontoId,
+            erro
+        );
+
+        return null;
+    }
+}
+
+function obterAlimentadoresDaRede(
+    rede
+) {
+
+    const alimentadores =
+        new Set();
+
+    for (
+        const trecho of
+        lista(
+            rede?.trechos
         )
     ) {
 
-        lista.push(
-            alimentadorId
-        );
-    }
-
-
-    estadoRede.operacao
-        .alimentadoresDesenergizados =
-        lista;
-
-
-    registrarHistorico(
-
-        "ALIMENTADOR_DESENERGIZADO",
-
-        {
-
-            alimentador:
-                alimentadorId
-        }
-    );
-
-
-    return {
-
-        sucesso: true,
-
-        alimentador
-    };
-}
-
-
-// ==========================================================
-// ENERGIZAR ALIMENTADOR
-// ==========================================================
-
-
-export function energizarAlimentador(
-    alimentadorId
-) {
-
-    const alimentador =
-        buscarAlimentador(
-            alimentadorId
-        );
-
-
-    if (!alimentador) {
-
-        return {
-
-            sucesso: false,
-
-            mensagem:
-                "Alimentador não encontrado"
-        };
-    }
-
-
-    alimentador.estado =
-        "ENERGIZADO";
-
-
-    estadoRede.operacao
-        .alimentadoresDesenergizados =
-
-        estadoRede.operacao
-            .alimentadoresDesenergizados
-            .filter(
-                (id) =>
-                    id !==
-                    alimentadorId
+        const valor =
+            primeiro(
+                trecho,
+                [
+                    "alimentador",
+                    "ALIMENTADOR",
+                    "CTMT",
+                    "ctmt",
+                    "circuito",
+                    "CIRCUITO"
+                ]
             );
 
+        if (
+            valor
+        ) {
 
-    registrarHistorico(
-
-        "ALIMENTADOR_ENERGIZADO",
-
-        {
-
-            alimentador:
-                alimentadorId
+            alimentadores.add(
+                normalizarId(
+                    valor
+                )
+            );
         }
-    );
+    }
 
+    for (
+        const ponto of
+        lista(
+            rede?.pontos
+        )
+    ) {
 
-    return {
+        const valor =
+            primeiro(
+                ponto,
+                [
+                    "alimentador",
+                    "ALIMENTADOR",
+                    "CTMT",
+                    "ctmt",
+                    "circuito",
+                    "CIRCUITO"
+                ]
+            );
 
-        sucesso: true,
+        if (
+            valor
+        ) {
 
-        alimentador
-    };
+            alimentadores.add(
+                normalizarId(
+                    valor
+                )
+            );
+        }
+    }
+
+    return [
+        ...alimentadores
+    ];
 }
 
-
-// ==========================================================
-// ESTADO OPERACIONAL GERAL
-// ==========================================================
-
-
-export function consultarEstadoOperacional() {
-
-    return {
-
-        equipamentosDesligados:
-
-            [
-                ...estadoRede
-                    .operacao
-                    .equipamentosDesligados
-            ],
-
-
-        equipamentos:
-
-            {
-                ...estadoRede
-                    .operacao
-                    .equipamentos
-            },
-
-
-        alimentadoresDesenergizados:
-
-            [
-                ...estadoRede
-                    .operacao
-                    .alimentadoresDesenergizados
-            ],
-
-
-        ultimaAtualizacao:
-
-            estadoRede
-                .operacao
-                .ultimaAtualizacao,
-
-
-        historico:
-
-            [
-                ...estadoRede
-                    .operacao
-                    .historico
-            ]
-    };
-}
-
-
-// ==========================================================
-// RESET COMPLETO
-// ==========================================================
-
-
-export function restaurarEstadoInicial() {
-
-    inicializarRede();
-
-
-    estadoRede.operacao
-        .equipamentosDesligados =
-        [];
-
-
-    estadoRede.operacao
-        .equipamentos =
-        {};
-
-
-    estadoRede.operacao
-        .alimentadoresDesenergizados =
-        [];
-
-
-    estadoRede.operacao
-        .historico =
-        [];
-
-
-    registrarHistorico(
-        "RESET_REDE",
-        {}
-    );
-
-
-    return estadoRede;
-}
-
-
-// ==========================================================
-// ANÁLISE DE MANOBRA OPERACIONAL
-// ==========================================================
-
-
-export function analisarManobraOperacional(
-    alimentadorOrigem,
-    alimentadorDestino,
-    correnteOrigem,
-    correnteDestino
+function redeContemPonto(
+    rede,
+    ponto
 ) {
 
-    const resultado = {
+    const alvo =
+        normalizarCodigo(
+            obterPac(
+                ponto
+            )
+        );
 
-        permitido:
+    if (!alvo) {
+        return false;
+    }
+
+    return lista(
+        rede?.pontos
+    ).some(
+        item => {
+
+            const ids = [
+
+                item?.id,
+                item?.ID,
+
+                item?.COD_ID,
+                item?.codId,
+
+                item?.PAC,
+                item?.pac,
+
+            ];
+
+            return ids.some(
+                valor =>
+                    normalizarCodigo(
+                        obterPac(
+                            valor
+                        )
+                    ) === alvo
+            );
+        }
+    );
+}
+
+// ==========================================================
+// IDENTIFICAÇÃO DA ÁREA AFETADA
+// ==========================================================
+
+function identificarAreaAfetada(
+    equipamentoFalha,
+    alimentadorOcorrencia
+) {
+
+    const base = {
+
+        sucesso:
             false,
-
-        status:
-            "BLOQUEADA",
 
         motivo:
             null,
 
-        detalhes:
-            {}
+        pacs:
+            [],
+
+        pac1:
+            null,
+
+        pac2:
+            null,
+
+        pacsCompletos:
+            false,
+
+        lados:
+            [],
+
+        pontoAfetado:
+            null,
+
+        pontoReceptor:
+            null,
+
+        redeAfetada:
+            null,
+
+        redeReceptor:
+            null,
+
+        alimentadorAfetado:
+            alimentadorOcorrencia,
+
+        alimentadorReceptor:
+            null,
+
+        quantidadePontosAfetados:
+            0,
+
+        quantidadeTrechosAfetados:
+            0,
+
+        criterio:
+            null,
+
+        metodo:
+            null,
+
     };
 
+    if (
+        !equipamentoFalha
+    ) {
+
+        return {
+
+            ...base,
+
+            motivo:
+                "Equipamento do desarme não localizado.",
+
+        };
+    }
+
+    if (
+        !estadoRede.topologiaBDGD
+    ) {
+
+        return {
+
+            ...base,
+
+            motivo:
+                "Topologia BDGD não registrada.",
+
+        };
+    }
+
+    const pacs =
+        obterPacsEquipamento(
+            equipamentoFalha
+        );
+
+    if (
+        pacs.length === 0
+    ) {
+
+        return {
+
+            ...base,
+
+            motivo:
+                "Não foi possível obter referência física do equipamento do desarme na topologia BDGD.",
+
+        };
+    }
+
+    const redes = [];
+
+    for (
+        const pontoId of pacs
+    ) {
+
+        const rede =
+            obterRedeDoPonto(
+                pontoId,
+                {
+                    respeitarEstadoOperacional:
+                        false,
+                }
+            );
+
+        if (!rede) {
+            continue;
+        }
+
+        const alimentadores =
+            obterAlimentadoresDaRede(
+                rede
+            );
+
+        redes.push({
+
+            pontoId,
+
+            rede,
+
+            alimentadores,
+
+            possuiAlimentadorOcorrencia:
+
+                Boolean(
+                    alimentadorOcorrencia
+                ) &&
+                alimentadores.some(
+                    item =>
+                        normalizarCodigo(
+                            item
+                        ) ===
+                        normalizarCodigo(
+                            alimentadorOcorrencia
+                        )
+                ),
+
+            quantidadePontos:
+                lista(
+                    rede?.pontos
+                ).length,
+
+            quantidadeTrechos:
+                lista(
+                    rede?.trechos
+                ).length,
+
+        });
+    }
+
+    if (
+        redes.length === 0
+    ) {
+
+        return {
+
+            ...base,
+
+            pacs,
+
+            pac1:
+                pacs[0] ??
+                null,
+
+            pac2:
+                pacs[1] ??
+                null,
+
+            pacsCompletos:
+                pacs.length >= 2,
+
+            motivo:
+                "Não foi possível determinar rede conectada a partir das referências físicas do equipamento.",
+
+        };
+    }
+
+    redes.sort(
+        (
+            a,
+            b
+        ) => {
+
+            const origemA =
+                a.possuiAlimentadorOcorrencia
+                    ? 1
+                    : 0;
+
+            const origemB =
+                b.possuiAlimentadorOcorrencia
+                    ? 1
+                    : 0;
+
+            if (
+                origemA !== origemB
+            ) {
+
+                return (
+                    origemB -
+                    origemA
+                );
+            }
+
+            return (
+                b.quantidadePontos -
+                a.quantidadePontos
+            );
+        }
+    );
+
+    const ladoAfetado =
+        redes.find(
+            item =>
+                item.possuiAlimentadorOcorrencia
+        ) ||
+        redes[0];
+
+    const ladoReceptor =
+        redes.find(
+            item =>
+                item !== ladoAfetado &&
+                item.alimentadores.some(
+                    alimentador =>
+                        normalizarCodigo(
+                            alimentador
+                        ) !==
+                        normalizarCodigo(
+                            alimentadorOcorrencia
+                        )
+                )
+        ) ||
+        null;
+
+    const receptores =
+        ladoReceptor
+            ? ladoReceptor.alimentadores.filter(
+                alimentador =>
+                    normalizarCodigo(
+                        alimentador
+                    ) !==
+                    normalizarCodigo(
+                        alimentadorOcorrencia
+                    )
+            )
+            : [];
+
+    return {
+
+        sucesso:
+            true,
+
+        motivo:
+            pacs.length >= 2
+                ? "Área afetada delimitada por referências físicas e conectividade BDGD."
+                : "Área afetada delimitada pela conectividade física BDGD.",
+
+        pacs,
+
+        pac1:
+            pacs[0] ??
+            null,
+
+        pac2:
+            pacs[1] ??
+            null,
+
+        pacsCompletos:
+            pacs.length >= 2,
+
+        lados:
+            redes,
+
+        ladoAfetado,
+
+        ladoReceptor,
+
+        pontoAfetado:
+            ladoAfetado?.pontoId ??
+            pacs[0] ??
+            null,
+
+        pontoReceptor:
+            ladoReceptor?.pontoId ??
+            pacs[1] ??
+            null,
+
+        redeAfetada:
+            ladoAfetado?.rede ??
+            null,
+
+        redeReceptor:
+            ladoReceptor?.rede ??
+            null,
+
+        quantidadePontosAfetados:
+            ladoAfetado?.quantidadePontos ??
+            0,
+
+        quantidadeTrechosAfetados:
+            ladoAfetado?.quantidadeTrechos ??
+            0,
+
+        alimentadorAfetado:
+            alimentadorOcorrencia ??
+            null,
+
+        alimentadorReceptor:
+            receptores[0] ??
+            null,
+
+        criterio:
+            ladoAfetado?.possuiAlimentadorOcorrencia
+                ? "ALIMENTADOR_OCORRENCIA"
+                : "CONECTIVIDADE_FISICA",
+
+        metodo:
+            pacs.length >= 2
+                ? "PACS_E_CONECTIVIDADE"
+                : "CONECTIVIDADE_BDGD",
+
+    };
+}
+
+// ==========================================================
+// LISTAR CANDIDATOS DE RECOMPOSIÇÃO
+// ==========================================================
+
+function listarCandidatosRecomposicao(
+    ocorrencia
+) {
+
+    const topologia =
+        estadoRede.topologiaBDGD;
+
+    if (!topologia) {
+        return [];
+    }
+
+    const interligacoes =
+        buscarInterligacoes();
+
+    const equipamentoDesarme =
+        normalizarCodigoEquipamento(
+
+            ocorrencia?.equipamentoDesarme ??
+            ocorrencia?.equipamentoDesarmeId ??
+            ocorrencia?.equipamento ??
+            ""
+
+        );
+
+    const mapa =
+        new Map();
+
+    const diagnostico = {
+
+        totalInterligacoes:
+            interligacoes.length,
+
+        localizadas:
+            0,
+
+        naoLocalizadas:
+            0,
+
+        bloqueadas:
+            0,
+
+        fechadas:
+            0,
+
+        semEstado:
+            0,
+
+        tipoInvalido:
+            0,
+
+        desarmeIgnorado:
+            0,
+
+        candidatas:
+            0,
+
+        detalhesRejeitados:
+            [],
+
+    };
+
+    for (
+        const interligacao of
+        interligacoes
+    ) {
+
+        const equipamento =
+            localizarEquipamentoPorInterligacao(
+                interligacao
+            );
+
+        if (
+            !equipamento
+        ) {
+
+            diagnostico
+                .naoLocalizadas++;
+
+            if (
+                diagnostico
+                    .detalhesRejeitados
+                    .length < 20
+            ) {
+
+                diagnostico
+                    .detalhesRejeitados
+                    .push({
+
+                        motivo:
+                            "EQUIPAMENTO_NAO_LOCALIZADO",
+
+                        interligacao,
+
+                        referencia:
+                            obterEquipamentoInterligacao(
+                                interligacao
+                            ),
+
+                        pacs:
+                            obterPacsInterligacao(
+                                interligacao
+                            ),
+
+                    });
+            }
+
+            continue;
+        }
+
+        diagnostico
+            .localizadas++;
+
+        const tip =
+            obterTIPUNID(
+                equipamento
+            );
+
+        if (
+            ![
+                19,
+                22,
+                32,
+                34
+            ].includes(
+                tip
+            )
+        ) {
+
+            diagnostico
+                .tipoInvalido++;
+
+            continue;
+        }
+
+        const id =
+            obterIdEquipamento(
+                equipamento
+            );
+
+        if (
+            !id
+        ) {
+            continue;
+        }
+
+        const chave =
+            normalizarCodigoEquipamento(
+                id
+            );
+
+        if (
+            !chave
+        ) {
+            continue;
+        }
+
+        if (
+            equipamentoDesarme &&
+            chave === equipamentoDesarme
+        ) {
+
+            diagnostico
+                .desarmeIgnorado++;
+
+            continue;
+        }
+
+        if (
+            equipamentoBloqueado(
+                equipamento
+            )
+        ) {
+
+            diagnostico
+                .bloqueadas++;
+
+            continue;
+        }
+
+        const estadoCandidato =
+            candidatoInterligacaoEstaAberto(
+                equipamento,
+                interligacao
+            );
+
+        // --------------------------------------------------
+        // FECHADO/INDISPONÍVEL/BYPASSADO EXPLÍCITO
+        // --------------------------------------------------
+
+        if (
+            estadoCandidato.conhecido &&
+            !estadoCandidato.aberto
+        ) {
+
+            if (
+                estadoCandidato.estado ===
+                "FECHADO"
+            ) {
+
+                diagnostico
+                    .fechadas++;
+            }
+
+            if (
+                diagnostico
+                    .detalhesRejeitados
+                    .length < 20
+            ) {
+
+                diagnostico
+                    .detalhesRejeitados
+                    .push({
+
+                        motivo:
+                            "INTERLIGACAO_NAO_ABERTA",
+
+                        id,
+
+                        plaqueta:
+                            obterPlaquetaEquipamento(
+                                equipamento
+                            ),
+
+                        estadoCandidato,
+
+                        estadoEquipamento:
+                            consultarEstadoEquipamento(
+                                id
+                            ),
+
+                        estadoInterligacao:
+                            obterEstadoInterligacao(
+                                interligacao
+                            ),
+
+                    });
+            }
+
+            continue;
+        }
+
+        // --------------------------------------------------
+        // SEM ESTADO EXPLÍCITO
+        // --------------------------------------------------
+
+        if (
+            !estadoCandidato.conhecido
+        ) {
+
+            diagnostico
+                .semEstado++;
+        }
+
+        mapa.set(
+            chave,
+            {
+
+                equipamento,
+
+                interligacao,
+
+                estadoCandidato,
+
+            }
+        );
+    }
+
+    const candidatos = [];
+
+    for (
+        const registro of
+        mapa.values()
+    ) {
+
+        candidatos.push({
+
+            ...registro.equipamento,
+
+            __interligacaoBDGD:
+                registro.interligacao,
+
+            __estadoCandidato:
+                registro.estadoCandidato,
+
+        });
+    }
+
+    diagnostico.candidatas =
+        candidatos.length;
+
+    console.log(
+        "🔎 [Power Grid Monitor] DIAGNÓSTICO DA BUSCA DE CANDIDATOS:",
+        diagnostico
+    );
+
+    return candidatos;
+}
+
+// ==========================================================
+// VALIDAR CANDIDATO TOPOLÓGICO
+// ==========================================================
+//
+// IMPORTANTE:
+//
+// Uma interligação oficial pode ter:
+//
+// - PAC_1 != PAC_2
+// - PAC_1 == PAC_2
+// - apenas um PAC
+//
+// Portanto:
+//
+// NÃO usamos a existência de dois PACs como requisito
+// para provar a existência dos dois lados.
+//
+// Os dois lados elétricos são determinados pela interligação
+// oficial:
+//
+//     Alimentador A <-> Alimentador B
+//
+// O PAC é utilizado como referência física real da chave.
+//
+// ==========================================================
+
+function validarCandidatoTopologico(
+    candidato,
+    areaAfetada
+) {
+
+    const pacs =
+        obterPacsEquipamento(
+            candidato
+        );
+
+    if (
+        pacs.length === 0
+    ) {
+
+        return {
+
+            valido:
+                false,
+
+            motivo:
+                "Equipamento candidato sem referência física PAC/PONNOT.",
+
+        };
+    }
+
+    const alimentadorOcorrencia =
+        normalizarCodigo(
+            areaAfetada?.alimentadorAfetado
+        );
+
+    // ======================================================
+    // PRIMEIRA OPÇÃO:
+    // usar a interligação já resolvida em listarCandidatos
+    // ======================================================
+
+    let interligacao =
+        candidato?.__interligacaoBDGD ??
+        null;
+
+    // ======================================================
+    // FALLBACK:
+    // procurar pela identidade do equipamento
+    // ======================================================
+
+    if (
+        !interligacao
+    ) {
+
+        const idCandidato =
+            normalizarCodigoEquipamento(
+                obterIdEquipamento(
+                    candidato
+                )
+            );
+
+        interligacao =
+            buscarInterligacoes()
+                .find(
+                    item => {
+
+                        const idInterligacao =
+                            normalizarCodigoEquipamento(
+                                obterEquipamentoInterligacao(
+                                    item
+                                )
+                            );
+
+                        return (
+                            idInterligacao &&
+                            idCandidato &&
+                            idInterligacao ===
+                            idCandidato
+                        );
+                    }
+                ) ??
+            null;
+    }
+
+    if (
+        !interligacao
+    ) {
+
+        return {
+
+            valido:
+                false,
+
+            motivo:
+                "Interligação oficial BDGD não localizada para o equipamento candidato.",
+
+        };
+    }
+
+    // ======================================================
+    // ALIMENTADORES OFICIAIS A/B
+    // ======================================================
+
+    const alimentadorInterligacaoA =
+        obterAlimentadorInterligacaoA(
+            interligacao
+        );
+
+    const alimentadorInterligacaoB =
+        obterAlimentadorInterligacaoB(
+            interligacao
+        );
+
+    const a =
+        normalizarCodigo(
+            alimentadorInterligacaoA
+        );
+
+    const b =
+        normalizarCodigo(
+            alimentadorInterligacaoB
+        );
+
+    if (
+        !a ||
+        !b
+    ) {
+
+        return {
+
+            valido:
+                false,
+
+            motivo:
+                "A interligação oficial BDGD não possui os dois alimentadores definidos.",
+
+            comprovacao:
+                {
+
+                    alimentadorA:
+                        alimentadorInterligacaoA,
+
+                    alimentadorB:
+                        alimentadorInterligacaoB,
+
+                },
+
+        };
+    }
+
+    if (
+        a === b
+    ) {
+
+        return {
+
+            valido:
+                false,
+
+            motivo:
+                "A interligação oficial aponta para o mesmo alimentador nos dois lados.",
+
+            comprovacao:
+                {
+
+                    alimentadorA:
+                        alimentadorInterligacaoA,
+
+                    alimentadorB:
+                        alimentadorInterligacaoB,
+
+                },
+
+        };
+    }
+
+    // ======================================================
+    // A OCORRÊNCIA PRECISA ESTAR EM UM DOS LADOS
+    // ======================================================
+
+    const ocorrenciaEstaNoLadoA =
+        a === alimentadorOcorrencia;
+
+    const ocorrenciaEstaNoLadoB =
+        b === alimentadorOcorrencia;
+
+    if (
+        !ocorrenciaEstaNoLadoA &&
+        !ocorrenciaEstaNoLadoB
+    ) {
+
+        return {
+
+            valido:
+                false,
+
+            motivo:
+                "A interligação existe na BDGD, mas nenhum dos seus lados corresponde ao alimentador da ocorrência.",
+
+            comprovacao:
+                {
+
+                    alimentadorA:
+                        alimentadorInterligacaoA,
+
+                    alimentadorB:
+                        alimentadorInterligacaoB,
+
+                    alimentadorOcorrencia:
+                        areaAfetada
+                            ?.alimentadorAfetado ??
+                        null,
+
+                },
+
+        };
+    }
+
+    // ======================================================
+    // ALIMENTADOR RECEPTOR
+    // ======================================================
+
+    const alimentadorReceptor =
+        ocorrenciaEstaNoLadoA
+            ? alimentadorInterligacaoB
+            : alimentadorInterligacaoA;
+
+    // ======================================================
+    // PAC FÍSICO DA INTERLIGAÇÃO
+    // ======================================================
+
+    const pacInterligacao =
+        pacs[0] ??
+        null;
+
+    // ======================================================
+    // NAVEGAR NOS PACS
+    // ======================================================
+
+    const lados =
+        pacs.map(
+            pac => {
+
+                const rede =
+                    obterRedeDoPonto(
+                        pac,
+                        {
+
+                            respeitarEstadoOperacional:
+                                false,
+
+                            permitirTravessiaEntreAlimentadores:
+                                true,
+
+                            permitirTravessiaEntreCircuitos:
+                                true,
+
+                        }
+                    );
+
+                const alimentadores =
+                    obterAlimentadoresDaRede(
+                        rede
+                    );
+
+                return {
+
+                    pac,
+
+                    rede,
+
+                    alimentadores,
+
+                    possuiAlimentadorOcorrencia:
+
+                        alimentadores.some(
+                            alimentador =>
+                                normalizarCodigo(
+                                    alimentador
+                                ) ===
+                                alimentadorOcorrencia
+                        ),
+
+                    possuiAlimentadorReceptor:
+
+                        alimentadores.some(
+                            alimentador =>
+                                normalizarCodigo(
+                                    alimentador
+                                ) ===
+                                normalizarCodigo(
+                                    alimentadorReceptor
+                                )
+                        ),
+
+                };
+
+            }
+        );
+
+    // ======================================================
+    // TENTAR LOCALIZAR LADO AFETADO PELA REDE
+    // ======================================================
+
+    let ladoAfetado =
+        lados.find(
+            lado =>
+                lado.possuiAlimentadorOcorrencia
+        ) ??
+        null;
+
+    // ======================================================
+    // TENTAR LOCALIZAR LADO RECEPTOR PELA REDE
+    // ======================================================
+
+    let ladoReceptor =
+        lados.find(
+            lado =>
+                lado.possuiAlimentadorReceptor
+        ) ??
+        null;
+
+    // ======================================================
+    // PAC ÚNICO
+    // ======================================================
+
+    const possuiPACUnico =
+        pacs.length === 1;
+
+    // ======================================================
+    // PAC1 = PAC2
+    // ======================================================
+
+    const possuiPACDuplicado =
+        pacs.length >= 2 &&
+        normalizarCodigo(
+            pacs[0]
+        ) ===
+        normalizarCodigo(
+            pacs[1]
+        );
+
+    // ======================================================
+    // CASO PAC ÚNICO OU PAC DUPLICADO
+    // ======================================================
+    //
+    // Não exigimos dois pontos físicos.
+    //
+    // Os dois lados já foram determinados pelos
+    // alimentadores oficiais da interligação.
+    //
+    // ======================================================
+
+    if (
+        possuiPACUnico ||
+        possuiPACDuplicado
+    ) {
+
+        ladoAfetado = {
+
+            pac:
+                pacInterligacao,
+
+            rede:
+                lados[0]?.rede ??
+                null,
+
+            alimentadores:
+                [
+                    alimentadorOcorrencia
+                ],
+
+            pertenceArea:
+                true,
+
+            origem:
+                "INTERLIGACAO_OFICIAL",
+
+        };
+
+        ladoReceptor = {
+
+            pac:
+                pacInterligacao,
+
+            rede:
+                lados[0]?.rede ??
+                null,
+
+            alimentadores:
+                [
+                    alimentadorReceptor
+                ],
+
+            pertenceArea:
+                false,
+
+            origem:
+                "INTERLIGACAO_OFICIAL",
+
+        };
+    }
+
+    // ======================================================
+    // FALLBACK POR ALIMENTADOR DO EQUIPAMENTO
+    // ======================================================
+
+    const alimentadorEquipamento =
+        normalizarCodigo(
+            obterAlimentadorEquipamento(
+                candidato
+            )
+        );
+
+    if (
+        !ladoAfetado &&
+        alimentadorEquipamento ===
+            alimentadorOcorrencia
+    ) {
+
+        ladoAfetado = {
+
+            pac:
+                pacInterligacao,
+
+            rede:
+                lados[0]?.rede ??
+                null,
+
+            alimentadores:
+                [
+                    alimentadorOcorrencia
+                ],
+
+            pertenceArea:
+                true,
+
+            origem:
+                "ALIMENTADOR_EQUIPAMENTO",
+
+        };
+    }
+
+    if (
+        !ladoReceptor &&
+        alimentadorEquipamento ===
+            normalizarCodigo(
+                alimentadorReceptor
+            )
+    ) {
+
+        ladoReceptor = {
+
+            pac:
+                pacInterligacao,
+
+            rede:
+                lados[0]?.rede ??
+                null,
+
+            alimentadores:
+                [
+                    alimentadorReceptor
+                ],
+
+            pertenceArea:
+                false,
+
+            origem:
+                "ALIMENTADOR_EQUIPAMENTO",
+
+        };
+    }
+
+    // ======================================================
+    // FALLBACK FINAL POR INTERLIGAÇÃO OFICIAL
+    // ======================================================
+
+    if (
+        !ladoAfetado
+    ) {
+
+        ladoAfetado = {
+
+            pac:
+                pacInterligacao,
+
+            rede:
+                lados[0]?.rede ??
+                null,
+
+            alimentadores:
+                [
+                    alimentadorOcorrencia
+                ],
+
+            pertenceArea:
+                true,
+
+            origem:
+                "ALIMENTADOR_OCORRENCIA",
+
+        };
+    }
+
+    if (
+        !ladoReceptor
+    ) {
+
+        ladoReceptor = {
+
+            pac:
+                pacInterligacao,
+
+            rede:
+                lados[0]?.rede ??
+                null,
+
+            alimentadores:
+                [
+                    alimentadorReceptor
+                ],
+
+            pertenceArea:
+                false,
+
+            origem:
+                "ALIMENTADOR_RECEPTOR",
+
+        };
+    }
+
+    // ======================================================
+    // DEFINIÇÃO DOS PONTOS
+    // ======================================================
+    //
+    // Para interligação com PAC único:
+    //
+    // - ponto afetado = referência física da área afetada;
+    // - ponto receptor = PAC real da interligação.
+    //
+    // O ponto receptor nunca é inventado.
+    //
+    // ======================================================
+
+    const pontoAfetado =
+        areaAfetada?.pontoAfetado ??
+        pacInterligacao ??
+        null;
+
+    const pontoReceptor =
+        pacInterligacao ??
+        areaAfetada?.pontoReceptor ??
+        null;
+
+    if (
+        !pontoAfetado ||
+        !pontoReceptor
+    ) {
+
+        return {
+
+            valido:
+                false,
+
+            motivo:
+                "Ponto afetado ou ponto receptor não determinado.",
+
+        };
+    }
+
+    // ======================================================
+    // ALIMENTADOR RECEPTOR
+    // ======================================================
+
+    if (
+        !alimentadorReceptor
+    ) {
+
+        return {
+
+            valido:
+                false,
+
+            motivo:
+                "Alimentador receptor não determinado.",
+
+        };
+    }
+
+    // ======================================================
+    // DIAGNÓSTICO
+    // ======================================================
+
+    console.log(
+        "🔎 [Power Grid Monitor] CANDIDATO TOPOLOGICAMENTE COMPROVADO:",
+        {
+
+            equipamento:
+                obterIdEquipamento(
+                    candidato
+                ),
+
+            tipo:
+                classificarEquipamento(
+                    candidato
+                ),
+
+            pacs,
+
+            pacUnico:
+                possuiPACUnico,
+
+            pacDuplicado:
+                possuiPACDuplicado,
+
+            alimentadorOcorrencia:
+                areaAfetada
+                    ?.alimentadorAfetado ??
+                null,
+
+            alimentadorA:
+                alimentadorInterligacaoA,
+
+            alimentadorB:
+                alimentadorInterligacaoB,
+
+            alimentadorReceptor,
+
+            pontoAfetado,
+
+            pontoReceptor,
+
+        }
+    );
+
+    return {
+
+        valido:
+            true,
+
+        pac1:
+            pacs[0] ??
+            null,
+
+        pac2:
+            pacs[1] ??
+            pacs[0] ??
+            null,
+
+        pontoAfetado,
+
+        pontoReceptor,
+
+        alimentadorReceptor,
+
+        redeReceptor:
+            ladoReceptor?.rede ??
+            lados[0]?.rede ??
+            null,
+
+        interligacao,
+
+        comprovacao:
+            {
+
+                porInterligacaoBDGD:
+                    true,
+
+                interligacaoOficial:
+                    true,
+
+                alimentadorA:
+                    alimentadorInterligacaoA,
+
+                alimentadorB:
+                    alimentadorInterligacaoB,
+
+                alimentadorAfetado:
+                    areaAfetada
+                        ?.alimentadorAfetado ??
+                    null,
+
+                alimentadorReceptor,
+
+                equipamento:
+                    obterIdEquipamento(
+                        candidato
+                    ),
+
+                alimentadorEquipamento:
+                    alimentadorEquipamento ||
+                    null,
+
+                pacs,
+
+                quantidadePacs:
+                    pacs.length,
+
+                pacUnico:
+                    possuiPACUnico,
+
+                pacDuplicado:
+                    possuiPACDuplicado,
+
+                redePossuiAlimentadorOcorrencia:
+                    lados.some(
+                        lado =>
+                            lado.possuiAlimentadorOcorrencia
+                    ),
+
+                redePossuiAlimentadorReceptor:
+                    lados.some(
+                        lado =>
+                            lado.possuiAlimentadorReceptor
+                    ),
+
+            },
+
+    };
+}
+
+// ==========================================================
+// SIMULAÇÃO DE FECHAMENTO
+// ==========================================================
+
+function criarEstadosSimulados(
+    equipamentoId
+) {
+
+    const estados =
+        obterMapaEstadosEquipamentos();
+
+    const chave =
+        obterChaveEstadoEquipamento(
+            equipamentoId
+        );
+
+    return {
+
+        ...estados,
+
+        [chave]: {
+
+            equipamentoId:
+                equipamentoId,
+
+            equipamentoIdNormalizado:
+                chave,
+
+            estado:
+                "FECHADO",
+
+            origem:
+                "SIMULACAO_RECOMPOSICAO",
+
+        },
+
+    };
+}
+
+function validarCaminhoSimulado(
+    pontoOrigem,
+    pontoDestino,
+    equipamentoId
+) {
+
+    if (
+        !pontoOrigem ||
+        !pontoDestino
+    ) {
+
+        return {
+
+            encontrado:
+                false,
+
+            pontos: [],
+
+            trechos: [],
+
+            motivo:
+                "Pontos de origem/destino não definidos.",
+
+        };
+    }
+
+    const caminho =
+        buscarCaminhoEletrico(
+
+            pontoOrigem,
+
+            pontoDestino,
+
+            {
+
+                estadosEquipamentos:
+                    criarEstadosSimulados(
+                        equipamentoId
+                    ),
+
+                respeitarEstadoOperacional:
+                    true,
+
+                permitirTravessiaEntreAlimentadores:
+                    true,
+
+                permitirTravessiaEntreCircuitos:
+                    true,
+
+            }
+
+        );
+
+    return caminho;
+}
+
+// ==========================================================
+// CAPACIDADE DO CANDIDATO
+// ==========================================================
+
+function validarCapacidadeCandidato(
+    candidato,
+    correnteDestino,
+    correnteDesligado
+) {
+
+    const base =
+        numero(
+            correnteDestino
+        );
+
+    const transferencia =
+        numero(
+            correnteDesligado
+        );
+
+    if (
+        base === null ||
+        transferencia === null
+    ) {
+
+        return {
+
+            conhecida:
+                false,
+
+            permitido:
+                null,
+
+            correnteBaseDestino:
+                base,
+
+            correnteTransferida:
+                transferencia,
+
+            correnteProjetada:
+                null,
+
+            carregamento:
+                null,
+
+            motivo:
+                "Corrente do trecho receptor ou corrente do trecho desenergizado não informada.",
+
+        };
+    }
+
+    const correnteProjetada =
+        base +
+        transferencia;
+
+    const caminho =
+        candidato?.caminhoSimulado ??
+        candidato?.caminho ??
+        null;
+
+    const trechos =
+        lista(
+            caminho?.trechos
+        );
+
+    if (
+        trechos.length === 0
+    ) {
+
+        return {
+
+            conhecida:
+                false,
+
+            permitido:
+                null,
+
+            correnteBaseDestino:
+                base,
+
+            correnteTransferida:
+                transferencia,
+
+            correnteProjetada,
+
+            carregamento:
+                null,
+
+            motivo:
+                "Caminho de transferência não possui trechos para validação de capacidade.",
+
+        };
+    }
+
+    const verificacoes =
+        trechos.map(
+            trecho => {
+
+                const id =
+                    normalizarId(
+
+                        trecho?.id ??
+                        trecho?.COD_ID ??
+                        trecho?.codId
+
+                    );
+
+                const capacidade =
+                    numero(
+                        calcularCapacidadeTrecho(
+                            id
+                        )
+                    );
+
+                if (
+                    capacidade === null ||
+                    capacidade <= 0
+                ) {
+
+                    return {
+
+                        id,
+
+                        capacidade:
+                            null,
+
+                        limite:
+                            null,
+
+                        carregamento:
+                            null,
+
+                        permitido:
+                            false,
+
+                        motivo:
+                            "Capacidade não determinada.",
+
+                    };
+                }
+
+                const limite =
+                    capacidade *
+                    0.8;
+
+                const carregamento =
+                    (
+                        correnteProjetada /
+                        capacidade
+                    ) *
+                    100;
+
+                return {
+
+                    id,
+
+                    capacidade,
+
+                    limite,
+
+                    carregamento,
+
+                    permitido:
+                        correnteProjetada <=
+                        limite,
+
+                    motivo:
+                        correnteProjetada <=
+                        limite
+                            ? null
+                            : "Corrente projetada acima do limite operacional de 80%.",
+
+                };
+            }
+        );
+
+    const bloqueado =
+        verificacoes.some(
+            item =>
+                item.permitido !==
+                true
+        );
+
+    const limitante =
+        verificacoes
+            .filter(
+                item =>
+                    item.capacidade !==
+                    null
+            )
+            .sort(
+                (
+                    a,
+                    b
+                ) =>
+                    a.capacidade -
+                    b.capacidade
+            )[0] ||
+        null;
+
+    return {
+
+        conhecida:
+            !bloqueado,
+
+        permitido:
+            !bloqueado,
+
+        correnteBaseDestino:
+            base,
+
+        correnteTransferida:
+            transferencia,
+
+        correnteProjetada,
+
+        carregamento:
+            limitante
+                ?.carregamento ??
+            null,
+
+        capacidade:
+            limitante
+                ?.capacidade ??
+            null,
+
+        limiteOperacional:
+            limitante
+                ?.limite ??
+            null,
+
+        trechoLimitante:
+            limitante
+                ? {
+
+                    id:
+                        limitante.id,
+
+                    capacidade:
+                        limitante.capacidade,
+
+                    limite:
+                        limitante.limite,
+
+                    carregamento:
+                        limitante.carregamento,
+
+                }
+                : null,
+
+        verificacoes,
+
+        motivo:
+            bloqueado
+                ? "Um ou mais trechos não suportam a corrente projetada."
+                : "Capacidade validada.",
+
+    };
+}
+
+// ==========================================================
+// DESCOBRIR CANDIDATOS
+// ==========================================================
+
+export function descobrirCandidatosRecomposicao(
+    ocorrencia,
+    opcoes = {}
+) {
+
+    const topologia =
+        estadoRede.topologiaBDGD;
+
+    if (!topologia) {
+        return [];
+    }
+
+    const equipamentoDesarmeId =
+        normalizarId(
+
+            ocorrencia?.equipamentoDesarme ??
+            ocorrencia?.equipamentoDesarmeId ??
+            ocorrencia?.equipamento ??
+            null
+
+        );
+
+    if (
+        !equipamentoDesarmeId
+    ) {
+
+        return [];
+    }
+
+    const equipamentoDesarme =
+        buscarEquipamento(
+            equipamentoDesarmeId
+        );
+
+    if (
+        !equipamentoDesarme
+    ) {
+
+        console.warn(
+            "[Power Grid Monitor] Equipamento de desarme não localizado:",
+            equipamentoDesarmeId
+        );
+
+        return [];
+    }
+
+    const alimentadorOcorrencia =
+        normalizarId(
+
+            ocorrencia?.alimentador ??
+            ocorrencia?.alimentadorOrigem ??
+            null
+
+        );
+
+    const areaAfetada =
+        identificarAreaAfetada(
+
+            equipamentoDesarme,
+
+            alimentadorOcorrencia
+
+        );
+
+    if (
+        !areaAfetada.sucesso
+    ) {
+
+        console.warn(
+            "[Power Grid Monitor] Área afetada não determinada:",
+            areaAfetada
+        );
+
+        return [];
+    }
+
+    const candidatos =
+        listarCandidatosRecomposicao(
+            ocorrencia
+        );
+
+    console.log(
+        "🔎 [Power Grid Monitor] CANDIDATOS BRUTOS:",
+        {
+
+            quantidade:
+                candidatos.length,
+
+            interligacoes:
+                buscarInterligacoes().length,
+
+            alimentadorOcorrencia,
+
+            equipamentoDesarme:
+                equipamentoDesarmeId,
+
+            areaAfetada:
+                {
+
+                    pacs:
+                        areaAfetada.pacs,
+
+                    pontoAfetado:
+                        areaAfetada.pontoAfetado,
+
+                    pontoReceptor:
+                        areaAfetada.pontoReceptor,
+
+                    alimentadorAfetado:
+                        areaAfetada.alimentadorAfetado,
+
+                    alimentadorReceptor:
+                        areaAfetada.alimentadorReceptor,
+
+                },
+
+            candidatosDetectados:
+                candidatos.map(
+                    candidato => ({
+
+                        id:
+                            obterIdEquipamento(
+                                candidato
+                            ),
+
+                        plaqueta:
+                            obterPlaquetaEquipamento(
+                                candidato
+                            ),
+
+                        tipo:
+                            classificarEquipamento(
+                                candidato
+                            ),
+
+                        estado:
+                            candidato
+                                ?.__estadoCandidato,
+
+                        interligacao:
+                            candidato
+                                ?.__interligacaoBDGD,
+
+                    })
+                ),
+
+        }
+    );
+
+    const resultado = [];
+
+    for (
+        const candidato of
+        candidatos
+    ) {
+
+        const equipamentoId =
+            obterIdEquipamento(
+                candidato
+            );
+
+        if (!equipamentoId) {
+            continue;
+        }
+
+        const tipo =
+            classificarEquipamento(
+                candidato
+            );
+
+        const estadoCandidato =
+            candidato?.__estadoCandidato;
+
+        const estadoNaoComprovado =
+            !estadoCandidato?.conhecido;
+
+        const validacaoTopologica =
+            validarCandidatoTopologico(
+
+                candidato,
+
+                areaAfetada
+
+            );
+
+        if (
+            !validacaoTopologica.valido
+        ) {
+
+            console.warn(
+                "[Power Grid Monitor] Candidato rejeitado na topologia:",
+                {
+
+                    equipamento:
+                        equipamentoId,
+
+                    motivo:
+                        validacaoTopologica.motivo,
+
+                    pacs:
+                        obterPacsEquipamento(
+                            candidato
+                        ),
+
+                }
+            );
+
+            continue;
+        }
+
+        const pontoAfetado =
+            validacaoTopologica
+                .pontoAfetado;
+
+        const pontoReceptor =
+            validacaoTopologica
+                .pontoReceptor;
+
+        const caminho =
+            validarCaminhoSimulado(
+
+                pontoAfetado,
+
+                pontoReceptor,
+
+                equipamentoId
+
+            );
+
+        if (
+            caminho?.encontrado !==
+            true
+        ) {
+
+            console.warn(
+                "[Power Grid Monitor] Candidato rejeitado por caminho:",
+                {
+
+                    equipamento:
+                        equipamentoId,
+
+                    pontoAfetado,
+
+                    pontoReceptor,
+
+                    motivo:
+                        caminho?.motivo ??
+                        "CAMINHO_NAO_ENCONTRADO",
+
+                }
+            );
+
+            continue;
+        }
+
+        const plaqueta =
+            obterPlaquetaEquipamento(
+                candidato
+            );
+
+        const codId =
+            normalizarId(
+                primeiro(
+                    candidato,
+                    [
+                        "COD_ID",
+                        "codId"
+                    ]
+                )
+            );
+
+        resultado.push({
+
+            equipamentoId,
+
+            equipamentoInterligacao:
+                equipamentoId,
+
+            equipamento:
+                candidato,
+
+            id:
+                equipamentoId,
+
+            plaqueta:
+                plaqueta ||
+                equipamentoId,
+
+            COD_ID:
+                codId ||
+                null,
+
+            codId:
+                codId ||
+                null,
+
+            tipo,
+
+            tipUnid:
+                obterTIPUNID(
+                    candidato
+                ),
+
+            estadoAtual:
+                estadoCandidato?.conhecido
+                    ? estadoCandidato.estado
+                    : null,
+
+            estado:
+                estadoCandidato?.conhecido
+                    ? estadoCandidato.estado
+                    : null,
+
+            estadoConhecido:
+                estadoCandidato?.conhecido === true,
+
+            estadoOrigem:
+                estadoCandidato?.origem ??
+                null,
+
+            estadoNaoComprovado,
+
+            pac1:
+                validacaoTopologica.pac1,
+
+            pac2:
+                validacaoTopologica.pac2,
+
+            pontoAfetado,
+
+            pontoReceptor,
+
+            alimentadorAfetado:
+                alimentadorOcorrencia,
+
+            alimentadorReceptor:
+                validacaoTopologica
+                    .alimentadorReceptor,
+
+            interligacaoBDGD:
+                validacaoTopologica
+                    .interligacao ??
+                candidato
+                    ?.__interligacaoBDGD ??
+                null,
+
+            comprovacaoTopologica:
+                validacaoTopologica
+                    .comprovacao ??
+                null,
+
+            caminhoSimulado:
+                caminho,
+
+            caminhoEletrico:
+                caminho,
+
+            quantidadeManobras:
+                1,
+
+            manobra: {
+
+                ordem:
+                    1,
+
+                acao:
+                    "FECHAR",
+
+                equipamento:
+                    equipamentoId,
+
+            },
+
+        });
+    }
+
+    console.log(
+        "⚡ [Power Grid Monitor] CANDIDATOS VÁLIDOS:",
+        resultado.map(
+            candidato => ({
+
+                equipamento:
+                    candidato.equipamentoId,
+
+                plaqueta:
+                    candidato.plaqueta,
+
+                tipo:
+                    candidato.tipo,
+
+                estado:
+                    candidato.estado,
+
+                estadoConhecido:
+                    candidato.estadoConhecido,
+
+                estadoOrigem:
+                    candidato.estadoOrigem,
+
+                alimentadorAfetado:
+                    candidato.alimentadorAfetado,
+
+                alimentadorReceptor:
+                    candidato.alimentadorReceptor,
+
+                pac1:
+                    candidato.pac1,
+
+                pac2:
+                    candidato.pac2,
+
+            })
+        )
+    );
+
+    return resultado;
+}
+
+// ==========================================================
+// ANÁLISE DE RECOMPOSIÇÃO
+// ==========================================================
+
+export function analisarRecomposicaoOcorrencia(
+    ocorrencia,
+    opcoes = {}
+) {
+
+    const equipamentoDesarmeId =
+        normalizarId(
+
+            ocorrencia?.equipamentoDesarme ??
+            ocorrencia?.equipamentoDesarmeId ??
+            ocorrencia?.equipamento ??
+            null
+
+        );
+
+    if (
+        !equipamentoDesarmeId
+    ) {
+
+        return {
+
+            sucesso:
+                false,
+
+            status:
+                "EQUIPAMENTO_DESARME_NAO_INFORMADO",
+
+            candidatos:
+                [],
+
+            recomendacao:
+                null,
+
+            motivo:
+                "Equipamento do desarme não informado.",
+
+        };
+    }
+
+    const validacao =
+        validarEquipamentoBDGD(
+
+            equipamentoDesarmeId,
+
+            ocorrencia?.alimentador
+
+        );
+
+    if (
+        !validacao?.valido
+    ) {
+
+        return {
+
+            sucesso:
+                false,
+
+            status:
+                "EQUIPAMENTO_DESARME_INVALIDO",
+
+            validacao,
+
+            candidatos:
+                [],
+
+            recomendacao:
+                null,
+
+            motivo:
+                validacao?.motivo ??
+                "Equipamento do desarme não validado na BDGD.",
+
+        };
+    }
+
+    const correnteDesligado =
+        numero(
+
+            opcoes?.correnteDesligado ??
+
+            ocorrencia?.correnteTrechoOcorrencia ??
+
+            ocorrencia?.manobra?.correnteDesligado ??
+
+            null
+
+        );
+
+    const correnteDestino =
+        numero(
+
+            opcoes?.correnteDestino ??
+
+            ocorrencia?.correnteTrechoRecuperacao ??
+
+            ocorrencia?.manobra?.correnteDestino ??
+
+            null
+
+        );
+
+    const candidatosBrutos =
+        descobrirCandidatosRecomposicao(
+
+            ocorrencia,
+
+            {
+
+                correnteDesligado,
+
+                correnteDestino,
+
+            }
+
+        );
+
+    const candidatos =
+        candidatosBrutos.map(
+            candidato => {
+
+                const capacidade =
+                    validarCapacidadeCandidato(
+
+                        candidato,
+
+                        correnteDestino,
+
+                        correnteDesligado
+
+                    );
+
+                const permitidoCarga =
+                    capacidade
+                        .conhecida
+                        ? capacidade.permitido
+                        : null;
+
+                // ==================================================
+                // REGRA FINAL DE VIABILIDADE
+                // ==================================================
+                //
+                // Para recomendar fechamento automaticamente,
+                // precisamos ter:
+                //
+                // 1. estado conhecido;
+                // 2. estado atual ABERTO;
+                // 3. capacidade validada;
+                //
+                // Caso o estado não esteja comprovado,
+                // permanece CONDICIONADA.
+                //
+                // ==================================================
+
+                const permitido =
+                    candidato.estadoConhecido &&
+                    candidato.estado ===
+                        "ABERTO" &&
+                    permitidoCarga ===
+                        true
+
+                        ? true
+
+                        : candidato.estadoConhecido &&
+                            candidato.estado ===
+                                "ABERTO" &&
+                            permitidoCarga ===
+                                false
+
+                            ? false
+
+                            : null;
+
+                let status =
+                    "CONDICIONADA";
+
+                if (
+                    permitido === true
+                ) {
+
+                    status =
+                        "VIAVEL";
+
+                } else if (
+                    permitido === false
+                ) {
+
+                    status =
+                        "BLOQUEADA";
+                }
+
+                return {
+
+                    ...candidato,
+
+                    correnteDesligado,
+
+                    correnteDestino,
+
+                    correnteBaseDestino:
+                        capacidade
+                            .correnteBaseDestino,
+
+                    correnteTransferida:
+                        capacidade
+                            .correnteTransferida,
+
+                    correnteProjetada:
+                        capacidade
+                            .correnteProjetada,
+
+                    carregamento:
+                        capacidade
+                            .carregamento,
+
+                    capacidade:
+                        capacidade
+                            .capacidade,
+
+                    limiteOperacional:
+                        capacidade
+                            .limiteOperacional,
+
+                    trechoLimitante:
+                        capacidade
+                            .trechoLimitante,
+
+                    validacaoCarga:
+                        capacidade,
+
+                    permitido,
+
+                    status,
+
+                };
+            }
+        );
+
+    candidatos.sort(
+        (
+            a,
+            b
+        ) => {
+
+            const prioridadeStatus = {
+
+                VIAVEL:
+                    0,
+
+                CONDICIONADA:
+                    1,
+
+                BLOQUEADA:
+                    2,
+
+            };
+
+            const aStatus =
+                prioridadeStatus[
+                    a?.status
+                ] ??
+                99;
+
+            const bStatus =
+                prioridadeStatus[
+                    b?.status
+                ] ??
+                99;
+
+            if (
+                aStatus !==
+                bStatus
+            ) {
+
+                return (
+                    aStatus -
+                    bStatus
+                );
+            }
+
+            const aCarga =
+                numero(
+                    a?.carregamento
+                );
+
+            const bCarga =
+                numero(
+                    b?.carregamento
+                );
+
+            if (
+                aCarga !== null &&
+                bCarga !== null
+            ) {
+
+                return (
+                    aCarga -
+                    bCarga
+                );
+            }
+
+            return (
+
+                Number(
+                    a?.quantidadeManobras ??
+                    1
+                ) -
+
+                Number(
+                    b?.quantidadeManobras ??
+                    1
+                )
+
+            );
+        }
+    );
+
+    const melhorAlternativa =
+        candidatos.find(
+            candidato =>
+                candidato?.permitido ===
+                true
+        ) || null;
+
+    if (
+        !melhorAlternativa
+    ) {
+
+        const candidatosTopologicos =
+            candidatos.length;
+
+        const candidatosSemEstado =
+            candidatos.filter(
+                candidato =>
+                    candidato?.estadoConhecido !==
+                    true
+            ).length;
+
+        let status =
+            "SEM_CANDIDATO";
+
+        let motivo =
+            "Nenhum equipamento de interligação atende aos critérios.";
+
+        if (
+            candidatosTopologicos > 0 &&
+            candidatosSemEstado ===
+                candidatosTopologicos
+        ) {
+
+            status =
+                "ESTADO_NAO_COMPROVADO";
+
+            motivo =
+                "Foram encontradas interligações reais e topologicamente compatíveis, porém a BDGD não forneceu estado explícito de abertura/fechamento para confirmar uma manobra segura.";
+
+        } else if (
+            candidatosTopologicos > 0
+        ) {
+
+            status =
+                "SEM_ALTERNATIVA";
+
+            motivo =
+                "Existem candidatos topológicos, mas nenhum atende simultaneamente ao estado operacional e à capacidade de transferência.";
+        }
+
+        return {
+
+            sucesso:
+                true,
+
+            status,
+
+            validacao,
+
+            equipamentoDesarme:
+                equipamentoDesarmeId,
+
+            alimentadorOcorrencia:
+                ocorrencia?.alimentador ??
+                null,
+
+            correnteDesligado,
+
+            correnteDestino,
+
+            candidatos,
+
+            quantidadeCandidatos:
+                candidatos.length,
+
+            recomendacao:
+                null,
+
+            motivo,
+
+        };
+    }
+
+    const recomendacao = {
+
+        equipamentoInterligacao:
+            melhorAlternativa
+                .equipamentoInterligacao,
+
+        equipamentoId:
+            melhorAlternativa
+                .equipamentoId,
+
+        id:
+            melhorAlternativa
+                .id,
+
+        plaqueta:
+            melhorAlternativa
+                .plaqueta,
+
+        COD_ID:
+            melhorAlternativa
+                .COD_ID ??
+            null,
+
+        codId:
+            melhorAlternativa
+                .codId ??
+            null,
+
+        tipo:
+            melhorAlternativa
+                .tipo,
+
+        tipUnid:
+            melhorAlternativa
+                .tipUnid,
+
+        estadoAntes:
+            melhorAlternativa
+                .estadoAtual,
+
+        estadoDepois:
+            "FECHADO",
+
+        pac1:
+            melhorAlternativa
+                .pac1,
+
+        pac2:
+            melhorAlternativa
+                .pac2,
+
+        pontoAfetado:
+            melhorAlternativa
+                .pontoAfetado,
+
+        pontoReceptor:
+            melhorAlternativa
+                .pontoReceptor,
+
+        alimentadorAfetado:
+            melhorAlternativa
+                .alimentadorAfetado,
+
+        alimentadorReceptor:
+            melhorAlternativa
+                .alimentadorReceptor,
+
+        correnteDesligado:
+            melhorAlternativa
+                .correnteDesligado,
+
+        correnteDestino:
+            melhorAlternativa
+                .correnteDestino,
+
+        correnteBaseDestino:
+            melhorAlternativa
+                .correnteBaseDestino,
+
+        correnteTransferida:
+            melhorAlternativa
+                .correnteTransferida,
+
+        correnteProjetada:
+            melhorAlternativa
+                .correnteProjetada,
+
+        carregamento:
+            melhorAlternativa
+                .carregamento,
+
+        capacidade:
+            melhorAlternativa
+                .capacidade,
+
+        limiteOperacional:
+            melhorAlternativa
+                .limiteOperacional,
+
+        trechoLimitante:
+            melhorAlternativa
+                .trechoLimitante,
+
+        caminhoEletrico:
+            melhorAlternativa
+                .caminhoSimulado,
+
+        interligacaoBDGD:
+            melhorAlternativa
+                .interligacaoBDGD ??
+            null,
+
+        comprovacaoTopologica:
+            melhorAlternativa
+                .comprovacaoTopologica ??
+            null,
+
+        quantidadeManobras:
+            1,
+
+        sequenciaManobra: [
+
+            {
+
+                ordem:
+                    1,
+
+                acao:
+                    "FECHAR",
+
+                equipamento:
+                    melhorAlternativa
+                        .equipamentoInterligacao,
+
+                descricao:
+
+                    `Fechar ${melhorAlternativa.plaqueta || melhorAlternativa.equipamentoId} após confirmação das condições operacionais.`,
+
+            }
+
+        ],
+
+    };
+
+    return {
+
+        sucesso:
+            true,
+
+        status:
+            "ALTERNATIVA_ENCONTRADA",
+
+        mensagem:
+            "Alternativa de recomposição encontrada pela topologia BDGD.",
+
+        validacao,
+
+        equipamentoDesarme:
+            equipamentoDesarmeId,
+
+        alimentadorOcorrencia:
+            ocorrencia?.alimentador ??
+            null,
+
+        correnteDesligado,
+
+        correnteDestino,
+
+        candidatos,
+
+        quantidadeCandidatos:
+            candidatos.length,
+
+        melhorAlternativa,
+
+        recomendacao,
+
+    };
+}
+
+// ==========================================================
+// ANÁLISES LEGADAS
+// ==========================================================
+
+export function analisarNormalizacao(
+    dados = {}
+) {
+
+    return {
+
+        permitido:
+            true,
+
+        status:
+            "ANALISE",
+
+        dados,
+
+    };
+}
+
+export function analisarTransferencia(
+    dados = {}
+) {
 
     const origem =
-        buscarAlimentador(
-            alimentadorOrigem
-        );
-
+        dados?.alimentadorOrigem ??
+        dados?.alimentador ??
+        null;
 
     const destino =
-        buscarAlimentador(
-            alimentadorDestino
-        );
+        dados?.alimentadorDestino ??
+        null;
 
+    const corrente =
+        numero(
+            dados?.correnteTransferida ??
+            dados?.corrente ??
+            null
+        );
 
     if (
         !origem ||
         !destino
     ) {
 
-        resultado.motivo =
-            "Alimentador não encontrado";
+        return {
 
-        return resultado;
-    }
+            permitido:
+                false,
 
+            status:
+                "DADO_INDISPONIVEL",
 
-    // ------------------------------------------------------
-    // Verificar se origem está energizada
-    // ------------------------------------------------------
+            motivo:
+                "Origem e destino não determinados.",
 
-    if (
-        origem?.estado ===
-        "DESENERGIZADO"
-    ) {
-
-        resultado.motivo =
-            "Alimentador origem está desenergizado.";
-
-        return resultado;
-    }
-
-
-    // ------------------------------------------------------
-    // Verificar destino
-    // ------------------------------------------------------
-
-    if (
-        destino?.estado ===
-        "DESENERGIZADO"
-    ) {
-
-        resultado.motivo =
-            "Alimentador destino está desenergizado.";
-
-        return resultado;
-    }
-
-
-    // ------------------------------------------------------
-    // Interligação
-    // ------------------------------------------------------
-
-    const interligacoes =
-        buscarCaminhoAlimentadores(
-            alimentadorOrigem,
-            alimentadorDestino
-        );
-
-
-    if (
-        interligacoes.length === 0
-    ) {
-
-        resultado.motivo =
-            "Não existe equipamento de interligação entre os alimentadores.";
-
-        return resultado;
-    }
-
-
-    resultado.detalhes
-        .interligacao =
-        interligacoes;
-
-
-    // ------------------------------------------------------
-    // Verificar equipamentos da interligação
-    // ------------------------------------------------------
-
-    for (
-        const item of
-        interligacoes
-    ) {
-
-        const equipamento =
-            buscarEquipamento(
-                item?.equipamento
-            );
-
-
-        if (!equipamento) {
-
-            resultado.motivo =
-                "Equipamento de interligação não encontrado.";
-
-            resultado.detalhes
-                .equipamento =
-                item;
-
-            return resultado;
-        }
-
-
-        const estado =
-            consultarEstadoEquipamento(
-                item?.equipamento
-            );
-
-
-        if (
-            estado?.estado ===
-                "INDISPONIVEL"
-        ) {
-
-            resultado.motivo =
-                "Equipamento de interligação indisponível.";
-
-            resultado.detalhes
-                .equipamento =
-                equipamento;
-
-            return resultado;
-        }
-    }
-
-
-    // ------------------------------------------------------
-    // Corrente
-    // ------------------------------------------------------
-
-    const correnteOrigemNumero =
-        Number(
-            correnteOrigem
-        ) || 0;
-
-
-    const correnteDestinoNumero =
-        Number(
-            correnteDestino
-        ) || 0;
-
-
-    const novaCorrente =
-        correnteOrigemNumero +
-        correnteDestinoNumero;
-
-
-    resultado.detalhes
-        .correnteAtual = {
-
-            origem:
-                correnteOrigemNumero,
-
-            destino:
-                correnteDestinoNumero,
-
-            total:
-                novaCorrente
         };
-
-
-    // ------------------------------------------------------
-    // Validar trechos do destino
-    // ------------------------------------------------------
-
-    const trechosDestino =
-        buscarTrechosAlimentador(
-            alimentadorDestino
-        );
-
-
-    for (
-        const trecho of
-        trechosDestino
-    ) {
-
-        const capacidade =
-            calcularCapacidadeTrecho(
-                trecho?.id
-            );
-
-
-        if (!capacidade) {
-            continue;
-        }
-
-
-        const limite =
-            capacidade * 0.8;
-
-
-        if (
-            novaCorrente >
-            limite
-        ) {
-
-            resultado.motivo =
-                "Transferência bloqueada: limite operacional do trecho excedido.";
-
-            resultado.detalhes
-                .trecho = {
-
-                    id:
-                        trecho?.id,
-
-                    capacidade,
-
-                    limite,
-
-                    correnteSolicitada:
-                        novaCorrente
-                };
-
-
-            return resultado;
-        }
     }
-
-
-    resultado.permitido =
-        true;
-
-
-    resultado.status =
-        "LIBERADA";
-
-
-    resultado.motivo =
-        "Manobra operacionalmente possível.";
-
-
-    return resultado;
-}
-
-
-// ==========================================================
-// IMPACTO DA MANOBRA
-// ==========================================================
-
-
-export function analisarImpactoManobra(
-    alimentador
-) {
-
-    const dados =
-        buscarAlimentador(
-            alimentador
-        );
-
-
-    if (!dados) {
-        return null;
-    }
-
-
-    const equipamentos =
-        buscarEquipamentosAlimentador(
-            alimentador
-        );
-
-
-    const telecomandados =
-        equipamentos.filter(
-            (eq) =>
-
-                eq?.telecomandado ===
-                    true ||
-
-                eq?.telecomando ===
-                    true ||
-
-                eq?.telecontrolado ===
-                    true
-        );
-
-
-    const desligados =
-        equipamentos.filter(
-            (eq) => {
-
-                const id =
-                    normalizarId(
-                        eq?.id ??
-                        eq?.COD_ID ??
-                        eq?.codId ??
-                        eq?.plaqueta
-                    );
-
-
-                const estado =
-                    consultarEstadoEquipamento(
-                        id
-                    );
-
-
-                return (
-
-                    estado?.estado ===
-                        "ABERTO" ||
-
-                    estado?.estado ===
-                        "INDISPONIVEL"
-                );
-            }
-        );
-
 
     return {
 
-        alimentador,
+        permitido:
+            corrente !== null,
 
-        clientes:
-            Number(
-                dados?.clientes
-            ) || 0,
+        status:
+            corrente !== null
+                ? "ANALISADA"
+                : "DADO_INDISPONIVEL",
 
-        hospitais:
-            Number(
-                dados?.hospitais
-            ) || 0,
+        alimentadorOrigem:
+            origem,
 
-        equipamentos:
-            equipamentos.length,
+        alimentadorDestino:
+            destino,
 
-        telecomandados:
-            telecomandados.length,
+        corrente,
 
-        equipamentosDesligados:
-            desligados.length
     };
 }
 
+export function analisarManobraOperacional(
+    dados = {}
+) {
+
+    return analisarTransferencia(
+        dados
+    );
+}
+
+export function analisarImpactoManobra(
+    dados = {}
+) {
+
+    return {
+
+        impacto:
+            null,
+
+        dados,
+
+    };
+}
 
 // ==========================================================
-// RESUMO DA REDE
+// DESENERGIZAÇÃO
 // ==========================================================
 
+export function desenergizarAlimentador(
+    alimentador
+) {
+
+    const id =
+        normalizarId(
+            alimentador
+        );
+
+    if (!id) {
+
+        return {
+
+            sucesso:
+                false,
+
+        };
+    }
+
+    if (
+        !estadoRede
+            .operacao
+            .alimentadoresDesenergizados
+            .includes(
+                id
+            )
+    ) {
+
+        estadoRede
+            .operacao
+            .alimentadoresDesenergizados
+            .push(
+                id
+            );
+    }
+
+    estadoRede
+        .operacao
+        .ultimaAtualizacao =
+        new Date();
+
+    return {
+
+        sucesso:
+            true,
+
+        alimentador:
+            id,
+
+    };
+}
+
+export function energizarAlimentador(
+    alimentador
+) {
+
+    const id =
+        normalizarId(
+            alimentador
+        );
+
+    estadoRede
+        .operacao
+        .alimentadoresDesenergizados =
+
+        estadoRede
+            .operacao
+            .alimentadoresDesenergizados
+            .filter(
+                item =>
+                    item !== id
+            );
+
+    estadoRede
+        .operacao
+        .ultimaAtualizacao =
+        new Date();
+
+    return {
+
+        sucesso:
+            true,
+
+        alimentador:
+            id,
+
+    };
+}
+
+// ==========================================================
+// RESUMO
+// ==========================================================
 
 export function resumoRede() {
+
+    const topologia =
+        estadoRede.topologiaBDGD;
 
     return {
 
@@ -3511,985 +7710,54 @@ export function resumoRede() {
                 .equipamentos
                 .length,
 
+        topologiaBDGD:
+            Boolean(
+                topologia
+            ),
+
+        topologiaAlimentador:
+            topologia?.alimentador ??
+            null,
+
+        topologiaAlimentadores:
+            lista(
+                topologia?.alimentadores
+            ),
+
+        pontosBDGD:
+            lista(
+                topologia?.pontos
+            ).length,
+
+        trechosBDGD:
+            lista(
+                topologia?.trechos
+            ).length,
+
+        equipamentosBDGD:
+            lista(
+                topologia?.equipamentos
+            ).length,
+
+        interligacoesBDGD:
+            lista(
+                topologia?.interligacoes
+            ).length,
+
         equipamentosDesligados:
             estadoRede
                 .operacao
                 .equipamentosDesligados
                 .length,
 
-        alimentadoresDesenergizados:
-            estadoRede
-                .operacao
-                .alimentadoresDesenergizados
-                .length,
-
-        possuiTopologiaBDGD:
-            possuiTopologiaBDGD(),
-
-        ultimaAtualizacao:
-            estadoRede
-                .operacao
-                .ultimaAtualizacao
     };
 }
 
-
 // ==========================================================
-// FACHADA DA TOPOLOGIA BDGD
+// EXPORTAÇÃO
 // ==========================================================
-
-
-function obterTopologiaOuNulo() {
-
-    return (
-        estadoRede.topologiaBDGD ||
-        null
-    );
-}
-
-
-// ==========================================================
-// FICHA OPERACIONAL
-// ==========================================================
-
-
-export function obterFichaOperacional(
-    equipamentoId
-) {
-
-    const topologia =
-        obterTopologiaOuNulo();
-
-
-    if (!topologia) {
-        return null;
-    }
-
-
-    return obterFichaBDGDLocal(
-
-        topologia,
-
-        equipamentoId
-    );
-}
-
-
-// ==========================================================
-// BUSCAR EQUIPAMENTO NA REDE
-// ==========================================================
-
-
-export function buscarEquipamentoRede(
-    equipamentoId
-) {
-
-    const topologia =
-        obterTopologiaOuNulo();
-
-
-    if (topologia) {
-
-        const bdgd =
-            buscarEquipamentoBDGDLocal(
-
-                topologia,
-
-                equipamentoId
-            );
-
-
-        if (bdgd) {
-            return bdgd;
-        }
-    }
-
-
-    return (
-        buscarEquipamento(
-            equipamentoId
-        ) ||
-        null
-    );
-}
-
-
-// ==========================================================
-// BUSCAR PONTO
-// ==========================================================
-
-
-export function buscarPontoRede(
-    pontoId
-) {
-
-    const topologia =
-        obterTopologiaOuNulo();
-
-
-    if (!topologia) {
-        return null;
-    }
-
-
-    return buscarPontoBDGD(
-
-        topologia,
-
-        pontoId
-    );
-}
-
-
-// ==========================================================
-// BUSCAR TRECHO
-// ==========================================================
-
-
-export function buscarTrechoRede(
-    trechoId
-) {
-
-    const topologia =
-        obterTopologiaOuNulo();
-
-
-    if (topologia) {
-
-        const trecho =
-            buscarTrechoBDGD(
-
-                topologia,
-
-                trechoId
-            );
-
-
-        if (trecho) {
-            return trecho;
-        }
-    }
-
-
-    return (
-        buscarTrecho(
-            trechoId
-        ) ||
-        null
-    );
-}
-
-
-// ==========================================================
-// BUSCAR CONEXÕES BDGD
-// ==========================================================
-
-
-export function buscarConexoesRede(
-    pontoId
-) {
-
-    const topologia =
-        obterTopologiaOuNulo();
-
-
-    if (!topologia) {
-        return [];
-    }
-
-
-    return buscarConexoesBDGD(
-
-        topologia,
-
-        pontoId
-    );
-}
-
-
-// ==========================================================
-// MONTANTE
-// ==========================================================
-
-
-export function buscarMontante(
-    pontoId,
-    opcoes = {}
-) {
-
-    const topologia =
-        obterTopologiaOuNulo();
-
-
-    if (!topologia) {
-
-        return {
-
-            pontoInicial:
-                pontoId ||
-                null,
-
-            pontos:
-                {},
-
-            trechos:
-                {},
-
-            ordemPontos:
-                [],
-
-            ordemTrechos:
-                [],
-
-            quantidadePontos:
-                0,
-
-            quantidadeTrechos:
-                0,
-
-            motivo:
-                "Topologia BDGD não registrada"
-        };
-    }
-
-
-    return buscarRedeAMontanteBDGD(
-
-        topologia,
-
-        pontoId,
-
-        opcoes
-    );
-}
-
-
-// ==========================================================
-// JUSANTE
-// ==========================================================
-
-
-export function buscarJusante(
-    pontoId,
-    opcoes = {}
-) {
-
-    const topologia =
-        obterTopologiaOuNulo();
-
-
-    if (!topologia) {
-
-        return {
-
-            pontoInicial:
-                pontoId ||
-                null,
-
-            pontos:
-                {},
-
-            trechos:
-                {},
-
-            ordemPontos:
-                [],
-
-            ordemTrechos:
-                [],
-
-            quantidadePontos:
-                0,
-
-            quantidadeTrechos:
-                0,
-
-            motivo:
-                "Topologia BDGD não registrada"
-        };
-    }
-
-
-    return buscarRedeAJusanteBDGD(
-
-        topologia,
-
-        pontoId,
-
-        opcoes
-    );
-}
-
-
-// ==========================================================
-// CAMINHO ELÉTRICO
-// ==========================================================
-
-
-export function buscarCaminhoEletrico(
-    pontoInicial,
-    pontoFinal
-) {
-
-    const topologia =
-        obterTopologiaOuNulo();
-
-
-    if (!topologia) {
-
-        return {
-
-            encontrado:
-                false,
-
-            pontoInicial:
-                pontoInicial ||
-                null,
-
-            pontoFinal:
-                pontoFinal ||
-                null,
-
-            pontos:
-                [],
-
-            trechos:
-                [],
-
-            distancia:
-                0,
-
-            motivo:
-                "Topologia BDGD não registrada"
-        };
-    }
-
-
-    return buscarCaminhoBDGD(
-
-        topologia,
-
-        pontoInicial,
-
-        pontoFinal
-    );
-}
-
-
-// ==========================================================
-// REDE CONECTADA
-// ==========================================================
-
-
-export function buscarRedeConectada(
-    pontoId
-) {
-
-    const topologia =
-        obterTopologiaOuNulo();
-
-
-    if (!topologia) {
-
-        return {
-
-            pontoInicial:
-                pontoId ||
-                null,
-
-            pontos:
-                {},
-
-            trechos:
-                {},
-
-            ordemPontos:
-                [],
-
-            ordemTrechos:
-                [],
-
-            quantidadePontos:
-                0,
-
-            quantidadeTrechos:
-                0,
-
-            motivo:
-                "Topologia BDGD não registrada"
-        };
-    }
-
-
-    const montante =
-        buscarRedeAMontanteBDGD(
-
-            topologia,
-
-            pontoId
-        );
-
-
-    const jusante =
-        buscarRedeAJusanteBDGD(
-
-            topologia,
-
-            pontoId,
-
-            {
-                respeitarOrientacao:
-                    true
-            }
-        );
-
-
-    const pontos = {
-
-        ...(montante?.pontos || {}),
-
-        ...(jusante?.pontos || {})
-    };
-
-
-    const trechos = {
-
-        ...(montante?.trechos || {}),
-
-        ...(jusante?.trechos || {})
-    };
-
-
-    const ordemPontos = [
-
-        ...(montante?.ordemPontos || []),
-
-        ...(jusante?.ordemPontos || [])
-
-    ].filter(
-
-        (
-            id,
-            index,
-            lista
-        ) =>
-
-            lista.indexOf(id) ===
-            index
-    );
-
-
-    const ordemTrechos = [
-
-        ...(montante?.ordemTrechos || []),
-
-        ...(jusante?.ordemTrechos || [])
-
-    ].filter(
-
-        (
-            id,
-            index,
-            lista
-        ) =>
-
-            lista.indexOf(id) ===
-            index
-    );
-
-
-    return {
-
-        pontoInicial:
-            pontoId ||
-            null,
-
-        pontos,
-
-        trechos,
-
-        ordemPontos,
-
-        ordemTrechos,
-
-        quantidadePontos:
-            ordemPontos.length,
-
-        quantidadeTrechos:
-            ordemTrechos.length,
-
-        montante,
-
-        jusante
-    };
-}
-
-
-// ==========================================================
-// PQT DO PONTO
-// ==========================================================
-
-
-export function buscarPQTDoPontoRede(
-    pontoId
-) {
-
-    const topologia =
-        obterTopologiaOuNulo();
-
-
-    if (!topologia) {
-        return [];
-    }
-
-
-    const ponto =
-        buscarPontoBDGD(
-
-            topologia,
-
-            pontoId
-        );
-
-
-    if (!ponto) {
-        return [];
-    }
-
-
-    const colecao =
-        topologia
-            .unidadesSeccionadoras ||
-        {};
-
-
-    const lista =
-        Array.isArray(
-            colecao
-        )
-            ? colecao
-            : Object.values(
-                colecao
-            );
-
-
-    const alvo =
-        normalizarId(
-            pontoId
-        );
-
-
-    return lista.filter(
-        (pqt) => {
-
-            const pac1 =
-                normalizarId(
-                    pqt?.pac1 ??
-                    pqt?.PAC_1
-                );
-
-
-            const pac2 =
-                normalizarId(
-                    pqt?.pac2 ??
-                    pqt?.PAC_2
-                );
-
-
-            const associado =
-                normalizarId(
-                    pqt?.pontoAssociado
-                );
-
-
-            return (
-
-                pac1 === alvo ||
-
-                pac2 === alvo ||
-
-                associado === alvo
-            );
-        }
-    );
-}
-
-
-// ==========================================================
-// TRANSFORMADORES DO PONTO
-// ==========================================================
-
-
-export function buscarTransformadoresDoPontoRede(
-    pontoId
-) {
-
-    const topologia =
-        obterTopologiaOuNulo();
-
-
-    if (!topologia) {
-        return [];
-    }
-
-
-    const colecao =
-        topologia
-            .transformadores ||
-        {};
-
-
-    const lista =
-        Array.isArray(
-            colecao
-        )
-            ? colecao
-            : Object.values(
-                colecao
-            );
-
-
-    const alvo =
-        normalizarId(
-            pontoId
-        );
-
-
-    return lista.filter(
-        (transformador) => {
-
-            const pac1 =
-                normalizarId(
-                    transformador?.pac1 ??
-                    transformador?.PAC_1
-                );
-
-
-            const pac2 =
-                normalizarId(
-                    transformador?.pac2 ??
-                    transformador?.PAC_2
-                );
-
-
-            const associado =
-                normalizarId(
-                    transformador?.pontoAssociado
-                );
-
-
-            return (
-
-                pac1 === alvo ||
-
-                pac2 === alvo ||
-
-                associado === alvo
-            );
-        }
-    );
-}
-
-
-// ==========================================================
-// FILTRAR REDE POR ALIMENTADOR
-// ==========================================================
-
-
-export function filtrarRedePorAlimentador(
-    alimentador
-) {
-
-    const topologia =
-        obterTopologiaOuNulo();
-
-
-    if (!topologia) {
-        return null;
-    }
-
-
-    return filtrarTopologiaPorAlimentadorLocal(
-
-        topologia,
-
-        alimentador
-    );
-}
-
-
-// ==========================================================
-// FICHA COMPLETA DO EQUIPAMENTO
-// ==========================================================
-
-
-export function obterFichaCompletaEquipamento(
-    equipamentoId
-) {
-
-    const topologia =
-        obterTopologiaOuNulo();
-
-
-    const equipamento =
-        buscarEquipamentoRede(
-            equipamentoId
-        );
-
-
-    if (!equipamento) {
-        return null;
-    }
-
-
-    const ficha =
-        topologia
-            ? obterFichaBDGDLocal(
-                topologia,
-                equipamentoId
-            )
-            : null;
-
-
-    const equipamentoModelo =
-        buscarEquipamento(
-            equipamentoId
-        );
-
-
-    const pontoId =
-
-        ficha?.pontoAssociado ||
-
-        ficha?.pac1 ||
-
-        ficha?.pac2 ||
-
-        equipamento?.pontoAssociado ||
-
-        equipamento?.pontoId ||
-
-        equipamento?.unidadeId ||
-
-        equipamento?.PAC_1 ||
-
-        equipamento?.PAC_2 ||
-
-        null;
-
-
-    const ponto =
-        topologia &&
-        pontoId
-            ? buscarPontoBDGD(
-                topologia,
-                pontoId
-            )
-            : null;
-
-
-    const conexoes =
-        topologia &&
-        pontoId
-            ? buscarConexoesBDGD(
-                topologia,
-                pontoId
-            )
-            : [];
-
-
-    const estadoOperacional =
-        consultarEstadoEquipamento(
-            equipamentoId
-        );
-
-
-    const estadoCadastro =
-        obterEstadoCadastralEquipamento(
-            equipamentoModelo ||
-            equipamento
-        );
-
-
-    const estadoConsolidado =
-        estadoOperacional?.estado &&
-        estadoOperacional.estado !==
-            "NAO_INFORMADO"
-
-            ? estadoOperacional.estado
-
-            : estadoCadastro ||
-              ficha?.situacao ||
-              "FECHADO";
-
-
-    return {
-
-        ...(ficha || {}),
-
-        equipamento,
-
-        estadoOperacional:
-            estadoConsolidado,
-
-        estadoOrigem:
-            estadoOperacional?.origem ||
-            null,
-
-        correnteAtual:
-            equipamentoModelo
-                ?.correnteAtual ??
-            equipamento
-                ?.correnteAtual ??
-            null,
-
-        observacaoOperacional:
-            estadoOperacional
-                ?.observacao ??
-            null,
-
-        atualizadoEm:
-            estadoOperacional
-                ?.atualizadoEm ??
-            null,
-
-        ponto,
-
-        conexoes,
-
-        modelo:
-            equipamentoModelo ||
-            null
-    };
-}
-
-
-// ==========================================================
-// FUNÇÕES AUXILIARES DE OPERAÇÃO
-// ==========================================================
-
-
-// ----------------------------------------------------------
-// Verificar se equipamento está aberto
-// ----------------------------------------------------------
-
-export function equipamentoEstaAberto(
-    equipamentoId
-) {
-
-    const estado =
-        consultarEstadoEquipamento(
-            equipamentoId
-        );
-
-
-    return (
-        estado?.estado ===
-        "ABERTO"
-    );
-}
-
-
-// ----------------------------------------------------------
-// Verificar se equipamento está fechado
-// ----------------------------------------------------------
-
-export function equipamentoEstaFechado(
-    equipamentoId
-) {
-
-    const estado =
-        consultarEstadoEquipamento(
-            equipamentoId
-        );
-
-
-    return (
-        estado?.estado ===
-        "FECHADO"
-    );
-}
-
-
-// ----------------------------------------------------------
-// Verificar se equipamento está disponível
-// ----------------------------------------------------------
-
-export function equipamentoEstaDisponivel(
-    equipamentoId
-) {
-
-    const estado =
-        consultarEstadoEquipamento(
-            equipamentoId
-        );
-
-
-    return (
-        estado?.estado !==
-        "INDISPONIVEL"
-    );
-}
-
-
-// ----------------------------------------------------------
-// Obter estado de todos os equipamentos
-// ----------------------------------------------------------
-
-export function obterMapaEstadosEquipamentos() {
-
-    const resultado = {};
-
-
-    estadoRede
-        .equipamentos
-        .forEach(
-            (equipamento) => {
-
-                const ids =
-                    obterIdentificadoresEquipamento(
-                        equipamento
-                    );
-
-
-                if (
-                    ids.length === 0
-                ) {
-                    return;
-                }
-
-
-                const estado =
-                    consultarEstadoEquipamento(
-                        ids[0]
-                    );
-
-
-                ids.forEach(
-                    (id) => {
-
-                        resultado[id] =
-                            estado;
-                    }
-                );
-            }
-        );
-
-
-    return resultado;
-}
-
-
-// ==========================================================
-// OBJETO MODELO
-// ==========================================================
-
 
 export const modeloRede = {
-
-    // ------------------------------------------------------
-    // DADOS
-    // ------------------------------------------------------
 
     getRede,
 
@@ -4501,17 +7769,7 @@ export const modeloRede = {
 
     getEquipamentos,
 
-
-    // ------------------------------------------------------
-    // IDENTIFICAÇÃO
-    // ------------------------------------------------------
-
     obterIdentificadoresEquipamento,
-
-
-    // ------------------------------------------------------
-    // TOPOLOGIA
-    // ------------------------------------------------------
 
     registrarTopologiaBDGD,
 
@@ -4521,10 +7779,7 @@ export const modeloRede = {
 
     possuiTopologiaBDGD,
 
-
-    // ------------------------------------------------------
-    // BUSCAS
-    // ------------------------------------------------------
+    validarEquipamentoBDGD,
 
     buscarSubestacao,
 
@@ -4536,35 +7791,21 @@ export const modeloRede = {
 
     buscarEquipamentoRede,
 
+    existeEquipamento,
+
     buscarPontoRede,
 
     buscarTrechoRede,
 
     buscarConexoesRede,
 
-
-    // ------------------------------------------------------
-    // ALIMENTADORES
-    // ------------------------------------------------------
+    buscarConexoesEquipamento,
 
     buscarTrechosAlimentador,
 
     buscarEquipamentosAlimentador,
 
     buscarEquipamentosTelecomandados,
-
-    buscarInterligacoes,
-
-    buscarInterligacoesAlimentador,
-
-    buscarCaminhoAlimentadores,
-
-    possuiInterligacao,
-
-
-    // ------------------------------------------------------
-    // ESTADOS
-    // ------------------------------------------------------
 
     normalizarEstadoEquipamento,
 
@@ -4574,7 +7815,11 @@ export const modeloRede = {
 
     atualizarEstadoEquipamento,
 
-    obterMapaEstadosEquipamentos,
+    executarManobraEquipamento,
+
+    desligarEquipamento,
+
+    ligarEquipamento,
 
     equipamentoEstaAberto,
 
@@ -4582,58 +7827,7 @@ export const modeloRede = {
 
     equipamentoEstaDisponivel,
 
-
-    // ------------------------------------------------------
-    // MANOBRAS
-    // ------------------------------------------------------
-
-    executarManobraEquipamento,
-
-    desligarEquipamento,
-
-    ligarEquipamento,
-
-
-    // ------------------------------------------------------
-    // ALIMENTADORES
-    // ------------------------------------------------------
-
-    atualizarCorrenteAlimentador,
-
-    atualizarCorrenteTrecho,
-
-    desenergizarAlimentador,
-
-    energizarAlimentador,
-
-
-    // ------------------------------------------------------
-    // CAPACIDADE
-    // ------------------------------------------------------
-
-    capacidadePorBitola,
-
-    calcularCapacidadeTrecho,
-
-    validarCargaTrecho,
-
-
-    // ------------------------------------------------------
-    // ANÁLISES
-    // ------------------------------------------------------
-
-    analisarNormalizacao,
-
-    analisarTransferencia,
-
-    analisarManobraOperacional,
-
-    analisarImpactoManobra,
-
-
-    // ------------------------------------------------------
-    // ESTADO GERAL
-    // ------------------------------------------------------
+    obterMapaEstadosEquipamentos,
 
     consultarEstadoOperacional,
 
@@ -4641,12 +7835,31 @@ export const modeloRede = {
 
     restaurarEstadoInicial,
 
-    resumoRede,
+    consultarCorrenteAlimentador,
 
+    obterCorrenteAlimentador,
 
-    // ------------------------------------------------------
-    // TOPOLOGIA OPERACIONAL
-    // ------------------------------------------------------
+    atualizarCorrenteAlimentador,
+
+    consultarCorrenteTrecho,
+
+    obterCorrenteTrecho,
+
+    atualizarCorrenteTrecho,
+
+    buscarInterligacoes,
+
+    buscarInterligacoesAlimentador,
+
+    possuiInterligacao,
+
+    buscarCaminhoAlimentadores,
+
+    capacidadePorBitola,
+
+    calcularCapacidadeTrecho,
+
+    validarCargaTrecho,
 
     buscarMontante,
 
@@ -4662,22 +7875,30 @@ export const modeloRede = {
 
     filtrarRedePorAlimentador,
 
-
-    // ------------------------------------------------------
-    // FICHAS
-    // ------------------------------------------------------
-
     obterFichaOperacional,
 
-    obterFichaCompletaEquipamento
+    obterFichaCompletaEquipamento,
+
+    classificarEquipamento,
+
+    descobrirCandidatosRecomposicao,
+
+    analisarRecomposicaoOcorrencia,
+
+    analisarNormalizacao,
+
+    analisarTransferencia,
+
+    analisarManobraOperacional,
+
+    analisarImpactoManobra,
+
+    desenergizarAlimentador,
+
+    energizarAlimentador,
+
+    resumoRede,
+
 };
 
-
-// ==========================================================
-// EXPORTAÇÃO DO ESTADO
-// ==========================================================
-
-
-export {
-    estadoRede
-};
+export default modeloRede;

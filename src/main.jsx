@@ -8,6 +8,7 @@ import theme from "./theme/theme.js";
 
 import "./index.css";
 
+import "./core/testeAnaliseOperacional";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
 

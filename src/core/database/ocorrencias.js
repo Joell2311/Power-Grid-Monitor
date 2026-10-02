@@ -1,131 +1,190 @@
+// ==========================================================
+// OCORRÊNCIAS DE TESTE
+// POWER GRID MONITOR
+// ==========================================================
+//
+// CENÁRIO DE TESTE
+//
+// Equipamento em falha:
+//   G02722
+//
+// Tipo:
+//   CHAVE FACA
+//
+// Situação:
+//   ABERTA
+//
+// Alimentador:
+//   CMG01C5
+//
+// Clientes interrompidos no momento do desarme:
+//   3200
+//
+// IMPORTANTE:
+//
+// As correntes NÃO ficam cadastradas neste arquivo.
+// Elas serão informadas pelo operador na análise.
+//
+// O sistema deverá utilizar a topologia BDGD para:
+//   - localizar o G02722;
+//   - confirmar seu cadastro;
+//   - identificar os pontos PAC_1/PAC_2;
+//   - identificar a rede afetada;
+//   - localizar interligações disponíveis;
+//   - analisar possíveis manobras;
+//   - calcular o impacto de cada alternativa.
+//
+// ==========================================================
+
+
 export const ocorrencias = [
-  {
-    // ==========================
-    // IDENTIFICAÇÃO
-    // ==========================
 
-    id: "OC001",
+    {
+        // ==================================================
+        // IDENTIFICAÇÃO DA OC
+        // ==================================================
 
-    // ==========================
-    // REFERÊNCIAS DA REDE
-    // ==========================
+        id: "OC001",
 
-    subestacao: "CMG",
-    alimentador: "CMG-01C4",
-    trecho: "T002",
-    equipamento: "A5577",
 
-    // ==========================
-    // EVENTO
-    // ==========================
+        // ==================================================
+        // REFERÊNCIA DA REDE
+        // ==================================================
 
-    tipo: "Desarme",
+        subestacao: "CMG",
 
-    causa: "Falha no trecho de rede",
+        alimentador: "CMG01C5",
 
-    dataHora: null,
+        trecho: null,
 
-    // ==========================
-    // LOCALIZAÇÃO
-    // ==========================
 
-    localizacao: {
-      latitude: -8.0250,
-      longitude: -34.9800,
-    },
+        // ==================================================
+        // EQUIPAMENTO EM FALHA
+        // ==================================================
+        //
+        // G02722 = chave faca de interligação
+        // pertencente ao CMG01C5.
+        //
+        // O sistema deverá validar este equipamento
+        // diretamente na BDGD.
+        //
 
-    // ==========================
-    // DADOS DA OCORRÊNCIA
-    // ==========================
+        equipamento: "G02722",
 
-    manobra: {
-      correnteNoMomento: 200,
-    },
+        equipamentoDesarme: "G02722",
 
-    // ==========================
-    // SITUAÇÃO
-    // ==========================
+        equipamentoDesarmeId: "G02722",
 
-    status: "ATIVA",
-  },
 
-  {
-    id: "OC002",
+        // ==================================================
+        // ESTADO DO EQUIPAMENTO
+        // ==================================================
 
-    subestacao: "CMG",
-    alimentador: "CMG-01C3",
-    trecho: "T008",
-    equipamento: "REC-002",
+        estadoEquipamento:
+            "ABERTO",
 
-    tipo: "Desarme",
 
-    causa: "Atuação de proteção do religador",
+        // ==================================================
+        // EVENTO
+        // ==================================================
 
-    dataHora: null,
+        tipo:
+            "Falha de Equipamento",
 
-    localizacao: {
-      latitude: -8.0190,
-      longitude: -34.9735,
-    },
+        causa:
+            "Falha em chave faca de interligação",
 
-    manobra: {
-      correnteNoMomento: 120,
-    },
+        dataHora:
+            null,
 
-    status: "ATIVA",
-  },
 
-  {
-    id: "OC003",
+        // ==================================================
+        // IMPACTO NO MOMENTO DO DESARME
+        // ==================================================
+        //
+        // Este é um dado da ocorrência.
+        //
+        // Não é corrente e não será calculado pelo motor.
+        //
 
-    subestacao: "CMG",
-    alimentador: "CMG-01C2",
-    trecho: null,
-    equipamento: "REC-003",
+        clientesAfetados:
+            3200,
 
-    tipo: "Defeito Permanente",
 
-    causa: "Defeito permanente em rede aérea",
+        clientesInterrompidos:
+            3200,
 
-    dataHora: null,
 
-    localizacao: {
-      latitude: -8.0310,
-      longitude: -34.9780,
-    },
+        clientesRecuperados:
+            0,
 
-    manobra: {
-      correnteNoMomento: 150,
-    },
 
-    status: "ATIVA",
-  },
+        clientesRemanescentes:
+            3200,
 
-  {
-    id: "OC004",
 
-    subestacao: "CMG",
-    alimentador: "CMG-01C6",
-    trecho: null,
-    equipamento: "CHV-006",
+        // ==================================================
+        // LOCALIZAÇÃO
+        // ==================================================
+        //
+        // A localização definitiva poderá ser obtida
+        // pela posição do equipamento na BDGD.
+        //
+        // Estes valores podem ser substituídos depois
+        // pela localização real calculada da BDGD.
+        //
 
-    tipo: "Falha de Equipamento",
+        localizacao: {
 
-    causa: "Falha de chave de proteção",
+            latitude:
+                null,
 
-    dataHora: null,
+            longitude:
+                null
+        },
 
-    localizacao: {
-      latitude: -8.0360,
-      longitude: -34.9820,
-    },
 
-    manobra: {
-      correnteNoMomento: 80,
-    },
+        // ==================================================
+        // DADOS DE MANOBRA
+        // ==================================================
+        //
+        // NÃO informar correntes aqui.
+        //
+        // O operador fornecerá:
+        //
+        // - corrente do trecho no momento do desarme;
+        // - corrente atual do trecho receptor.
+        //
+        // O sistema preencherá esses valores durante
+        // a análise.
+        //
 
-    status: "ATIVA",
-  },
+        manobra: {
+
+            equipamentoInterligacao:
+                null,
+
+            correnteDesligado:
+                null,
+
+            correnteDestino:
+                null
+        },
+
+
+        // ==================================================
+        // SITUAÇÃO DA OC
+        // ==================================================
+
+        status:
+            "ATIVA"
+    }
+
 ];
+
+
+// ==========================================================
+// EXPORT DEFAULT
+// ==========================================================
 
 export default ocorrencias;
