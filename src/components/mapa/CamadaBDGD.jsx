@@ -60,7 +60,7 @@ import {
 // ==========================================================
 
 const PASTA_BDGD_CMG =
-  "/data/bdgd/CMG_COMPLETO";
+  `${import.meta.env.BASE_URL}data/bdgd/CMG_COMPLETO`;
 
 const ALIMENTADORES_CMG = [
   "CMG01C1",
