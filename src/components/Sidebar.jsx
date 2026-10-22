@@ -192,7 +192,7 @@ function Sidebar() {
 
           {!open && (
             <Tooltip
-              title="COI Monitor"
+              title="Power Grid Monitor"
               placement="right"
               arrow
             >
@@ -228,7 +228,7 @@ function Sidebar() {
                   lineHeight: 1.1,
                 }}
               >
-                ⚡ COI
+                ⚡ 
               </Typography>
 
               <Typography
@@ -243,7 +243,7 @@ function Sidebar() {
                   mt: 0.3,
                 }}
               >
-                Centro Operacional
+                
               </Typography>
             </>
           )}
