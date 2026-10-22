@@ -65,7 +65,7 @@ function Header() {
                 lineHeight: 1.2,
               }}
             >
-              COI Monitor
+              Power Grid Monitor
             </Typography>
 
             <Typography
@@ -74,7 +74,7 @@ function Header() {
                 color: "#94a3b8",
               }}
             >
-              Centro de Operações Integradas • Camaragibe/PE
+              
             </Typography>
           </Box>
 
