@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   GeoJSON,
@@ -13,6 +13,8 @@ import L from "leaflet";
 
 import {
   criarTopologiaBDGD,
+  orientarTopologiaAutomaticamente,
+  orientarTopologia,
   buscarPonto,
   buscarTrechoBDGD,
   buscarConexoes,
@@ -27,6 +29,7 @@ import {
   obterFichaCompletaEquipamento,
   consultarEstadoEquipamento,
   executarManobraEquipamento,
+  calcularEstadosEnergizacaoTrechos,
 } from "../../core/modelo/modeloRede";
 
 // ==========================================================
@@ -59,8 +62,14 @@ import {
 // ARQUIVOS BDGD
 // ==========================================================
 
-const PASTA_BDGD_CMG =
-  `${import.meta.env.BASE_URL}data/bdgd/CMG_COMPLETO`;
+// Usa o base configurado no Vite para funcionar tanto no ambiente local
+// quanto no GitHub Pages em /Power-Grid-Monitor/.
+const PASTA_BDGD_RAIZ =
+  `${import.meta.env.BASE_URL}data/bdgd`;
+
+const PASTA_BDGD_CMG 
+=
+  `${PASTA_BDGD_RAIZ}/CMG_COMPLETO`;
 
 const ALIMENTADORES_CMG = [
   "CMG01C1",
@@ -74,7 +83,8 @@ const ALIMENTADORES_CMG = [
 function caminhosBDGDCMG(alimentador) {
   return {
     trechos:
-      `${PASTA_BDGD_CMG}/${alimentador}/${alimentador}_trechos.geojson`,
+      
+`${PASTA_BDGD_CMG}/${alimentador}/${alimentador}_trechos.geojson`,
 
     pontos:
       `${PASTA_BDGD_CMG}/${alimentador}/${alimentador}_pontos.geojson`,
@@ -83,7 +93,8 @@ function caminhosBDGDCMG(alimentador) {
       `${PASTA_BDGD_CMG}/${alimentador}/${alimentador}_equipamentos_completos.geojson`,
 
     diagnostico:
-      `${PASTA_BDGD_CMG}/${alimentador}/${alimentador}_diagnostico.json`,
+      
+`${PASTA_BDGD_CMG}/${alimentador}/${alimentador}_diagnostico.json`,
   };
 }
 
@@ -93,7 +104,8 @@ function caminhosBDGDCMG(alimentador) {
 
 const ID_TRECHO_TESTE = "941527";
 const ID_ORIGEM_TESTE = "10060794";
-const ID_DESTINO_TESTE = "1088716";
+const ID_DESTINO_TESTE = 
+"1088716";
 
 // ==========================================================
 // ZOOM
@@ -104,7 +116,8 @@ const ZOOM_CHAVES_FUSIVEIS = 15;
 const ZOOM_DETALHADO = 17;
 
 // ==========================================================
-// NORMALIZAÇÃO
+// 
+NORMALIZAÇÃO
 // ==========================================================
 
 function normalizarId(valor) {
@@ -136,7 +149,8 @@ function normalizarTexto(valor) {
 
 // ==========================================================
 // FORMATAÇÃO
-// ==========================================================
+// 
+==========================================================
 
 function formatarNumero(
   valor,
@@ -153,7 +167,8 @@ function formatarNumero(
   const numero =
     Number(valor);
 
-  if (
+  if 
+(
     !Number.isFinite(numero)
   ) {
     return String(valor);
@@ -167,7 +182,8 @@ function formatarNumero(
 // ==========================================================
 
 function obterValorEquipamento(
-  equipamento,
+  
+equipamento,
   ...campos
 ) {
   if (!equipamento) {
@@ -185,7 +201,8 @@ function obterValorEquipamento(
   ) {
     if (!fonte) {
       continue;
-    }
+    
+}
 
     for (
       const campo of campos
@@ -203,7 +220,8 @@ function obterValorEquipamento(
     }
   }
 
-  return null;
+  return 
+null;
 }
 
 // ==========================================================
@@ -217,7 +235,8 @@ function obterEquipamentosPQT(
     return [];
   }
 
-  const propriedades =
+  const propriedades 
+=
     equipamento.properties ||
     equipamento.propriedades ||
     equipamento;
@@ -235,7 +254,8 @@ function obterEquipamentosPQT(
       equipamento.eqse
     )
   ) {
-    return equipamento.eqse;
+    return 
+equipamento.eqse;
   }
 
   if (
@@ -251,7 +271,8 @@ function obterEquipamentosPQT(
       equipamento.equipamentos
     )
   ) {
-    return equipamento.equipamentos;
+    return 
+equipamento.equipamentos;
   }
 
   return [];
@@ -265,7 +286,8 @@ function obterItensColecao(
   colecao
 ) {
   if (!colecao) {
-    return [];
+    return 
+[];
   }
 
   if (Array.isArray(colecao)) {
@@ -296,7 +318,8 @@ function obterItensColecao(
 // 34 -> CHAVE_SECCIONADORA
 // 38 -> TRANSFORMADOR
 //
-// EQSE/texto não pode sobrescrever TIP_UNID.
+// EQSE/texto não pode sobrescrever 
+TIP_UNID.
 // ==========================================================
 
 function obterTipoEquipamento(
@@ -312,7 +335,8 @@ function obterTipoEquipamento(
     equipamento;
 
   const tipoUnidade =
-    normalizarTexto(
+    
+normalizarTexto(
       equipamento?.tipoUnidade ??
       propriedades?.tipoUnidade ??
       propriedades?.TIP_UNID
@@ -330,7 +354,8 @@ function obterTipoEquipamento(
     case "32":
       return "RELIGADOR";
 
-    case "34":
+    case 
+"34":
       return "CHAVE_SECCIONADORA";
 
     case "38":
@@ -347,7 +372,8 @@ function obterTipoEquipamento(
 
   const tiposConhecidos = [
     "RELIGADOR",
-    "CHAVE_FUSIVEL",
+    
+"CHAVE_FUSIVEL",
     "CHAVE_LAMINA",
     "CHAVE_SECCIONADORA",
     "TRANSFORMADOR",
@@ -365,7 +391,8 @@ function obterTipoEquipamento(
 
   const tipoPrincipal =
     normalizarTexto(
-      equipamento?.equipamentoPrincipal ??
+      
+equipamento?.equipamentoPrincipal ??
       propriedades?.equipamentoPrincipal
     );
 
@@ -380,7 +407,8 @@ function obterTipoEquipamento(
   const descricao =
     normalizarTexto(
       equipamento?.descricao ??
-      propriedades?.DESCR ??
+      propriedades?.DESCR 
+??
       propriedades?.DESCRICAO ??
       propriedades?.TIP_INST
     );
@@ -398,7 +426,8 @@ function obterTipoEquipamento(
 
   if (
     descricao.includes(
-      "FUSIVEL"
+      
+"FUSIVEL"
     ) ||
     descricao.includes(
       "FUSÍVEL"
@@ -416,7 +445,8 @@ function obterTipoEquipamento(
     ) ||
     descricao.includes(
       "CHAVE LÂMINA"
-    )
+    
+)
   ) {
     return "CHAVE_LAMINA";
   }
@@ -434,7 +464,8 @@ function obterTipoEquipamento(
       "TRANSFORMADOR"
     ) ||
     descricao.includes(
-      "TRAFO"
+      
+"TRAFO"
     )
   ) {
     return "TRANSFORMADOR";
@@ -452,7 +483,8 @@ function obterTipoEquipamento(
     descricao.includes(
       "CAPACITOR"
     )
-  ) {
+  ) 
+{
     return "CAPACITOR";
   }
 
@@ -466,7 +498,8 @@ function obterTipoEquipamento(
 function obterNivelVisualPorZoom(
   zoom
 ) {
-  const nivel =
+  const nivel 
+=
     Number(zoom);
 
   if (
@@ -484,7 +517,8 @@ function obterNivelVisualPorZoom(
 
   if (
     nivel <
-    ZOOM_CHAVES_FUSIVEIS
+    
+ZOOM_CHAVES_FUSIVEIS
   ) {
     return "OPERACIONAL";
   }
@@ -501,7 +535,8 @@ function obterNivelVisualPorZoom(
 
 function obterVisibilidadePorZoom(
   zoom
-) {
+) 
+{
   const nivel =
     Number(zoom);
 
@@ -519,7 +554,8 @@ function obterVisibilidadePorZoom(
 
   return {
     mostrarRede:
-      nivel >=
+      nivel 
+>=
       ZOOM_MINIMO_REDE,
 
     mostrarReligadores:
@@ -537,7 +573,8 @@ function obterVisibilidadePorZoom(
     mostrarDetalhamento:
       nivel >=
       ZOOM_DETALHADO,
-  };
+  
+};
 }
 
 function equipamentoPermitidoPorZoom(
@@ -554,7 +591,8 @@ function equipamentoPermitidoPorZoom(
 
   if (
     !visibilidade.mostrarRede
-  ) {
+  ) 
+{
     return false;
   }
 
@@ -601,7 +639,8 @@ function obterEstiloEquipamento(
   ) {
     case "RELIGADOR":
       return {
-        cor: "#dc2626",
+        cor: 
+"#dc2626",
         fundo: "#fee2e2",
         titulo: "Religador",
       };
@@ -619,7 +658,8 @@ function obterEstiloEquipamento(
         cor: "#eab308",
         fundo: "#fef9c3",
         titulo:
-          "Chave fusível",
+          "Chave 
+fusível",
       };
 
     case "CHAVE_LAMINA":
@@ -655,7 +695,8 @@ function obterEstiloEquipamento(
       };
 
     case "SUBESTACAO":
-      return {
+      return 
+{
         cor: "#0891b2",
         fundo: "#cffafe",
         titulo:
@@ -672,7 +713,8 @@ function obterEstiloEquipamento(
   }
 }
 
-// ==========================================================
+// 
+==========================================================
 // ESTADO OPERACIONAL
 // ==========================================================
 
@@ -686,7 +728,8 @@ const ESTADOS_OPERACIONAIS = [
 function obterEstiloEstadoOperacional(
   estado
 ) {
-  switch (
+  switch 
+(
     normalizarTexto(estado)
   ) {
     case "FECHADO":
@@ -722,7 +765,8 @@ function obterEstiloEstadoOperacional(
         simbolo: "↔",
       };
 
-    default:
+    
+default:
       return {
         cor: "#64748b",
         fundo: "#0f172a",
@@ -754,7 +798,8 @@ function criarIconeEquipamento(
   const equipamentos =
     obterEquipamentosPQT(
       equipamento
-    );
+    
+);
 
   const quantidade =
     Math.max(
@@ -772,7 +817,8 @@ function criarIconeEquipamento(
       title="${estilo.titulo}"
       style="
         position:relative;
-        width:42px;
+        
+width:42px;
         height:42px;
         display:flex;
         align-items:center;
@@ -789,7 +835,8 @@ function criarIconeEquipamento(
           border:3px solid white;
           box-shadow:0 2px 7px rgba(0,0,0,0.45);
           display:flex;
-          align-items:center;
+          
+align-items:center;
           justify-content:center;
         "
       >
@@ -806,7 +853,8 @@ function criarIconeEquipamento(
       <div
         title="Estado operacional: ${estado.rotulo}"
         style="
-          position:absolute;
+          
+position:absolute;
           left:0;
           bottom:-2px;
           min-width:18px;
@@ -824,7 +872,8 @@ function criarIconeEquipamento(
           justify-content:center;
         "
       >
-        ${estado.simbolo}
+        
+${estado.simbolo}
       </div>
 
       ${
@@ -841,7 +890,8 @@ function criarIconeEquipamento(
                 padding:0 4px;
                 border-radius:10px;
                 background:#111827;
-                border:2px solid white;
+                border:2px solid 
+white;
                 color:white;
                 font-family:Arial,sans-serif;
                 font-size:9px;
@@ -876,7 +926,8 @@ function criarIconeEquipamento(
     ],
 
     popupAnchor: [
-      0,
+      
+0,
       -21,
     ],
   });
@@ -890,7 +941,8 @@ async function carregarGeoJSON(
   caminho,
   nome
 ) {
-  const response =
+  const response 
+=
     await fetch(
       caminho,
       {
@@ -924,7 +976,8 @@ async function carregarGeoJSON(
   return geojson;
 }
 
-// ==========================================================
+// 
+==========================================================
 // CARREGAR CMG
 // ==========================================================
 
@@ -938,7 +991,8 @@ async function carregarColecaoCMG(
 
   for (
     const alimentador of
-    ALIMENTADORES_CMG
+    
+ALIMENTADORES_CMG
   ) {
     const caminhos =
       caminhosBDGDCMG(
@@ -955,7 +1009,8 @@ async function carregarColecaoCMG(
         await carregarGeoJSON(
           caminho,
           `${alimentador} - ${nomeArquivo}`
-        );
+        
+);
 
       geojson.features.forEach(
         (
@@ -972,7 +1027,8 @@ async function carregarColecaoCMG(
               ...propriedades,
 
               alimentador:
-                propriedades.alimentador ||
+                propriedades.alimentador 
+||
                 propriedades.CT_COD_OP ||
                 propriedades.CT_COD_OPER ||
                 alimentador,
@@ -987,7 +1043,8 @@ async function carregarColecaoCMG(
       );
 
       carregados.push({
-        alimentador,
+        
+alimentador,
 
         quantidade:
           geojson.features.length,
@@ -1003,7 +1060,8 @@ async function carregarColecaoCMG(
     ) {
       console.error(
         `❌ ${alimentador} ${nomeArquivo}:`,
-        error
+        
+error
       );
 
       erros.push({
@@ -1021,7 +1079,8 @@ async function carregarColecaoCMG(
     }
   }
 
-  return {
+  return 
+{
     type:
       "FeatureCollection",
 
@@ -1035,8 +1094,196 @@ async function carregarColecaoCMG(
 }
 
 // ==========================================================
-// COMPONENTE
+// CADASTROS TÉCNICOS: SEGCON / TCABOBIT
+// 
+==========================================================
+// SEGCON.COD_ID é referenciado por SSDMT.TIP_CND.
+// CNOM e CMAX pertencem ao cadastro SEGCON.
+// BIT_FAS_1/_2/_3 são referências; se TCABOBIT não estiver
+// disponível, R_REGUL é usado como designação de condutor/bitola
+// quando presente (ex.: CUM16MM2, ALI25MM2, AL2_0AWG).
+// A seção em mm² só é extraída quando a própria designação contém
+// explicitamente MM2/MM². Não se inventam 
+valores.
+// Os cadastros são opcionais e aceitam GeoJSON ou JSON tabular.
 // ==========================================================
+
+function obterCaminhosCadastroGlobal(tabela) {
+  const extensoes = ["geojson", "json"];
+  const caminhos = [];
+
+  // Primeiro, os caminhos globais recomendados.
+  for (const pasta of [
+    
+`${PASTA_BDGD_CMG}/cadastros`,
+    PASTA_BDGD_CMG,
+  ]) {
+    for (const extensao of extensoes) {
+      caminhos.push(`${pasta}/${tabela}.${extensao}`);
+    }
+  }
+
+  // Também aceita uma exportação separada por alimentador.
+  // Os registros repetidos serão deduplicados por COD_ID. Limitamos
+  // a busca a dois nomes previsíveis por pasta para evitar dezenas de 
+404.
+  for (const alimentador of ALIMENTADORES_CMG) {
+    const pasta = `${PASTA_BDGD_CMG}/${alimentador}`;
+    for (const extensao of extensoes) {
+      caminhos.push(`${pasta}/${tabela}.${extensao}`);
+    }
+  }
+
+  return [...new Set(caminhos)];
+}
+
+function 
+normalizarCadastroParaFeatureCollection(dados, tabela, caminho) {
+  if (
+    dados &&
+    dados.type === "FeatureCollection" &&
+    Array.isArray(dados.features)
+  ) {
+    return dados;
+  }
+
+  if (dados && dados.type === "Feature" && dados.properties) {
+    return {
+      type: "FeatureCollection",
+      features: [dados],
+    };
+  }
+
+  // Algumas exportações tabulares usam JSON simples em vez de GeoJSON.
+  let registros = Array.isArray(dados) ? dados : null;
+
+  if (!registros && dados && typeof dados === "object") {
+    for (const chave of ["features", "records", "registros", "data", "rows", "results"]) {
+      if (Array.isArray(dados[chave])) {
+        registros = dados[chave];
+        break;
+      }
+    }
+  
+}
+
+  if (!registros && dados && typeof dados === "object") {
+    const valores = Object.values(dados);
+    const parecemRegistros = valores.length > 0 && valores.every(
+      (item) => item && typeof item === "object" && !Array.isArray(item)
+    );
+    if (parecemRegistros) registros = valores;
+  }
+
+  if (!registros) {
+    console.warn(`⚠️ Cadastro 
+${tabela} em formato não reconhecido: ${caminho}`);
+    return null;
+  }
+
+  const features = registros.map((registro) => {
+    if (registro?.type === "Feature" && registro.properties) return registro;
+    const propriedades = registro?.properties || registro?.propriedades || registro || {};
+    return {
+      type: "Feature",
+      geometry: registro?.geometry ?? null,
+      properties: 
+propriedades,
+    };
+  });
+
+  return {
+    type: "FeatureCollection",
+    features,
+  };
+}
+
+async function tentarCarregarCadastroGeoJSON(caminho, tabela) {
+  try {
+    const response = await fetch(caminho, { cache: "no-store" });
+    if (!response.ok) return null;
+
+    const dados = await response.json();
+    const colecao = normalizarCadastroParaFeatureCollection(dados, tabela, caminho);
+
+    if (!colecao || !Array.isArray(colecao.features)) return null;
+    return colecao;
+  } catch {
+    // Arquivo opcional ausente/inacessível: não interromper o mapa.
+    return null;
+  }
+}
+
+function obterCodigoCadastro(feature) {
+  const p = feature?.properties || feature?.propriedades || feature || {};
+  const codigo = p.COD_ID ?? p.cod_id ?? p.codId ?? p.id ?? p.ID;
+  return codigo === null || codigo === undefined ? null : String(codigo).trim() || null;
+}
+
+async function carregarCadastroCondutores(tabela) {
+  const encontrados = [];
+  const caminhosEncontrados = [];
+  const caminhos = 
+obterCaminhosCadastroGlobal(tabela);
+
+  // Busca os arquivos comuns e, caso não existam, tenta os arquivos
+  // organizados por alimentador. Não gera logs de erro para cada 404.
+  for (const caminho of caminhos) {
+    const colecao = await tentarCarregarCadastroGeoJSON(caminho, tabela);
+    if (!colecao?.features?.length) continue;
+
+    caminhosEncontrados.push(caminho);
+    
+encontrados.push(...colecao.features);
+
+    // Um cadastro global é suficiente; se os registros vieram de uma
+    // pasta específica do alimentador, continua para reunir os demais.
+    if (
+      caminho.startsWith(`${PASTA_BDGD_CMG}/cadastros/`) ||
+      caminho.startsWith(`${PASTA_BDGD_CMG}/${tabela}.`)
+    ) {
+      break;
+    }
+  
+}
+
+  const porCodigo = new Map();
+  const semCodigo = [];
+  for (const feature of encontrados) {
+    const codigo = obterCodigoCadastro(feature);
+    if (codigo) porCodigo.set(codigo, feature);
+    else semCodigo.push(feature);
+  }
+
+  const features = [...porCodigo.values(), ...semCodigo];
+  const origemCadastro = caminhosEncontrados.length
+    ? caminhosEncontrados.join("; ")
+    : 
+null;
+
+  if (features.length) {
+    console.info(`✅ Cadastro ${tabela} carregado: ${features.length} registros`, origemCadastro);
+  } else {
+    console.warn(
+      `⚠️ Cadastro ${tabela} NÃO carregado. Foram testados ${caminhos.length} caminhos. ` +
+      `Bitola/corrente não serão estimadas. Verifique os arquivos publicados sob ` +
+      `public/data/bdgd/CMG_COMPLETO/cadastros/ ou nas pastas dos 
+alimentadores.`
+    );
+  }
+
+  return {
+    type: "FeatureCollection",
+    features,
+    origemCadastro,
+    caminhosTestados: caminhos,
+  };
+}
+
+// ==========================================================
+// COMPONENTE
+// 
+==========================================================
 
 export default function CamadaBDGD({
   mostrarRedeMT = true,
@@ -1070,7 +1317,8 @@ export default function CamadaBDGD({
   mostrarRedeConectada = false,
 
   alimentadoresSelecionados = [
-    "CMG01C1",
+    
+"CMG01C1",
     "CMG01C2",
     "CMG01C3",
     "CMG01C4",
@@ -1084,7 +1332,8 @@ export default function CamadaBDGD({
     useMap();
 
   // ========================================================
-  // ZOOM
+  // 
+ZOOM
   // ========================================================
 
   const [
@@ -1100,7 +1349,8 @@ export default function CamadaBDGD({
       return undefined;
     }
 
-    const atualizarZoom =
+    const atualizarZoom 
+=
       () => {
         setZoomAtual(
           map.getZoom()
@@ -1118,7 +1368,8 @@ export default function CamadaBDGD({
       map.off(
         "zoomend",
         atualizarZoom
-      );
+      
+);
     };
   }, [map]);
 
@@ -1136,7 +1387,8 @@ export default function CamadaBDGD({
       () =>
         obterNivelVisualPorZoom(
           zoomAtual
-        ),
+        
+),
       [zoomAtual]
     );
 
@@ -1150,7 +1402,8 @@ export default function CamadaBDGD({
   ] = useState(null);
 
   const [
-    ponnot,
+    
+ponnot,
     setPonnot,
   ] = useState(null);
 
@@ -1159,7 +1412,12 @@ export default function CamadaBDGD({
     setEquipamentosGeoJSON,
   ] = useState(null);
 
-  // ========================================================
+  // Cadastros técnicos usados para relacionar o trecho ao condutor.
+  const [segconCadastro, setSegconCadastro] = useState(null);
+  const [tcabobitCadastro, setTcabobitCadastro] = useState(null);
+
+  // 
+========================================================
   // TOPOLOGIA
   // ========================================================
 
@@ -1170,7 +1428,8 @@ export default function CamadaBDGD({
 
   // ========================================================
   // ELEMENTO
-  // ========================================================
+  // 
+========================================================
 
   const [
     elementoSelecionado,
@@ -1184,7 +1443,8 @@ export default function CamadaBDGD({
 
   // ========================================================
   // OPERAÇÃO
-  // ========================================================
+  // 
+========================================================
 
   const [
     estadoSelecionado,
@@ -1200,6 +1460,113 @@ export default function CamadaBDGD({
     versaoEstadoOperacional,
     setVersaoEstadoOperacional,
   ] = useState(0);
+
+  // Recalcula o estado elétrico por 
+trecho após cada alteração operacional.
+  // O cálculo não altera a BDGD: produz apenas uma visão operacional em memória.
+  const estadosEnergizacaoTrechos = useMemo(
+    () => calcularEstadosEnergizacaoTrechos(topologia),
+    [topologia, versaoEstadoOperacional]
+  );
+
+  // Eventos Leaflet (mouseover/mouseout) são criados uma única vez por feição.
+  // A ref garante que eles consultem o cálculo mais recente, sem usar 
+um estado antigo.
+  const estadosEnergizacaoTrechosRef = useRef(estadosEnergizacaoTrechos);
+  estadosEnergizacaoTrechosRef.current = estadosEnergizacaoTrechos;
+
+  useEffect(() => {
+    const diagnostico = estadosEnergizacaoTrechos?.diagnostico;
+    if (!diagnostico) return;
+
+    console.info("⚡ [Power Grid Monitor] Estado elétrico dos trechos:", diagnostico);
+    console.info("⚡ [Power Grid 
+Monitor] Resumo do cálculo elétrico:", {
+      quantidadeFontes: diagnostico.quantidadeFontes ?? 0,
+      fontes: diagnostico.fontes ?? [],
+      fontesAmbiguas: diagnostico.fontesAmbiguas ?? [],
+      energizados: diagnostico.energizados ?? 0,
+      desenergizados: diagnostico.desenergizados ?? 0,
+      indeterminados: diagnostico.indeterminados ?? 0,
+      equipamentosAbertos: diagnostico.equipamentosSeccionadoresAbertos ?? 0,
+      nosFisicamenteAlimentados: diagnostico.nosFisicamenteAlimentados ?? 
+0,
+      criterio: diagnostico.criterio ?? null,
+    });
+    const diagnosticoC66131 = {
+      estado: (diagnostico.estadosDispositivos || []).find((item) =>
+        (item.ids || []).some((id) => String(id).trim().toUpperCase() === "C66131")
+      ) || null,
+      abertura: (diagnostico.idsEquipamentosAbertos || []).find((item) =>
+        (item.ids || [item.id]).some((id) => String(id).trim().toUpperCase() === "C66131")
+      ) || 
+null,
+      associacaoPAC: (diagnostico.dispositivosPacsMesmoPontoMasSeparados || []).find((item) =>
+        (item.ids || []).some((id) => String(id).trim().toUpperCase() === "C66131")
+      ) || null,
+      trechosNosPACs: (diagnostico.trechosAssociadosPorPACEmDispositivosAbertos || []).find((item) =>
+        (item.ids || []).some((id) => String(id).trim().toUpperCase() === "C66131")
+      ) || null,
+    };
+    if (diagnosticoC66131.estado || 
+diagnosticoC66131.abertura) {
+      console.info("🔎 [Power Grid Monitor] Diagnóstico específico C66131:", diagnosticoC66131);
+    }
+
+    if (diagnostico.calculado && Number(diagnostico.quantidadeFontes || 0) === 0) {
+      console.warn(
+        "⚠️ [Power Grid Monitor] Nenhuma fonte real foi reconhecida. Os trechos permanecem com a cor original porque não é seguro declarar desenergização sem uma fonte comprovada. Verifique PONNOT.TIP_PN=PSA/PIS ou configure 
+VITE_CMG_PONTOS_ORIGEM com COD_ID reais conferidos."
+      );
+    }
+
+    if (
+      diagnostico.calculado &&
+      Number(diagnostico.equipamentosSeccionadoresAbertos || 0) > 0 &&
+      Number(diagnostico.desenergizados || 0) === 0
+    ) {
+      console.warn(
+        "⚠️ [Power Grid Monitor] Há equipamento(s) aberto(s), mas nenhum trecho foi classificado como desenergizado. Confira as 
+fontes vinculadas, fontesAmbiguas, idsEquipamentosAbertos, trechosAssociadosPorPACEmDispositivosAbertos e os motivos de cada trecho."
+      );
+    }
+
+    const dispositivosPontoSemOrientacao = diagnostico.dispositivosPontoSemOrientacao || [];
+    if (diagnostico.calculado && dispositivosPontoSemOrientacao.length > 0) {
+      console.warn(
+        "⚠️ [Power Grid Monitor] Há equipamento(s) sem dois PACs brutos distintos. Para esses 
+dispositivos não é possível representar a abertura com segurança. Confira PAC_1/PAC_2 originais e a associação real aos trechos:",
+        dispositivosPontoSemOrientacao
+      );
+    }
+  }, [estadosEnergizacaoTrechos]);
+
+  // Também acompanha manobras disparadas por outros componentes da aplicação.
+  useEffect(() => {
+    const atualizarEnergizacao = (evento) => {
+      // A manobra executada pela própria camada dispara um 
+segundo evento
+      // enriquecido (com `resultado`) apenas para os demais consumidores;
+      // a atualização do estado já foi notificada pelo modelo central.
+      if (evento?.detail?.resultado) return;
+      setVersaoEstadoOperacional((versao) => versao + 1);
+    };
+
+    if (typeof window === "undefined") return undefined;
+
+    window.addEventListener(
+      
+"power-grid-estado-equipamento-alterado",
+      atualizarEnergizacao
+    );
+
+    return () => {
+      window.removeEventListener(
+        "power-grid-estado-equipamento-alterado",
+        atualizarEnergizacao
+      );
+    };
+  }, []);
 
   const [
     manobraPendente,
@@ -1251,7 +1618,8 @@ export default function CamadaBDGD({
 
   const [
     erroSsdmt,
-    setErroSsdmt,
+    
+setErroSsdmt,
   ] = useState(null);
 
   const [
@@ -1266,7 +1634,8 @@ export default function CamadaBDGD({
 
   // ========================================================
   // CARREGAR SSDMT
-  // ========================================================
+  // 
+========================================================
 
   useEffect(() => {
     let ativo = true;
@@ -1282,7 +1651,8 @@ export default function CamadaBDGD({
         );
 
         const resultado =
-          await carregarColecaoCMG(
+          await 
+carregarColecaoCMG(
             "trechos",
             "SSDMT"
           );
@@ -1300,7 +1670,8 @@ export default function CamadaBDGD({
               resultado.erros
                 .map(
                   (
-                    item
+                    
+item
                   ) =>
                     `${item.alimentador}: ${item.mensagem}`
                 )
@@ -1317,7 +1688,8 @@ export default function CamadaBDGD({
         );
 
         if (ativo) {
-          setErroSsdmt(
+          
+setErroSsdmt(
             error?.message ||
               "Erro ao carregar SSDMT da CMG."
           );
@@ -1365,7 +1737,8 @@ export default function CamadaBDGD({
             "PONNOT"
           );
 
-        if (ativo) {
+        if (ativo) 
+{
           setPonnot(
             resultado
           );
@@ -1382,7 +1755,8 @@ export default function CamadaBDGD({
                   ) =>
                     `${item.alimentador}: ${item.mensagem}`
                 )
-                .join("\n")
+                
+.join("\n")
             );
           }
         }
@@ -1417,7 +1791,8 @@ export default function CamadaBDGD({
 
     return () => {
       ativo = false;
-    };
+    
+};
   }, []);
 
   // ========================================================
@@ -1430,7 +1805,8 @@ export default function CamadaBDGD({
     async function carregarEquipamentos() {
       try {
         setCarregandoEquipamentos(
-          true
+          
+true
         );
 
         setErroEquipamentos(
@@ -1448,7 +1824,8 @@ export default function CamadaBDGD({
             resultado
           );
 
-          if (
+          if 
+(
             resultado.erros.length >
             0
           ) {
@@ -1465,7 +1842,8 @@ export default function CamadaBDGD({
           }
         }
       } catch (
-        error
+        
+error
       ) {
         console.error(
           "❌ Erro equipamentos CMG:",
@@ -1482,7 +1860,8 @@ export default function CamadaBDGD({
             null
           );
         }
-      } finally {
+      } finally 
+{
         if (ativo) {
           setCarregandoEquipamentos(
             false
@@ -1498,13 +1877,58 @@ export default function CamadaBDGD({
     };
   }, []);
 
+  // 
+========================================================
+  // CARREGAR CADASTROS DE CONDUTORES
+  // ========================================================
+
+  useEffect(() => {
+    let ativo = true;
+
+    async function carregarCadastrosCondutores() {
+      const [segcon, tcabobit] = await Promise.all([
+        carregarCadastroCondutores("SEGCON"),
+        
+carregarCadastroCondutores("TCABOBIT"),
+      ]);
+
+      if (!ativo) return;
+
+      setSegconCadastro(segcon);
+      setTcabobitCadastro(tcabobit);
+
+      console.log("🔌 Cadastros técnicos disponíveis:", {
+        SEGCON: segcon?.features?.length || 0,
+        TCABOBIT: tcabobit?.features?.length || 0,
+        origemSEGCON: segcon?.origemCadastro || null,
+        origemTCABOBIT: tcabobit?.origemCadastro || 
+null,
+      });
+    }
+
+    carregarCadastrosCondutores().catch((error) => {
+      console.error("❌ Erro ao carregar cadastros técnicos de condutores:", error);
+      if (ativo) {
+        // Mantém a topologia funcional mesmo se o cadastro opcional falhar.
+        setSegconCadastro({ type: "FeatureCollection", features: [] });
+        setTcabobitCadastro({ type: "FeatureCollection", features: [] });
+      
+}
+    });
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
   // ========================================================
   // EQSE DERIVADO
   // ========================================================
 
   const eqseDerivado =
     useMemo(() => {
-      if (
+      if 
+(
         !equipamentosGeoJSON
       ) {
         return null;
@@ -1538,7 +1962,8 @@ export default function CamadaBDGD({
 
               features.push({
                 type:
-                  "Feature",
+                  
+"Feature",
 
                 geometry:
                   null,
@@ -1556,7 +1981,8 @@ export default function CamadaBDGD({
           "FeatureCollection",
 
         features,
-      };
+      
+};
     }, [
       equipamentosGeoJSON,
     ]);
@@ -1570,7 +1996,9 @@ export default function CamadaBDGD({
       !ssdmt ||
       !ponnot ||
       !equipamentosGeoJSON ||
-      !eqseDerivado
+      !eqseDerivado 
+||
+      !segconCadastro
     ) {
       return;
     }
@@ -1581,24 +2009,62 @@ export default function CamadaBDGD({
           ssdmt,
           ponnot,
           equipamentosGeoJSON,
-          eqseDerivado
+          eqseDerivado,
+          null,
+          null,
+          null,
+          null,
+          segconCadastro,
+          // TCABOBIT não existe na 
+exportação atual. É opcional;
+          // a designação e CMAX/CNOM vêm de SEGCON.
+          tcabobitCadastro ?? { type: "FeatureCollection", features: [] }
         );
 
       if (!novaTopologia) {
-        setTopologia(
-          null
-        );
-
+        setTopologia(null);
         return;
       }
 
-      setTopologia(
-        novaTopologia
-      );
+      // Orientar antes do registro: a validação de manobra precisa da cadeia
+      // a montante do ponto receptor. Nunca inventamos uma origem por ID arbitrário.
+      const origensConfiguradas = 
+String(
+        import.meta.env.VITE_CMG_PONTOS_ORIGEM ??
+        import.meta.env.VITE_CMG_PONTO_ORIGEM ??
+        ""
+      ).split(/[;,]/).map((valor) => normalizarId(valor)).filter(Boolean);
 
-      registrarTopologiaBDGD(
-        novaTopologia
-      );
+      const orientacaoEletrica = origensConfiguradas.length > 0
+        ? orientarTopologia(novaTopologia, origensConfiguradas)
+        : 
+orientarTopologiaAutomaticamente(novaTopologia);
+
+      const diagnosticoOrientacao = {
+        origensConfiguradas,
+        origensDetectadas: novaTopologia?.origensAutomaticasDetectadas?.map((item) => item.pontoId) ?? [],
+        origensConfirmadas: orientacaoEletrica?.origensConfirmadas?.map((item) => item.pontoId) ?? [],
+        origensInvalidas: orientacaoEletrica?.origensInvalidas ?? [],
+        pontosOrientados: orientacaoEletrica?.quantidadePontos ?? 
+0,
+        pontosTotais: Object.keys(novaTopologia?.pontos || {}).length,
+        trechosOrientados: orientacaoEletrica?.quantidadeTrechos ?? 0,
+        trechosTotais: Object.keys(novaTopologia?.trechos || {}).length,
+        componentesBloqueados: orientacaoEletrica?.componentesBloqueados?.length ?? 0,
+        orientacaoCompleta: orientacaoEletrica?.orientacaoCompleta === true,
+      };
+
+      console.log("🧭 [Power Grid 
+Monitor] Orientação para Manobra Inteligente:", diagnosticoOrientacao);
+      if (!orientacaoEletrica?.origemConfirmada) {
+        console.warn("⚠️ Manobra Inteligente condicionada: nenhuma origem comprovada foi configurada/encontrada. Confira os PONNOT reais da origem de cada componente antes de liberar recomendações.");
+      } else if (!orientacaoEletrica?.orientacaoCompleta) {
+        console.warn("⚠️ Orientação parcial: somente componentes radiais com uma única origem 
+comprovada serão avaliados; componentes sem origem, com múltiplas fontes ou ciclos permanecem bloqueados.");
+      }
+
+      setTopologia(novaTopologia);
+      registrarTopologiaBDGD(novaTopologia);
 
       setRedeJusante(
         null
@@ -1625,7 +2091,8 @@ export default function CamadaBDGD({
     ) {
       console.error(
         "❌ Erro ao criar topologia:",
-        error
+        
+error
       );
 
       setTopologia(
@@ -1653,11 +2120,14 @@ export default function CamadaBDGD({
     ponnot,
     equipamentosGeoJSON,
     eqseDerivado,
+    segconCadastro,
+    tcabobitCadastro,
   ]);
 
   // ========================================================
   // FILTRO ALIMENTADORES
-  // ========================================================
+  // 
+========================================================
 
   const alimentadoresFiltro =
     useMemo(() => {
@@ -1674,7 +2144,8 @@ export default function CamadaBDGD({
               item
             ) =>
               normalizarTexto(
-                item
+                
+item
               )
           )
           .filter(
@@ -1690,7 +2161,8 @@ export default function CamadaBDGD({
     ALIMENTADORES_CMG.length;
 
   function obterAlimentadorFeature(
-    feature
+    
+feature
   ) {
     const p =
       feature?.properties ||
@@ -1707,7 +2179,8 @@ export default function CamadaBDGD({
 
   function itemPertenceAoAlimentador(
     item
-  ) {
+  ) 
+{
     if (!item) {
       return false;
     }
@@ -1742,7 +2215,8 @@ export default function CamadaBDGD({
     const p =
       item?.properties ||
       item?.propriedades ||
-      item;
+      
+item;
 
     const valorCircuito =
       normalizarTexto(
@@ -1759,7 +2233,8 @@ export default function CamadaBDGD({
       "152":
         "CMG01C2",
 
-      "153":
+      
+"153":
         "CMG01C3",
 
       "154":
@@ -1777,7 +2252,8 @@ export default function CamadaBDGD({
         circuitoParaAlimentador[
           valorCircuito
         ] &&
-        alimentadoresFiltro.has(
+        
+alimentadoresFiltro.has(
           circuitoParaAlimentador[
             valorCircuito
           ]
@@ -1795,7 +2271,8 @@ export default function CamadaBDGD({
         ...ssdmt,
 
         features:
-          (
+          
+(
             ssdmt.features ||
             []
           ).filter(
@@ -1811,7 +2288,8 @@ export default function CamadaBDGD({
   const equipamentosGeoJSONFiltrados =
     useMemo(() => {
       if (
-        !equipamentosGeoJSON
+        
+!equipamentosGeoJSON
       ) {
         return null;
       }
@@ -1828,7 +2306,8 @@ export default function CamadaBDGD({
           ),
       };
     }, [
-      equipamentosGeoJSON,
+      
+equipamentosGeoJSON,
       alimentadoresFiltro,
       todosAlimentadoresSelecionados,
     ]);
@@ -1837,24 +2316,106 @@ export default function CamadaBDGD({
   // SINCRONIZAÇÃO COM MAPVIEW
   // ========================================================
 
-  useEffect(() => {
-    if (
-      typeof onEquipamentosDisponiveisChange !==
-      "function"
-    ) {
-      return;
-    }
+ useEffect(() => {
+  if (
+    typeof 
+onEquipamentosDisponiveisChange !== "function"
+  ) {
+    return;
+  }
 
-    onEquipamentosDisponiveisChange(
-      equipamentosGeoJSONFiltrados
-        ?.features || []
-    );
-  }, [
-    equipamentosGeoJSONFiltrados,
-    onEquipamentosDisponiveisChange,
-  ]);
+  const equipamentosDisponiveis =
+    (equipamentosGeoJSONFiltrados?.features || [])
+      .map((feature) => {
+        const equipamento =
+          obterEquipamentoCamada(feature);
 
-  // ========================================================
+        if (!equipamento) {
+          return null;
+        
+}
+
+        const identidade =
+          obterIdentidadeOperacional(
+            equipamento,
+            feature
+          );
+
+        const coordenadas =
+          obterCoordenadasEquipamentoCamada(
+            equipamento,
+            feature
+          );
+
+        if (!coordenadas) {
+          return null;
+        
+}
+
+        const [latitude, longitude] =
+          coordenadas;
+
+        return {
+          ...equipamento,
+
+          // identidade operacional
+          id:
+            identidade.idOperacional ||
+            identidade.idModelo ||
+            identidade.idFeature,
+
+          plaqueta:
+            identidade.plaqueta,
+
+          idOperacional:
+            
+identidade.idOperacional,
+
+          idPatrimonial:
+            identidade.idPatrimonial,
+
+          unsemtId:
+            identidade.unsemtId,
+
+          untrmtId:
+            identidade.untrmtId,
+
+          idFeature:
+            identidade.idFeature,
+
+          // posição definitiva utilizada pela camada
+          latitude,
+          longitude,
+
+          coordenadasMapa: {
+            latitude,
+            longitude,
+            origem:
+              equipamento?.coordenadas?.origem ||
+              "TOPOLOGIA_BDGD",
+          },
+
+          // mantém o feature original para ficha/PAC/etc.
+          featureOriginal:
+            feature,
+
+          feature,
+        };
+      
+})
+      .filter(Boolean);
+
+  onEquipamentosDisponiveisChange(
+    equipamentosDisponiveis
+  );
+}, [
+  equipamentosGeoJSONFiltrados,
+  topologia,
+  onEquipamentosDisponiveisChange,
+]);
+
+  // 
+========================================================
   // PONTOS PERMITIDOS
   // ========================================================
 
@@ -1869,7 +2430,8 @@ export default function CamadaBDGD({
           []
       ) {
         const p =
-          feature?.properties ||
+          feature?.properties 
+||
           {};
 
         [
@@ -1905,7 +2467,8 @@ export default function CamadaBDGD({
         if (
           !itemPertenceAoAlimentador(
             feature
-          )
+          
+)
         ) {
           continue;
         }
@@ -1957,7 +2520,8 @@ export default function CamadaBDGD({
                 return true;
               }
 
-              const id =
+              const id 
+=
                 normalizarId(
                   feature
                     ?.properties
@@ -1975,7 +2539,8 @@ export default function CamadaBDGD({
       };
     }, [
       ponnot,
-      alimentadoresFiltro,
+      
+alimentadoresFiltro,
       todosAlimentadoresSelecionados,
       idsPontosPermitidos,
     ]);
@@ -1986,7 +2551,8 @@ export default function CamadaBDGD({
 
   function obterIdEquipamentoFeature(
     feature
-  ) {
+  ) 
+{
     const p =
       feature?.properties ||
       {};
@@ -2004,7 +2570,8 @@ export default function CamadaBDGD({
         p.codId ??
         p.ID
     );
-  }
+  
+}
 
   // ========================================================
   // BUSCAR EQUIPAMENTO NA TOPOLOGIA
@@ -2016,7 +2583,8 @@ export default function CamadaBDGD({
     const idNormalizado =
       normalizarId(id);
 
-    if (
+    if 
+(
       !idNormalizado ||
       !topologia
     ) {
@@ -2032,7 +2600,8 @@ export default function CamadaBDGD({
         idNormalizado
       ];
 
-    if (
+    if 
+(
       equipamento
     ) {
       return equipamento;
@@ -2062,7 +2631,8 @@ export default function CamadaBDGD({
         idNormalizado
       ];
 
-    if (
+    if 
+(
       transformador
     ) {
       return transformador;
@@ -2078,7 +2648,8 @@ export default function CamadaBDGD({
       );
 
     const encontradoEquipamento =
-      equipamentos.find(
+      
+equipamentos.find(
         (item) =>
           normalizarId(
             item?.id
@@ -2096,7 +2667,8 @@ export default function CamadaBDGD({
             item?.idEQSE
           ) === idNormalizado ||
           normalizarId(
-            item?.unsemtId
+            
+item?.unsemtId
           ) === idNormalizado ||
           normalizarId(
             item?.codIdUNSEMT
@@ -2113,7 +2685,8 @@ export default function CamadaBDGD({
     }
 
     // ------------------------------------------------------
-    // 5. BUSCA NAS UNIDADES
+    // 5. BUSCA NAS 
+UNIDADES
     // ------------------------------------------------------
 
     const unidades =
@@ -2129,7 +2702,8 @@ export default function CamadaBDGD({
               item?.id
             ) === idNormalizado
           ) {
-            return true;
+            return 
+true;
           }
 
           if (
@@ -2165,7 +2739,8 @@ export default function CamadaBDGD({
               ) === idNormalizado ||
               normalizarId(
                 filho?.codId
-              ) === idNormalizado ||
+              ) === idNormalizado 
+||
               normalizarId(
                 filho?.eqseId
               ) === idNormalizado ||
@@ -2183,7 +2758,8 @@ export default function CamadaBDGD({
       unidadeEncontrada
     ) {
       return unidadeEncontrada;
-    }
+    
+}
 
     // ------------------------------------------------------
     // 6. TRANSFORMADORES
@@ -2198,7 +2774,8 @@ export default function CamadaBDGD({
       transformadores.find(
         (item) =>
           normalizarId(
-            item?.id
+            
+item?.id
           ) === idNormalizado ||
           normalizarId(
             item?.plaqueta
@@ -2216,7 +2793,8 @@ export default function CamadaBDGD({
 
     if (
       transformadorEncontrado
-    ) {
+    ) 
+{
       return transformadorEncontrado;
     }
 
@@ -2229,7 +2807,8 @@ export default function CamadaBDGD({
   //
   // CHAVES / RELIGADORES:
   //   plaqueta = UNSEMT.COD_ID
-  //
+  
+//
   // TRANSFORMADOR:
   //   plaqueta = UNTRMT.COD_ID
   //
@@ -2243,7 +2822,8 @@ export default function CamadaBDGD({
   ) {
     const p =
       feature?.properties ||
-      {};
+      
+{};
 
     const modelo =
       equipamento ||
@@ -2260,7 +2840,8 @@ export default function CamadaBDGD({
       );
 
     const unidade =
-      modelo?.unidadeSeccionadora ||
+      modelo?.unidadeSeccionadora 
+||
       modelo?.unidade ||
       null;
 
@@ -2276,7 +2857,8 @@ export default function CamadaBDGD({
           propriedades?.unsemtId ??
           propriedades?.codIdUNSEMT ??
           propriedades?.COD_ID_UNSEMT ??
-          p?.unsemtId ??
+          p?.unsemtId 
+??
           p?.codIdUNSEMT ??
           p?.COD_ID_UNSEMT ??
           unidade?.unsemtId ??
@@ -2292,7 +2874,8 @@ export default function CamadaBDGD({
           modelo?.COD_ID_UNTRMT ??
           propriedades?.untrmtId ??
           propriedades?.codIdUNTRMT ??
-          propriedades?.COD_ID_UNTRMT ??
+          propriedades?.COD_ID_UNTRMT 
+??
           p?.untrmtId ??
           p?.codIdUNTRMT ??
           p?.COD_ID_UNTRMT ??
@@ -2309,7 +2892,8 @@ export default function CamadaBDGD({
       normalizarId(
         p?.COD_ID ??
           p?.codId ??
-          p?.ID
+          
+p?.ID
       );
 
     const idPatrimonial =
@@ -2327,7 +2911,8 @@ export default function CamadaBDGD({
           p?.COD_ID_EQSE
       );
 
-    let plaqueta = null;
+    let plaqueta = 
+null;
 
     if (
       tipo ===
@@ -2345,7 +2930,8 @@ export default function CamadaBDGD({
           modelo?.codIdUNTRMT
         ) ||
         idModelo ||
-        idFeature;
+        
+idFeature;
     } else {
       plaqueta =
         unsemtId ||
@@ -2363,7 +2949,8 @@ export default function CamadaBDGD({
     }
 
     return {
-      plaqueta,
+      
+plaqueta,
       idOperacional:
         plaqueta,
 
@@ -2381,7 +2968,8 @@ export default function CamadaBDGD({
 
       idModelo:
         idModelo ||
-        null,
+        
+null,
 
       idFeature:
         idFeature ||
@@ -2393,7 +2981,8 @@ export default function CamadaBDGD({
   // NORMALIZAR EQUIPAMENTO DA CAMADA
   // ========================================================
 
-  function obterEquipamentoCamada(
+  function 
+obterEquipamentoCamada(
     feature
   ) {
     if (!feature) {
@@ -2411,7 +3000,8 @@ export default function CamadaBDGD({
       );
 
     const propriedadesFeature =
-      feature?.properties ||
+      feature?.properties 
+||
       {};
 
     if (
@@ -2429,7 +3019,8 @@ export default function CamadaBDGD({
         properties:
           propriedadesFeature,
 
-        tipoEquipamento:
+        
+tipoEquipamento:
           obterTipoEquipamento(
             feature
           ),
@@ -2447,7 +3038,8 @@ export default function CamadaBDGD({
       return {
         ...equipamentoFallback,
 
-        plaqueta:
+        
+plaqueta:
           identidade.plaqueta,
 
         idOperacional:
@@ -2465,7 +3057,8 @@ export default function CamadaBDGD({
         idFeature:
           identidade.idFeature,
       };
-    }
+    
+}
 
     const equipamento = {
       ...equipamentoModelo,
@@ -2480,7 +3073,8 @@ export default function CamadaBDGD({
       properties: {
         ...propriedadesFeature,
 
-        ...(equipamentoModelo.properties ||
+        ...(equipamentoModelo.properties 
+||
           {}),
 
         ...(equipamentoModelo.propriedades ||
@@ -2494,7 +3088,8 @@ export default function CamadaBDGD({
       // PAC
       // ----------------------------------------------------
 
-      pac1Original:
+      
+pac1Original:
         equipamentoModelo.pac1Original ??
         equipamentoModelo.PAC_1 ??
         propriedadesFeature.PAC_1 ??
@@ -2508,7 +3103,8 @@ export default function CamadaBDGD({
 
       pac1:
         equipamentoModelo.pac1 ??
-        equipamentoModelo.PAC_1 ??
+        equipamentoModelo.PAC_1 
+??
         null,
 
       pac2:
@@ -2524,7 +3120,8 @@ export default function CamadaBDGD({
         equipamentoModelo.ponto1 ??
         null,
 
-      ponto2:
+      
+ponto2:
         equipamentoModelo.ponto2 ??
         null,
 
@@ -2537,7 +3134,8 @@ export default function CamadaBDGD({
       // ----------------------------------------------------
 
       latitude:
-        equipamentoModelo.latitude ??
+        equipamentoModelo.latitude 
+??
         null,
 
       longitude:
@@ -2550,7 +3148,8 @@ export default function CamadaBDGD({
 
       // ----------------------------------------------------
       // REDE
-      // ----------------------------------------------------
+      // 
+----------------------------------------------------
 
       alimentador:
         equipamentoModelo.alimentador ??
@@ -2560,7 +3159,8 @@ export default function CamadaBDGD({
         null,
 
       circuito:
-        equipamentoModelo.circuito ??
+        equipamentoModelo.circuito 
+??
         propriedadesFeature.CTMT ??
         null,
 
@@ -2573,7 +3173,8 @@ export default function CamadaBDGD({
         equipamentoModelo.tipoVisual ??
         obterTipoEquipamento(
           equipamentoModelo
-        ),
+        
+),
     };
 
     const identidade =
@@ -2589,7 +3190,8 @@ export default function CamadaBDGD({
       // IDENTIDADE OPERACIONAL
       // ----------------------------------------------------
 
-      plaqueta:
+      
+plaqueta:
         identidade.plaqueta,
 
       idOperacional:
@@ -2607,7 +3209,8 @@ export default function CamadaBDGD({
       idFeature:
         identidade.idFeature,
 
-      idModelo:
+      
+idModelo:
         identidade.idModelo,
 
       // ----------------------------------------------------
@@ -2622,7 +3225,8 @@ export default function CamadaBDGD({
     };
   }
 
-  // ========================================================
+  // 
+========================================================
   // COORDENADAS DO EQUIPAMENTO
   // ========================================================
 
@@ -2634,7 +3238,8 @@ export default function CamadaBDGD({
       !equipamento &&
       !feature
     ) {
-      return null;
+      return 
+null;
     }
 
     // ------------------------------------------------------
@@ -2649,7 +3254,8 @@ export default function CamadaBDGD({
       );
 
     const longitudeModelo =
-      Number(
+      
+Number(
         equipamento?.coordenadas
           ?.longitude ??
         equipamento?.longitude
@@ -2667,7 +3273,8 @@ export default function CamadaBDGD({
         latitudeModelo,
         longitudeModelo,
       ];
-    }
+    
+}
 
     // ------------------------------------------------------
     // 2. PONTO ASSOCIADO
@@ -2683,7 +3290,8 @@ export default function CamadaBDGD({
       const ponto =
         buscarPonto(
           topologia,
-          pontoAssociado
+          
+pontoAssociado
         );
 
       if (
@@ -2701,7 +3309,8 @@ export default function CamadaBDGD({
 
         if (
           Number.isFinite(
-            latitude
+            
+latitude
           ) &&
           Number.isFinite(
             longitude
@@ -2717,7 +3326,8 @@ export default function CamadaBDGD({
 
     // ------------------------------------------------------
     // 3. PONTO 1
-    // ------------------------------------------------------
+    // 
+------------------------------------------------------
 
     const latitudePonto1 =
       Number(
@@ -2735,7 +3345,8 @@ export default function CamadaBDGD({
       Number.isFinite(
         latitudePonto1
       ) &&
-      Number.isFinite(
+      
+Number.isFinite(
         longitudePonto1
       )
     ) {
@@ -2751,7 +3362,8 @@ export default function CamadaBDGD({
 
     const latitudePonto2 =
       Number(
-        equipamento?.ponto2
+        
+equipamento?.ponto2
           ?.latitude
       );
 
@@ -2769,7 +3381,8 @@ export default function CamadaBDGD({
         longitudePonto2
       )
     ) {
-      return [
+      return 
+[
         latitudePonto2,
         longitudePonto2,
       ];
@@ -2785,7 +3398,8 @@ export default function CamadaBDGD({
         ?.coordinates;
 
     if (
-      Array.isArray(
+      
+Array.isArray(
         coordinates
       ) &&
       coordinates.length >= 2
@@ -2803,7 +3417,8 @@ export default function CamadaBDGD({
       if (
         Number.isFinite(
           latitude
-        ) &&
+        ) 
+&&
         Number.isFinite(
           longitude
         )
@@ -2819,7 +3434,8 @@ export default function CamadaBDGD({
   }
 
   // ========================================================
-  // SELECIONAR EQUIPAMENTO
+  // SELECIONAR 
+EQUIPAMENTO
   // ========================================================
 
   function selecionarEquipamentoOperacional(
@@ -2850,7 +3466,8 @@ export default function CamadaBDGD({
     if (!id) {
       console.warn(
         "⚠️ Equipamento sem ID operacional:",
-        {
+        
+{
           feature,
           equipamento,
           identidade,
@@ -2868,7 +3485,8 @@ export default function CamadaBDGD({
     const estado =
       consultarEstadoEquipamento(
         id
-      );
+      
+);
 
     const ficha =
       obterFichaCompletaEquipamento(
@@ -2885,7 +3503,8 @@ export default function CamadaBDGD({
       id,
 
       plaqueta:
-        identidade.plaqueta,
+        
+identidade.plaqueta,
 
       idOperacional:
         identidade.idOperacional,
@@ -2921,7 +3540,8 @@ export default function CamadaBDGD({
         feature,
 
       pac1:
-        equipamento?.pac1 ??
+        equipamento?.pac1 
+??
         equipamento?.pac1Original ??
         null,
 
@@ -2938,7 +3558,8 @@ export default function CamadaBDGD({
         equipamento?.latitude ??
         null,
 
-      longitude:
+      
+longitude:
         equipamento?.longitude ??
         null,
     });
@@ -2973,7 +3594,8 @@ export default function CamadaBDGD({
     );
 
     setCaminhoEletrico(
-      null
+      
+null
     );
 
     setManobraPendente(
@@ -2989,7 +3611,8 @@ export default function CamadaBDGD({
     if (
       coordenadas
     ) {
-      map.flyTo(
+      
+map.flyTo(
         coordenadas,
         Math.max(
           map.getZoom(),
@@ -3006,7 +3629,8 @@ export default function CamadaBDGD({
     }
 
     console.log(
-      "=================================================="
+      
+"=================================================="
     );
 
     console.log(
@@ -3040,7 +3664,8 @@ export default function CamadaBDGD({
 
     console.log(
       "TIPO:",
-      tipo
+      
+tipo
     );
 
     console.log(
@@ -3058,7 +3683,8 @@ export default function CamadaBDGD({
       null
     );
 
-    console.log(
+    
+console.log(
       "PAC_2:",
       equipamento?.pac2 ??
       equipamento?.pac2Original ??
@@ -3093,7 +3719,8 @@ export default function CamadaBDGD({
       "Longitude:",
       equipamento?.longitude ??
       null
-    );
+    
+);
 
     console.log(
       "Origem coordenada:",
@@ -3111,7 +3738,8 @@ export default function CamadaBDGD({
     console.log(
       "Circuito:",
       equipamento?.circuito ??
-      null
+      
+null
     );
 
     console.log(
@@ -3125,7 +3753,8 @@ export default function CamadaBDGD({
   }
 
   // ========================================================
-  // MANOBRA
+  // 
+MANOBRA
   // ========================================================
 
   function solicitarManobra(
@@ -3141,7 +3770,8 @@ export default function CamadaBDGD({
     const acaoNormalizada =
       normalizarTexto(
         acao
-      );
+      
+);
 
     if (
       acaoNormalizada !==
@@ -3159,7 +3789,8 @@ export default function CamadaBDGD({
       id,
 
       estadoAtual:
-        estadoSelecionado ||
+        estadoSelecionado 
+||
         consultarEstadoEquipamento(
           id
         )?.estado ||
@@ -3177,7 +3808,8 @@ export default function CamadaBDGD({
     acao
   ) {
     const id =
-      elementoSelecionado?.id;
+      
+elementoSelecionado?.id;
 
     if (!id) {
       return;
@@ -3195,7 +3827,8 @@ export default function CamadaBDGD({
         "FECHAR"
     ) {
       return;
-    }
+    
+}
 
     const resultado =
       executarManobraEquipamento(
@@ -3227,25 +3860,32 @@ export default function CamadaBDGD({
         "ABRIR"
           ? "ABERTO"
           : "FECHADO"
-      );
+      
+);
 
     setEstadoSelecionado(
       novoEstado
     );
 
-    setVersaoEstadoOperacional(
-      (
-        valor
-      ) =>
-        valor + 1
-    );
+    // Força o recálculo do estado elétrico e remonta a camada GeoJSON.
+    // O modelo também emite um evento global; o incremento local garante
+    // atualização imediata quando a manobra é executada nesta camada.
+    setVersaoEstadoOperacional((versao) => versao + 1);
+
+    console.info("⚙️ [Power Grid Monitor] Manobra aplicada à simulação:", {
+      equipamentoId: id,
+      estadoNovo: novoEstado,
+      origem: "MANOBRA_OPERADOR",
+      recalculoEnergizacao: "o modelo emite evento para recalcular e redesenhar os trechos",
+    });
 
     setManobraPendente(
       null
     );
 
     setFichaOperacional(
-      obterFichaCompletaEquipamento(
+      
+obterFichaCompletaEquipamento(
         id
       )
     );
@@ -3278,7 +3918,8 @@ export default function CamadaBDGD({
     );
   }
 
-  // ========================================================
+  // 
+========================================================
   // BUSCAR UNIDADE DA TOPOLOGIA
   // ========================================================
 
@@ -3292,7 +3933,8 @@ export default function CamadaBDGD({
       return null;
     }
 
-    const unidades =
+    const unidades 
+=
       topologia
         .unidadesSeccionadoras ||
       {};
@@ -3328,7 +3970,8 @@ export default function CamadaBDGD({
       );
 
     return encontrada ||
-      null;
+      
+null;
   }
 
   // ========================================================
@@ -3341,7 +3984,8 @@ export default function CamadaBDGD({
     if (
       todosAlimentadoresSelecionados
     ) {
-      return true;
+      return 
+true;
     }
 
     if (
@@ -3359,7 +4003,8 @@ export default function CamadaBDGD({
       return true;
     }
 
-    const id =
+    const id 
+=
       normalizarId(
         typeof item ===
           "object"
@@ -3377,7 +4022,8 @@ export default function CamadaBDGD({
     );
   }
 
-  // ========================================================
+  // 
+========================================================
   // NAVEGAÇÃO TESTE
   // ========================================================
 
@@ -3392,7 +4038,8 @@ export default function CamadaBDGD({
       );
 
     if (
-      !topologia.pontos?.[
+      
+!topologia.pontos?.[
         origem
       ]
     ) {
@@ -3410,7 +4057,8 @@ export default function CamadaBDGD({
     const rede =
       buscarJusanteModelo(
         origem,
-        {
+        
+{
           respeitarOrientacao:
             true,
         }
@@ -3428,7 +4076,8 @@ export default function CamadaBDGD({
       );
 
     if (
-      !topologia.pontos?.[
+      
+!topologia.pontos?.[
         destino
       ]
     ) {
@@ -3446,7 +4095,8 @@ export default function CamadaBDGD({
             id !==
             origem
         );
-    }
+    
+}
 
     if (
       destino &&
@@ -3464,7 +4114,8 @@ export default function CamadaBDGD({
         );
       }
     }
-  }, [
+  }, 
+[
     topologia,
   ]);
 
@@ -3477,7 +4128,8 @@ export default function CamadaBDGD({
       !topologia ||
       !elementoSelecionado
     ) {
-      return null;
+      return 
+null;
     }
 
     if (
@@ -3495,7 +4147,8 @@ export default function CamadaBDGD({
           trecho?.pontoFinal
         ) ||
         normalizarId(
-          trecho?.pontoInicial
+          
+trecho?.pontoInicial
         )
       );
     }
@@ -3513,7 +4166,8 @@ export default function CamadaBDGD({
         normalizarId(
           unidade?.pontoAssociado
         ) ||
-        normalizarId(
+        
+normalizarId(
           unidade?.ponto1
         ) ||
         normalizarId(
@@ -3531,7 +4185,8 @@ export default function CamadaBDGD({
     ) {
       return (
         normalizarId(
-          elementoSelecionado
+          
+elementoSelecionado
             ?.equipamento
             ?.pontoAssociado
         ) ||
@@ -3549,7 +4204,8 @@ export default function CamadaBDGD({
           elementoSelecionado
             ?.transformador
             ?.pac1
-        ) ||
+        ) 
+||
         normalizarId(
           elementoSelecionado
             ?.transformador
@@ -3567,7 +4223,8 @@ export default function CamadaBDGD({
       );
     }
 
-    return null;
+    return 
+null;
   }
 
   // ========================================================
@@ -3580,7 +4237,8 @@ export default function CamadaBDGD({
     if (
       !topologia ||
       !elementoSelecionado
-    ) {
+    ) 
+{
       return;
     }
 
@@ -3598,7 +4256,8 @@ export default function CamadaBDGD({
     }
 
     if (
-      modo ===
+      modo 
+===
       "MONTANTE"
     ) {
       setRedeMontante(
@@ -3616,7 +4275,8 @@ export default function CamadaBDGD({
       );
 
       return;
-    }
+    
+}
 
     if (
       modo ===
@@ -3634,7 +4294,8 @@ export default function CamadaBDGD({
 
       setRedeMontante(
         null
-      );
+      
+);
 
       return;
     }
@@ -3684,7 +4345,8 @@ export default function CamadaBDGD({
     );
 
     setCaminhoEletrico(
-      null
+      
+null
     );
 
     setManobraPendente(
@@ -3700,97 +4362,8 @@ export default function CamadaBDGD({
     );
   }
 
-  // ========================================================
-  // POPUP SSDMT
-  // ========================================================
-
-  function criarPopupSSDMT(
-    feature
-  ) {
-    const p =
-      feature?.properties ||
-      {};
-
-    const comprimento =
-      p.COMP !== null &&
-      p.COMP !== undefined &&
-      p.COMP !== ""
-        ? `${formatarNumero(
-            p.COMP,
-            2
-          )} m`
-        : "-";
-
-    return `
-      <div
-        style="
-          min-width:240px;
-          font-family:Arial,sans-serif;
-          font-size:13px;
-          line-height:1.5;
-        "
-      >
-        <div
-          style="
-            font-size:16px;
-            font-weight:bold;
-            margin-bottom:8px;
-            color:#1565c0;
-          "
-        >
-          ⚡ Trecho SSDMT
-        </div>
-
-        <div>
-          <strong>Alimentador:</strong>
-          ${p.CT_COD_OP ??
-          p.alimentador ??
-          "-"}
-        </div>
-
-        <div>
-          <strong>COD_ID:</strong>
-          ${p.COD_ID ?? "-"}
-        </div>
-
-        <hr />
-
-        <div>
-          <strong>PN inicial:</strong>
-          ${p.PN_CON_1 ?? "-"}
-        </div>
-
-        <div>
-          <strong>PN final:</strong>
-          ${p.PN_CON_2 ?? "-"}
-        </div>
-
-        <hr />
-
-        <div>
-          <strong>Condutor:</strong>
-          ${p.TIP_CND ?? "-"}
-        </div>
-
-        <div>
-          <strong>Fases:</strong>
-          ${p.FAS_CON ?? "-"}
-        </div>
-
-        <div>
-          <strong>Comprimento:</strong>
-          ${comprimento}
-        </div>
-
-        <div>
-          <strong>Situação:</strong>
-          ${p.SITCONT ?? "-"}
-        </div>
-      </div>
-    `;
-  }
-
-  // ========================================================
+  // 
+========================================================
   // CORES DOS ALIMENTADORES
   // ========================================================
 
@@ -3804,7 +4377,8 @@ export default function CamadaBDGD({
     CMG01C3:
       "#16a34a",
 
-    CMG01C4:
+    
+CMG01C4:
       "#9333ea",
 
     CMG01C5:
@@ -3822,7 +4396,8 @@ export default function CamadaBDGD({
         normalizarTexto(
           alimentador
         )
-      ] ||
+      ] 
+||
       "#64748b"
     );
   }
@@ -3831,55 +4406,55 @@ export default function CamadaBDGD({
     feature,
     destacado = false
   ) {
-    const cor =
-      obterCorAlimentador(
-        obterAlimentadorFeature(
-          feature
-        )
-      );
+    const propriedades = feature?.properties || {};
+    const trechoId = normalizarId(
+      propriedades.COD_ID ?? propriedades.codId ?? propriedades.id
+    );
+    const resultadoAtual =
+      
+estadosEnergizacaoTrechosRef.current || estadosEnergizacaoTrechos;
+    const estadoCalculado = trechoId
+      ? resultadoAtual?.estados?.[trechoId]?.estado
+      : null;
+
+    const corOriginal = obterCorAlimentador(
+      obterAlimentadorFeature(feature)
+    );
+
+    // Verde exclusivo para desenergização. O verde original do CMG01C3
+    // permanece mais escuro (#16a34a), evitando confundir os 
+estados.
+    const cor = estadoCalculado === "DESENERGIZADO"
+      ? "#00e676"
+      : corOriginal;
 
     return {
-      color:
-        cor,
-
-      weight:
-        destacado
-          ? 6
-          : 3,
-
-      opacity:
-        destacado
-          ? 1
-          : 0.88,
-
-      lineCap:
-        "round",
-
-      lineJoin:
-        "round",
+      color: cor,
+      weight: destacado ? 6 : 3,
+      opacity: destacado ? 1 : 0.88,
+      lineCap: "round",
+      lineJoin: "round",
     };
   }
 
   // ========================================================
-  // EVENTO SSDMT
+  // EVENTO 
+SSDMT
   // ========================================================
 
   function aoCriarTrecho(
     feature,
     layer
   ) {
-    layer.bindPopup(
-      criarPopupSSDMT(
-        feature
-      )
-    );
-
+    // Sem Popup Leaflet para SSDMT: o clique seleciona o trecho
+    // e mantém apenas a ficha compacta do operador.
     layer.on({
       mouseover:
         (
           evento
         ) => {
-          evento.target.setStyle(
+          
+evento.target.setStyle(
             estiloSSDMT(
               feature,
               true
@@ -3897,7 +4472,8 @@ export default function CamadaBDGD({
             estiloSSDMT(
               feature,
               false
-            )
+            
+)
           );
         },
 
@@ -3917,13 +4493,19 @@ export default function CamadaBDGD({
           }
 
           setElementoSelecionado({
-            tipo:
-              "TRECHO",
-
-            id:
-              trechoId,
-
+            tipo: "TRECHO",
+            id: trechoId,
             propriedades,
+            // Preserva a feição GeoJSON completa para a ficha operacional.
+            // Sem isso, a ficha não consegue consultar feature.properties.
+            feature,
+            featureOriginal: feature,
+            alimentador:
+              propriedades.alimentador ||
+              propriedades.CT_COD_OP ||
+              propriedades.CT_COD_OPER 
+||
+              obterAlimentadorFeature(feature),
           });
 
           setFichaOperacional(
@@ -3939,7 +4521,8 @@ export default function CamadaBDGD({
           );
 
           setRedeConectada(
-            null
+            
+null
           );
 
           setCaminhoEletrico(
@@ -3953,7 +4536,8 @@ export default function CamadaBDGD({
   // COORDENADAS PONTO
   // ========================================================
 
-  function obterCoordenadasPonto(
+  function 
+obterCoordenadasPonto(
     id
   ) {
     const pontoId =
@@ -3989,7 +4573,8 @@ export default function CamadaBDGD({
     if (
       !Number.isFinite(
         latitude
-      ) ||
+      ) 
+||
       !Number.isFinite(
         longitude
       )
@@ -4007,7 +4592,8 @@ export default function CamadaBDGD({
     item
   ) {
     if (
-      item === null ||
+      item === null 
+||
       item === undefined
     ) {
       return null;
@@ -4025,7 +4611,8 @@ export default function CamadaBDGD({
     }
 
     const latitude =
-      Number(
+      
+Number(
         item.latitude ??
           item.lat ??
           item.y ??
@@ -4043,7 +4630,8 @@ export default function CamadaBDGD({
           item.x ??
           item.properties
             ?.longitude ??
-          item.properties
+          
+item.properties
             ?.lng
       );
 
@@ -4061,7 +4649,8 @@ export default function CamadaBDGD({
       ];
     }
 
-    const pontoId =
+    const pontoId 
+=
       normalizarId(
         item.pontoId ??
           item.pontoAssociado ??
@@ -4079,7 +4668,8 @@ export default function CamadaBDGD({
       );
     }
 
-    return null;
+    return 
+null;
   }
 
   function obterTrechoDoResultado(
@@ -4097,7 +4687,8 @@ export default function CamadaBDGD({
         item.trechoId
       ) {
         return {
-          ...item,
+          
+...item,
 
           id:
             item.trechoId,
@@ -4113,7 +4704,8 @@ export default function CamadaBDGD({
     );
   }
 
-  // ========================================================
+  // 
+========================================================
   // RENDER JUSANTE
   // ========================================================
 
@@ -4127,7 +4719,8 @@ export default function CamadaBDGD({
 
     if (
       !mostrarRedeJusante ||
-      !redeJusante
+      
+!redeJusante
     ) {
       return null;
     }
@@ -4145,7 +4738,8 @@ export default function CamadaBDGD({
     return ids.map(
       (
         item,
-        indice
+        
+indice
       ) => {
         const trecho =
           obterTrechoDoResultado(
@@ -4163,7 +4757,8 @@ export default function CamadaBDGD({
 
         const fim =
           obterCoordenadasPonto(
-            trecho.pontoFinal
+            
+trecho.pontoFinal
           );
 
         if (
@@ -4181,7 +4776,8 @@ export default function CamadaBDGD({
         return (
           <Polyline
             key={
-              `jusante-${id}`
+              
+`jusante-${id}`
             }
             positions={[
               inicio,
@@ -4199,7 +4795,8 @@ export default function CamadaBDGD({
             }}
           />
         );
-      }
+      
+}
     );
   }
 
@@ -4213,7 +4810,8 @@ export default function CamadaBDGD({
       ZOOM_MINIMO_REDE
     ) {
       return null;
-    }
+    
+}
 
     if (
       !mostrarCaminhoEletrico ||
@@ -4230,7 +4828,8 @@ export default function CamadaBDGD({
         : Object.keys(
             caminhoEletrico.trechos ||
               {}
-          );
+          
+);
 
     return ids.map(
       (
@@ -4248,7 +4847,8 @@ export default function CamadaBDGD({
 
         const inicio =
           obterCoordenadasPonto(
-            trecho.pontoInicial
+            
+trecho.pontoInicial
           );
 
         const fim =
@@ -4266,7 +4866,8 @@ export default function CamadaBDGD({
         const id =
           trecho.id ||
           trecho.trechoId ||
-          `caminho-${indice}`;
+          
+`caminho-${indice}`;
 
         return (
           <Polyline
@@ -4284,7 +4885,8 @@ export default function CamadaBDGD({
               weight:
                 8,
 
-              opacity:
+              
+opacity:
                 1,
             }}
           />
@@ -4297,7 +4899,8 @@ export default function CamadaBDGD({
   // RENDER MONTANTE
   // ========================================================
 
-  function renderizarRedeMontante() {
+  function renderizarRedeMontante() 
+{
     if (
       zoomAtual <
       ZOOM_MINIMO_REDE
@@ -4315,7 +4918,8 @@ export default function CamadaBDGD({
     const ids =
       Array.isArray(
         redeMontante.ordemTrechos
-      )
+      
+)
         ? redeMontante.ordemTrechos
         : Object.keys(
             redeMontante.trechos ||
@@ -4333,7 +4937,8 @@ export default function CamadaBDGD({
           );
 
         if (!trecho) {
-          return null;
+          return 
+null;
         }
 
         const inicio =
@@ -4351,7 +4956,8 @@ export default function CamadaBDGD({
           !fim
         ) {
           return null;
-        }
+        
+}
 
         const id =
           trecho.id ||
@@ -4369,7 +4975,8 @@ export default function CamadaBDGD({
             ]}
             pathOptions={{
               color:
-                "#f59e0b",
+                
+"#f59e0b",
 
               weight:
                 5,
@@ -4385,7 +4992,8 @@ export default function CamadaBDGD({
 
   // ========================================================
   // RENDER CONECTADA
-  // ========================================================
+  // 
+========================================================
 
   function renderizarRedeConectada() {
     if (
@@ -4419,7 +5027,8 @@ export default function CamadaBDGD({
       ) => {
         const trecho =
           obterTrechoDoResultado(
-            item
+            
+item
           );
 
         if (!trecho) {
@@ -4437,7 +5046,8 @@ export default function CamadaBDGD({
           );
 
         if (
-          !inicio ||
+          !inicio 
+||
           !fim
         ) {
           return null;
@@ -4455,7 +5065,8 @@ export default function CamadaBDGD({
             }
             positions={[
               inicio,
-              fim,
+              
+fim,
             ]}
             pathOptions={{
               color:
@@ -4473,7 +5084,8 @@ export default function CamadaBDGD({
     );
   }
 
-  // ========================================================
+  // 
+========================================================
   // FILTRO DE EQUIPAMENTO
   // ========================================================
 
@@ -4487,7 +5099,8 @@ export default function CamadaBDGD({
 
     if (
       !equipamentoPermitidoPorZoom(
-        tipo,
+        
+tipo,
         zoomAtual
       )
     ) {
@@ -4505,7 +5118,8 @@ export default function CamadaBDGD({
     if (
       (
         tipo ===
-          "CHAVE_FUSIVEL" ||
+          "CHAVE_FUSIVEL" 
+||
         tipo ===
           "CHAVE_LAMINA" ||
         tipo ===
@@ -4541,7 +5155,8 @@ export default function CamadaBDGD({
     }
 
     return true;
-  }
+  
+}
 
   // ========================================================
   // RENDER EQUIPAMENTOS
@@ -4552,7 +5167,8 @@ export default function CamadaBDGD({
       !mostrarEquipamentos ||
       !visibilidadeZoom.mostrarRede ||
       !equipamentosGeoJSONFiltrados ||
-      !topologia
+      
+!topologia
     ) {
       return null;
     }
@@ -4568,7 +5184,8 @@ export default function CamadaBDGD({
               feature
             );
 
-          if (!equipamento) {
+          if (!equipamento) 
+{
             return null;
           }
 
@@ -4586,7 +5203,8 @@ export default function CamadaBDGD({
 
           if (!id) {
             return null;
-          }
+          
+}
 
           const tipo =
             obterTipoEquipamento(
@@ -4603,7 +5221,8 @@ export default function CamadaBDGD({
           }
 
           if (
-            tipo ===
+            tipo 
+===
               "RELIGADOR" &&
             !mostrarReligadores
           ) {
@@ -4621,7 +5240,8 @@ export default function CamadaBDGD({
             ) &&
             !mostrarChaves
           ) {
-            return null;
+            return 
+null;
           }
 
           if (
@@ -4655,7 +5275,8 @@ export default function CamadaBDGD({
             );
 
           if (!coordenadas) {
-            console.warn(
+            
+console.warn(
               "⚠️ Equipamento sem coordenada:",
               {
                 id,
@@ -4707,27 +5328,27 @@ export default function CamadaBDGD({
             };
 
           return (
-            <Marker
-              key={
-                `bdgd-equipamento-${id}-${indice}`
-              }
-              position={
-                coordenadas
-              }
-              icon={
-                criarIconeEquipamento(
-                  equipamentoVisual,
-                  estadoAtual
-                )
-              }
-              eventHandlers={{
-                click:
-                  () =>
-                    selecionarEquipamentoOperacional(
-                      feature
-                    ),
-              }}
-            />
+           
+<Marker
+  key={`bdgd-equipamento-${id}-${indice}`}
+  position={coordenadas}
+  icon={criarIconeEquipamento(
+    equipamentoVisual,
+    estadoAtual
+  )}
+  zIndexOffset={
+    id === equipamentoVisual.id
+      ? 1000
+      : 0
+  }
+  eventHandlers={{
+    click: () =>
+      selecionarEquipamentoOperacional(
+        
+feature
+      ),
+  }}
+/>
           );
         }
       )
@@ -4738,7 +5359,8 @@ export default function CamadaBDGD({
   // STATUS ZOOM
   // ========================================================
 
-  function obterDescricaoZoom() {
+  function obterDescricaoZoom() 
+{
     switch (
       nivelZoom
     ) {
@@ -4754,7 +5376,8 @@ export default function CamadaBDGD({
       case "DETALHADO":
         return "Visualização detalhada";
 
-      default:
+      
+default:
         return "Mapa base";
     }
   }
@@ -4766,7 +5389,8 @@ export default function CamadaBDGD({
   return (
     <>
       {/* ================================================== */}
-      {/* INDICADOR DE ZOOM */}
+      {/* INDICADOR DE ZOOM 
+*/}
       {/* ================================================== */}
 
       <div
@@ -4782,7 +5406,8 @@ export default function CamadaBDGD({
               ? 426
               : 12,
 
-          zIndex:
+          
+zIndex:
             2500,
 
           background:
@@ -4799,7 +5424,8 @@ export default function CamadaBDGD({
           borderRadius:
             8,
 
-          padding:
+          
+padding:
             "6px 9px",
 
           fontFamily:
@@ -4817,7 +5443,8 @@ export default function CamadaBDGD({
       >
         <div
           style={{
-            fontWeight:
+            
+fontWeight:
               700,
 
             color:
@@ -4834,7 +5461,8 @@ export default function CamadaBDGD({
           )}
         </div>
 
-        <div
+        
+<div
           style={{
             marginTop:
               2,
@@ -4848,7 +5476,8 @@ export default function CamadaBDGD({
 
       {/* ================================================== */}
       {/* STATUS */}
-      {/* ================================================== */}
+      {/* ================================================== 
+*/}
 
       {carregandoSsdmt && (
         <div
@@ -4866,7 +5495,8 @@ export default function CamadaBDGD({
               3000,
 
             background:
-              "#0b131d",
+              
+"#0b131d",
 
             color:
               "#38bdf8",
@@ -4884,7 +5514,8 @@ export default function CamadaBDGD({
               "none",
           }}
         >
-          🔵 Carregando SSDMT...
+          🔵 Carregando 
+SSDMT...
         </div>
       )}
 
@@ -4920,7 +5551,8 @@ export default function CamadaBDGD({
 
             pointerEvents:
               "none",
-          }}
+          
+}}
         >
           🟢 Carregando PONNOT...
         </div>
@@ -4938,7 +5570,8 @@ export default function CamadaBDGD({
             left:
               10,
 
-            zIndex:
+            
+zIndex:
               3000,
 
             background:
@@ -4956,7 +5589,8 @@ export default function CamadaBDGD({
             fontSize:
               12,
 
-            pointerEvents:
+            
+pointerEvents:
               "none",
           }}
         >
@@ -4973,7 +5607,8 @@ export default function CamadaBDGD({
             top:
               10,
 
-            left:
+            
+left:
               10,
 
             zIndex:
@@ -4991,7 +5626,8 @@ export default function CamadaBDGD({
             borderRadius:
               6,
 
-            fontSize:
+            
+fontSize:
               12,
 
             maxWidth:
@@ -5045,7 +5681,8 @@ export default function CamadaBDGD({
       )}
 
       {erroEquipamentos && (
-        <div
+        
+<div
           style={{
             position:
               "absolute",
@@ -5063,7 +5700,8 @@ export default function CamadaBDGD({
               "#3b1111",
 
             color:
-              "#fbbf24",
+              
+"#fbbf24",
 
             padding:
               "8px 12px",
@@ -5081,7 +5719,8 @@ export default function CamadaBDGD({
           ❌ EQUIPAMENTOS:
           <br />
           {erroEquipamentos}
-        </div>
+        
+</div>
       )}
 
       {/* ================================================== */}
@@ -5095,40 +5734,42 @@ export default function CamadaBDGD({
               "absolute",
 
             top:
-              18,
+              
+56,
 
             right:
-              18,
+              14,
 
             zIndex:
               4000,
 
             width:
-              390,
+              324,
 
             maxWidth:
-              "calc(100vw - 36px)",
+              "calc(100vw - 24px)",
 
             maxHeight:
-              "calc(100vh - 36px)",
+              "min(68vh, calc(100vh - 100px))",
 
-            overflowY:
+            
+overflowY:
               "auto",
 
             background:
-              "#0b131d",
+              "#ffffff",
 
             color:
-              "#e5e7eb",
+              "#0f172a",
 
             border:
-              "1px solid #263241",
+              "1px solid #dbe3ec",
 
             borderRadius:
               12,
 
             boxShadow:
-              "0 12px 40px rgba(0,0,0,0.5)",
+              "0 8px 28px rgba(15,23,42,0.22)",
 
             fontFamily:
               "Arial,sans-serif",
@@ -5145,7 +5786,8 @@ export default function CamadaBDGD({
 
             const equipamentoSelecionado =
               elementoSelecionado
-                ?.equipamento ||
+                ?.equipamento 
+||
               null;
 
             const dadosEquipamento =
@@ -5162,7 +5804,8 @@ export default function CamadaBDGD({
 
             const equipamentoFonte =
               dadosEquipamento ||
-              equipamentoSelecionado ||
+              equipamentoSelecionado 
+||
               dadosUnidade ||
               null;
 
@@ -5179,7 +5822,8 @@ export default function CamadaBDGD({
                 ),
 
                 ...(
-                  dadosEquipamento?.propriedades ||
+                  
+dadosEquipamento?.propriedades ||
                   {}
                 ),
 
@@ -5193,7 +5837,8 @@ export default function CamadaBDGD({
               elementoSelecionado.tipo ===
               "TRECHO"
                 ? "TRECHO"
-                : (
+                : 
+(
                     dadosFicha?.tipo ||
                     dadosEquipamento?.tipoEquipamento ||
                     equipamentoSelecionado?.tipoEquipamento ||
@@ -5207,7 +5852,8 @@ export default function CamadaBDGD({
             const estilo =
               tipo ===
               "TRECHO"
-                ? {
+                ? 
+{
                     cor:
                       "#38bdf8",
 
@@ -5223,7 +5869,8 @@ export default function CamadaBDGD({
 
             // ------------------------------------------------
             // IDENTIDADE
-            // ------------------------------------------------
+            // 
+------------------------------------------------
 
             const identidadeFicha =
               tipo === "TRECHO"
@@ -5239,7 +5886,8 @@ export default function CamadaBDGD({
                     elementoSelecionado?.id ||
                     p?.COD_ID ||
                     "-"
-                  )
+                  
+)
                 : (
                     identidadeFicha?.plaqueta ??
                     elementoSelecionado?.plaqueta ??
@@ -5250,7 +5898,8 @@ export default function CamadaBDGD({
 
             const idPatrimonial =
               identidadeFicha?.idPatrimonial ??
-              elementoSelecionado?.idPatrimonial ??
+              
+elementoSelecionado?.idPatrimonial ??
               equipamentoFonte?.idPatrimonial ??
               "-";
 
@@ -5263,7 +5912,8 @@ export default function CamadaBDGD({
               p.CT_COD_OPER ??
               obterAlimentadorFeature(
                 feature
-              ) ??
+              ) 
+??
               "-";
 
             const circuito =
@@ -5278,7 +5928,8 @@ export default function CamadaBDGD({
             // COORDENADAS
             // ------------------------------------------------
 
-            const coordenadasMapa =
+            const coordenadasMapa 
+=
               obterCoordenadasEquipamentoCamada(
                 equipamentoFonte,
                 feature
@@ -5293,7 +5944,8 @@ export default function CamadaBDGD({
                     dadosFicha?.ponto
                       ?.longitude ??
                       dadosUnidade?.longitude ??
-                      equipamentoFonte?.longitude
+                      
+equipamentoFonte?.longitude
                   );
 
             const latitude =
@@ -5309,7 +5961,8 @@ export default function CamadaBDGD({
                   );
 
             const latitudeOk =
-              Number.isFinite(
+              
+Number.isFinite(
                 latitude
               );
 
@@ -5325,7 +5978,8 @@ export default function CamadaBDGD({
             const valor = (
               ...campos
             ) => {
-              for (
+              for 
+(
                 const campo of
                   campos
               ) {
@@ -5343,7 +5997,8 @@ export default function CamadaBDGD({
                     ""
                 ) {
                   return valorCampo;
-                }
+                
+}
 
                 const valorEquip =
                   equipamentoFonte?.[
@@ -5361,11 +6016,289 @@ export default function CamadaBDGD({
                     ""
                 ) {
                   return valorEquip;
-                }
+                
+}
               }
 
               return "-";
             };
+
+            // ------------------------------------------------
+            // DADOS DO VÃO / CONDUTOR
+            // ------------------------------------------------
+            // A BDGD pode guardar os atributos do condutor em um
+            // cadastro relacionado, não diretamente no SSDMT.
+            // Consultamos somente valores realmente presentes no
+            // trecho/modelo. Não 
+estimamos bitola nem ampacidade.
+
+            const trechoModelo =
+              tipo === "TRECHO"
+                ? buscarTrechoBDGD(
+                    topologia,
+                    id
+                  )
+                : null;
+
+            const fontesTrecho = [
+              trechoModelo?.condutor?.properties,
+              trechoModelo?.condutor?.propriedades,
+              trechoModelo?.condutor,
+              
+trechoModelo?.dadosCondutor?.properties,
+              trechoModelo?.dadosCondutor?.propriedades,
+              trechoModelo?.dadosCondutor,
+              trechoModelo?.segmentoCondutor?.properties,
+              trechoModelo?.segmentoCondutor?.propriedades,
+              trechoModelo?.segmentoCondutor,
+              trechoModelo?.cadastroCondutor,
+              
+trechoModelo?.propriedadesCondutor,
+              trechoModelo?.properties,
+              trechoModelo?.propriedades,
+              trechoModelo,
+              p,
+            ].filter(Boolean);
+
+            const valorTrecho = (
+              ...campos
+            ) => {
+              for (const fonte of fontesTrecho) {
+                for (const campo of campos) {
+                  const valorCampo = fonte?.[campo];
+
+                  if (
+                    valorCampo !== undefined &&
+                    valorCampo !== null &&
+                    String(valorCampo).trim() !== ""
+                  ) {
+                    return valorCampo;
+                  }
+                }
+              }
+
+              return null;
+            };
+
+            const formatarValorTecnico = (
+              
+valorTecnico,
+              unidade
+            ) => {
+              if (
+                valorTecnico === null ||
+                valorTecnico === undefined ||
+                String(valorTecnico).trim() === ""
+              ) {
+                return "Não disponível na BDGD carregada";
+              }
+
+              const texto = String(valorTecnico).trim();
+
+              if (
+                
+texto.toLowerCase().includes(
+                  unidade.toLowerCase()
+                )
+              ) {
+                return texto;
+              }
+
+              const numero = Number(texto);
+
+              return Number.isFinite(numero)
+                ? `${formatarNumero(numero, 2)} ${unidade}`
+                : texto;
+            };
+
+            // Use diretamente os 
+campos enriquecidos da topologia antes de
+            // consultar propriedades brutas do SSDMT. Alguns arquivos trazem
+            // DESCR_CND/DESCR como códigos numéricos, não como nome do cabo.
+            const obterPrimeiroValorTecnico = (...valores) =>
+              valores.find(
+                (valor) =>
+                  valor !== null &&
+                  valor !== undefined &&
+                  String(valor).trim() !== ""
+              ) ?? null;
+
+            const 
+cadastroCondutorSelecionado =
+              trechoModelo?.cadastroCondutor?.properties ||
+              trechoModelo?.cadastroCondutor?.propriedades ||
+              trechoModelo?.cadastroCondutor ||
+              trechoModelo?.propriedadesCondutor?.properties ||
+              trechoModelo?.propriedadesCondutor?.propriedades ||
+              trechoModelo?.propriedadesCondutor 
+||
+              {};
+
+            const designacaoCondutorSelecionado =
+              obterPrimeiroValorTecnico(
+                trechoModelo?.designacaoCondutor,
+                cadastroCondutorSelecionado?.R_REGUL,
+                cadastroCondutorSelecionado?.RREGUL,
+                cadastroCondutorSelecionado?.DESIGNACAO_CONDUTOR,
+                
+cadastroCondutorSelecionado?.DESIGNACAO,
+                cadastroCondutorSelecionado?.TIPO_CND,
+                trechoModelo?.propriedades?.R_REGUL,
+                p?.R_REGUL
+              );
+
+            const codigoTipoCondutor =
+              obterPrimeiroValorTecnico(
+                trechoModelo?.codigoCondutor,
+                trechoModelo?.condutor,
+                valorTrecho(
+                  "TIP_CND",
+                  
+"tipCnd",
+                  "codigoCondutor",
+                  "tipoCondutorCodigo"
+                )
+              );
+
+            const descricaoBrutaCondutor =
+              valorTrecho(
+                "descricaoCondutor",
+                "DESCR_CND",
+                "tipoCondutor",
+                "tipo_condutor"
+              );
+
+            // Não exibe códigos puramente numéricos como se fossem uma
+            // descrição legível. 
+R_REGUL (ex.: CUM25MM2) tem prioridade.
+            const descricaoCondutor =
+              designacaoCondutorSelecionado ??
+              (
+                descricaoBrutaCondutor !== null &&
+                !/^\d+$/.test(String(descricaoBrutaCondutor).trim())
+                  ? descricaoBrutaCondutor
+                  : null
+              );
+
+            const extrairBitolaMm2 = (valor) => {
+              if (valor === null || valor === undefined || 
+String(valor).trim() === "") {
+                return null;
+              }
+
+              const texto = String(valor).trim();
+              const match = texto.match(/(\d+(?:[.,]\d+)?)\s*MM(?:2|²)/i);
+              if (!match) return null;
+
+              const numero = Number(match[1].replace(",", "."));
+              return Number.isFinite(numero) ? numero : null;
+            };
+
+            const bitolaMm2Topologia 
+=
+              obterPrimeiroValorTecnico(
+                trechoModelo?.bitolaMm2,
+                trechoModelo?.BITOLA_MM2,
+                trechoModelo?.bitola_mm2
+              );
+
+            const bitolaMm2Numero =
+              bitolaMm2Topologia !== null
+                ? Number(bitolaMm2Topologia)
+                : extrairBitolaMm2(designacaoCondutorSelecionado);
+
+            // Para CUM25MM2, exibe 
+25 mm². Para designações como AL2_0AWG,
+            // preserva o rótulo sem inventar uma conversão de unidade.
+            const bitolaCondutor =
+              Number.isFinite(bitolaMm2Numero)
+                ? bitolaMm2Numero
+                : obterPrimeiroValorTecnico(
+                    designacaoCondutorSelecionado,
+                    trechoModelo?.bitola,
+                    valorTrecho("bitola", "BITOLA", "secaoMm2", "SECAO_MM2", "seccaoMm2")
+                  
+);
+
+            // BIT_FAS normalmente funciona como referência de cadastro;
+            // não deve ser exibido como se fosse um valor em mm².
+            const referenciaBitola =
+              valorTrecho(
+                "referenciaBitola",
+                "referenciaBitolas",
+                "BIT_FAS",
+                "BIT_FAS_1",
+                "BIT_FAS_2",
+                "BIT_FAS_3",
+                "bitFas"
+              ) ??
+              
+(Array.isArray(trechoModelo?.bitolasFase)
+                ? trechoModelo.bitolasFase
+                    .map((item) => item?.codigo)
+                    .filter(Boolean)
+                    .join(" / ") || null
+                : null);
+
+            const correnteNominalTrecho =
+              obterPrimeiroValorTecnico(
+                trechoModelo?.correnteNominal,
+                cadastroCondutorSelecionado?.CNOM,
+                
+cadastroCondutorSelecionado?.COR_NOM,
+                valorTrecho(
+                  "correnteNominal",
+                  "CORRENTE_NOMINAL",
+                  "CNOM",
+                  "cNom"
+                )
+              );
+
+            const correnteMaximaTrecho =
+              obterPrimeiroValorTecnico(
+                trechoModelo?.correnteMaxima,
+                trechoModelo?.correnteAdmissivel,
+                
+cadastroCondutorSelecionado?.CMAX,
+                cadastroCondutorSelecionado?.COR_MAX,
+                valorTrecho(
+                  "correnteMaxima",
+                  "CORRENTE_MAXIMA",
+                  "correnteAdmissivel",
+                  "CORRENTE_ADMISSIVEL",
+                  "CMAX",
+                  "cMax",
+                  "capacidadeCorrente"
+                )
+              );
+
+            const comprimentoTrecho =
+              
+valorTrecho(
+                "COMP",
+                "comp",
+                "comprimento",
+                "comprimentoM"
+              );
+
+            const pontoInicialTrecho =
+              valorTrecho(
+                "PN_CON_1",
+                "PN_CON1",
+                "pontoInicial",
+                "origem",
+                "pontoOrigem"
+              );
+
+            const pontoFinalTrecho =
+              valorTrecho(
+                
+"PN_CON_2",
+                "PN_CON2",
+                "pontoFinal",
+                "destino",
+                "pontoDestino"
+              );
 
             const posicao =
               equipamentoFonte?.posicao ??
@@ -5377,7 +6310,8 @@ export default function CamadaBDGD({
             const fases =
               equipamentoFonte?.fases ??
               valor(
-                "FAS_CON",
+                
+"FAS_CON",
                 "FAS_CON_P",
                 "fases"
               );
@@ -5390,7 +6324,8 @@ export default function CamadaBDGD({
               equipamentoFonte?.pac1Original ??
               equipamentoFonte?.pac1 ??
               dadosUnidade?.pac1Original ??
-              dadosUnidade?.pac1 ??
+              dadosUnidade?.pac1 
+??
               p?.PAC_1 ??
               p?.pac1Original ??
               p?.PAC1 ??
@@ -5418,7 +6353,8 @@ export default function CamadaBDGD({
                 dadosUnidade?.pontoAssociado
               ) ||
               normalizarId(
-                elementoSelecionado?.pontoAssociado
+                
+elementoSelecionado?.pontoAssociado
               );
 
             if (
@@ -5434,7 +6370,8 @@ export default function CamadaBDGD({
               pontoAssociado =
                 normalizarId(
                   unidade?.pontoAssociado
-                ) ||
+                ) 
+||
                 normalizarId(
                   unidade?.pac1
                 ) ||
@@ -5451,7 +6388,8 @@ export default function CamadaBDGD({
               pontoAssociado =
                 normalizarId(
                   equipamentoFonte
-                    ?.pontoAssociado
+                    
+?.pontoAssociado
                 ) ||
                 normalizarId(
                   equipamentoFonte
@@ -5468,7 +6406,8 @@ export default function CamadaBDGD({
                 normalizarId(
                   elementoSelecionado.id
                 );
-            }
+            
+}
 
             if (
               !pontoAssociado &&
@@ -5485,7 +6424,8 @@ export default function CamadaBDGD({
                 normalizarId(
                   trecho?.pontoFinal
                 ) ||
-                normalizarId(
+                
+normalizarId(
                   trecho?.pontoInicial
                 );
             }
@@ -5501,7 +6441,8 @@ export default function CamadaBDGD({
             const conexoes =
               Array.isArray(
                 dadosFicha?.conexoes
-              )
+              
+)
                 ? dadosFicha.conexoes
                 : pontoAssociado
                   ? buscarConexoes(
@@ -5533,7 +6474,8 @@ export default function CamadaBDGD({
                 estadoOperacional
               );
 
-            const equipamentoManobravel =
+            const 
+equipamentoManobravel =
               tipo ===
                 "RELIGADOR" ||
               normalizarTexto(
@@ -5550,7 +6492,8 @@ export default function CamadaBDGD({
               valor(
                 "POT_NOM",
                 "potNom",
-                "POTENCIA",
+                
+"POTENCIA",
                 "potencia",
                 "POT_TRAFO"
               );
@@ -5568,7 +6511,8 @@ export default function CamadaBDGD({
               valor(
                 "TEN_SEC",
                 "TEN_SEC_NOM",
-                "tensaoSecundaria",
+                
+"tensaoSecundaria",
                 "TEN_LIN_SEC"
               );
 
@@ -5580,44 +6524,46 @@ export default function CamadaBDGD({
               null;
 
             const corSecao =
-              "#263241";
+              "#e2e8f0";
 
             const estiloLabel = {
               fontSize:
-                10,
+                9,
 
               color:
-                "#94a3b8",
+                "#64748b",
 
               textTransform:
                 "uppercase",
 
               letterSpacing:
-                "0.08em",
+                "0.05em",
 
               fontWeight:
                 700,
 
               marginBottom:
-                4,
+                
+3,
             };
 
             const estiloValor = {
               fontSize:
-                13,
+                12,
 
               color:
-                "#f8fafc",
+                "#0f172a",
 
               fontWeight:
                 600,
 
               lineHeight:
-                1.35,
+                1.25,
 
               wordBreak:
                 "break-word",
-            };
+            
+};
 
             const card = {
               border:
@@ -5627,20 +6573,21 @@ export default function CamadaBDGD({
                 8,
 
               padding:
-                "9px 10px",
+                "7px 8px",
 
               background:
-                "#101b27",
+                "#f8fafc",
             };
 
             return (
               <>
-                {/* CABEÇALHO */}
+                {/* CABEÇALHO 
+*/}
 
                 <div
                   style={{
                     padding:
-                      "14px 16px",
+                      "10px 12px",
 
                     borderBottom:
                       `1px solid ${corSecao}`,
@@ -5652,16 +6599,17 @@ export default function CamadaBDGD({
                       "center",
 
                     gap:
-                      11,
+                      
+11,
                   }}
                 >
                   <div
                     style={{
                       width:
-                        42,
+                        32,
 
                       height:
-                        42,
+                        32,
 
                       flexShrink:
                         0,
@@ -5670,7 +6618,8 @@ export default function CamadaBDGD({
                         10,
 
                       background:
-                        estilo.fundo,
+                        
+estilo.fundo,
 
                       border:
                         `1px solid ${estilo.cor}`,
@@ -5687,8 +6636,9 @@ export default function CamadaBDGD({
                       color:
                         estilo.cor,
 
-                      fontSize:
-                        19,
+                      
+fontSize:
+                        16,
                     }}
                   >
                     {tipo ===
@@ -5705,14 +6655,15 @@ export default function CamadaBDGD({
                       minWidth:
                         0,
                     }}
-                  >
+                  
+>
                     <div
                       style={{
                         color:
                           estilo.cor,
 
                         fontSize:
-                          16,
+                          14,
 
                         fontWeight:
                           700,
@@ -5723,16 +6674,17 @@ export default function CamadaBDGD({
                       }
                     </div>
 
-                    <div
+                    
+<div
                       style={{
                         marginTop:
                           3,
 
                         color:
-                          "#94a3b8",
+                          "#64748b",
 
                         fontSize:
-                          11,
+                          10,
                       }}
                     >
                       ID / Plaqueta:{" "}
@@ -5741,7 +6693,8 @@ export default function CamadaBDGD({
                   </div>
 
                   <button
-                    type="button"
+                    
+type="button"
                     onClick={
                       limparAnalise
                     }
@@ -5760,10 +6713,10 @@ export default function CamadaBDGD({
                         7,
 
                       background:
-                        "#101b27",
+                        "#0f172a",
 
                       color:
-                        "#94a3b8",
+                        "#64748b",
 
                       cursor:
                         "pointer",
@@ -5776,7 +6729,8 @@ export default function CamadaBDGD({
                   </button>
                 </div>
 
-                <div
+                
+<div
                   style={{
                     padding:
                       14,
@@ -5787,14 +6741,15 @@ export default function CamadaBDGD({
                   <div
                     style={{
                       marginBottom:
-                        14,
+                        9,
                     }}
                   >
                     <div
                       style={
                         estiloLabel
                       }
-                    >
+                    
+>
                       IDENTIFICAÇÃO
                     </div>
 
@@ -5807,12 +6762,13 @@ export default function CamadaBDGD({
                           "1fr 1fr",
 
                         gap:
-                          7,
+                          5,
                       }}
                     >
                       <div
                         style={
-                          card
+                          
+card
                         }
                       >
                         <div
@@ -5830,7 +6786,8 @@ export default function CamadaBDGD({
                         >
                           {
                             estilo.titulo
-                          }
+                          
+}
                         </div>
                       </div>
 
@@ -5848,7 +6805,8 @@ export default function CamadaBDGD({
                         </div>
 
                         <div
-                          style={
+                          
+style={
                             estiloValor
                           }
                         >
@@ -5866,7 +6824,8 @@ export default function CamadaBDGD({
                           <div
                             style={
                               estiloLabel
-                            }
+                            
+}
                           >
                             ID Patrimonial / EQSE
                           </div>
@@ -5883,7 +6842,8 @@ export default function CamadaBDGD({
                         </div>
                       )}
 
-                      <div
+                      
+<div
                         style={
                           card
                         }
@@ -5901,7 +6861,8 @@ export default function CamadaBDGD({
                             estiloValor
                           }
                         >
-                          {
+                          
+{
                             alimentador
                           }
                         </div>
@@ -5933,13 +6894,140 @@ export default function CamadaBDGD({
                     </div>
                   </div>
 
+                  {/* DADOS DO CONDUTOR E CAPACIDADE DO VÃO */}
+
+                  {tipo === "TRECHO" && (
+                    
+<div
+                      style={{
+                        marginBottom: 14,
+                      }}
+                    >
+                      <div style={{ ...estiloLabel, marginBottom: 5, color: "#334155" }}>
+                        CONDUTOR E CAPACIDADE ELÉTRICA
+                      </div>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: 5,
+                        
+}}
+                      >
+                        <div style={card}>
+                          <div style={estiloLabel}>
+                            Código do condutor (TIP_CND)
+                          </div>
+                          <div style={estiloValor}>
+                            {codigoTipoCondutor ?? "Não disponível na BDGD carregada"}
+                          </div>
+                        </div>
+
+                        <div style={card}>
+                          <div 
+style={estiloLabel}>
+                            Descrição do condutor
+                          </div>
+                          <div style={estiloValor}>
+                            {descricaoCondutor ?? "Não disponível na BDGD carregada"}
+                          </div>
+                        </div>
+
+                        <div style={card}>
+                          <div style={estiloLabel}>
+                            Bitola
+                          </div>
+                          <div 
+style={estiloValor}>
+                            {formatarValorTecnico(bitolaCondutor, "mm²")}
+                          </div>
+                        </div>
+
+                        <div style={card}>
+                          <div style={estiloLabel}>
+                            Corrente nominal
+                          </div>
+                          <div style={estiloValor}>
+                            {formatarValorTecnico(correnteNominalTrecho, "A")}
+                          </div>
+                        
+</div>
+
+                        <div
+                          style={{
+                            ...card,
+                            gridColumn: "1 / -1",
+                            borderColor: "#155e75",
+                            background: "#082f49",
+                          }}
+                        >
+                          <div
+                            style={{
+                              ...estiloLabel,
+                              color: "#7dd3fc",
+                            }}
+                          >
+                            CORRENTE 
+MÁXIMA ADMISSÍVEL
+                          </div>
+                          <div
+                            style={{
+                              ...estiloValor,
+                              fontSize: 18,
+                              color: "#bae6fd",
+                            }}
+                          >
+                            {formatarValorTecnico(correnteMaximaTrecho, "A")}
+                          </div>
+                        </div>
+
+                        <div style={card}>
+                          <div style={estiloLabel}>
+                            Ponto 
+inicial
+                          </div>
+                          <div style={estiloValor}>
+                            {pontoInicialTrecho ?? "-"}
+                          </div>
+                        </div>
+
+                        <div style={card}>
+                          <div style={estiloLabel}>
+                            Ponto final
+                          </div>
+                          <div style={estiloValor}>
+                            {pontoFinalTrecho ?? "-"}
+                          
+</div>
+                        </div>
+
+                        <div style={card}>
+                          <div style={estiloLabel}>
+                            Comprimento
+                          </div>
+                          <div style={estiloValor}>
+                            {comprimentoTrecho === null || comprimentoTrecho === undefined || String(comprimentoTrecho).trim() === ""
+                              ? "Não disponível na BDGD carregada"
+                              : 
+formatarValorTecnico(comprimentoTrecho, "m")}
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  )}
+
+                  {tipo !== "TRECHO" && (
+                  <>
                   {/* ESTADO OPERACIONAL */}
 
                   <div
                     style={{
                       marginBottom:
-                        14,
-                    }}
+                        9,
+                    
+}}
                   >
                     <div
                       style={
@@ -5957,7 +7045,8 @@ export default function CamadaBDGD({
                           "flex",
 
                         alignItems:
-                          "center",
+                          
+"center",
 
                         justifyContent:
                           "space-between",
@@ -5975,7 +7064,8 @@ export default function CamadaBDGD({
                             fontWeight:
                               700,
 
-                            color:
+                            
+color:
                               estadoVisual.cor,
                           }}
                         >
@@ -5993,7 +7083,8 @@ export default function CamadaBDGD({
                               10,
 
                             color:
-                              "#64748b",
+                              
+"#64748b",
                           }}
                         >
                           Posição BDGD:{" "}
@@ -6028,7 +7119,8 @@ export default function CamadaBDGD({
                             "center",
 
                           justifyContent:
-                            "center",
+                            
+"center",
 
                           fontSize:
                             16,
@@ -6046,7 +7138,8 @@ export default function CamadaBDGD({
                     {correnteAtual !==
                       null && (
                       <div
-                        style={{
+                        
+style={{
                           ...card,
 
                           marginTop:
@@ -6064,7 +7157,8 @@ export default function CamadaBDGD({
                         <div
                           style={
                             estiloValor
-                          }
+                          
+}
                         >
                           {formatarNumero(
                             correnteAtual,
@@ -6081,7 +7175,8 @@ export default function CamadaBDGD({
                   <div
                     style={{
                       marginBottom:
-                        14,
+                        
+9,
                     }}
                   >
                     <div
@@ -6098,10 +7193,11 @@ export default function CamadaBDGD({
                           "grid",
 
                         gridTemplateColumns:
-                          "1fr 1fr",
+                          "1fr 
+1fr",
 
                         gap:
-                          7,
+                          5,
                       }}
                     >
                       <div
@@ -6134,7 +7230,8 @@ export default function CamadaBDGD({
                           card
                         }
                       >
-                        <div
+                        
+<div
                           style={
                             estiloLabel
                           }
@@ -6152,7 +7249,8 @@ export default function CamadaBDGD({
                               conexoes
                             )
                               ? conexoes.length
-                              : 0
+                              : 
+0
                           }
                         </div>
                       </div>
@@ -6170,7 +7268,8 @@ export default function CamadaBDGD({
                           PAC 1
                         </div>
 
-                        <div
+                        
+<div
                           style={
                             estiloValor
                           }
@@ -6188,7 +7287,8 @@ export default function CamadaBDGD({
                           style={
                             estiloLabel
                           }
-                        >
+                        
+>
                           PAC 2
                         </div>
 
@@ -6206,7 +7306,8 @@ export default function CamadaBDGD({
                           card
                         }
                       >
-                        <div
+                        
+<div
                           style={
                             estiloLabel
                           }
@@ -6224,7 +7325,8 @@ export default function CamadaBDGD({
                       </div>
 
                       <div
-                        style={
+                        
+style={
                           card
                         }
                       >
@@ -6242,7 +7344,8 @@ export default function CamadaBDGD({
                           }
                         >
                           {
-                            telecomandadoModelo ===
+                            
+telecomandadoModelo ===
                             true
                               ? "SIM"
                               : telecomandadoModelo ===
@@ -6259,7 +7362,8 @@ export default function CamadaBDGD({
                     {(ponto1 ||
                       ponto2) && (
                       <div
-                        style={{
+                        
+style={{
                           display:
                             "grid",
 
@@ -6276,7 +7380,8 @@ export default function CamadaBDGD({
                         <div
                           style={
                             card
-                          }
+                          
+}
                         >
                           <div
                             style={
@@ -6294,7 +7399,8 @@ export default function CamadaBDGD({
                             {
                               ponto1
                                 ?.id ??
-                              pac1 ??
+                              pac1 
+??
                               "-"
                             }
                           </div>
@@ -6329,7 +7435,8 @@ export default function CamadaBDGD({
                       </div>
                     )}
 
-                    {/* ORIGEM DA COORDENADA */}
+                    {/* ORIGEM DA COORDENADA 
+*/}
 
                     {equipamentoFonte
                       ?.coordenadas
@@ -6347,7 +7454,8 @@ export default function CamadaBDGD({
                             estiloLabel
                           }
                         >
-                          Referência espacial
+                          Referência 
+espacial
                         </div>
 
                         <div
@@ -6365,7 +7473,8 @@ export default function CamadaBDGD({
                     )}
                   </div>
 
-                  {/* TRANSFORMADOR */}
+                  {/* TRANSFORMADOR 
+*/}
 
                   {tipo ===
                     "TRANSFORMADOR" && (
@@ -6381,7 +7490,8 @@ export default function CamadaBDGD({
                         }
                       >
                         DADOS DO TRANSFORMADOR
-                      </div>
+                      
+</div>
 
                       <div
                         style={{
@@ -6398,7 +7508,8 @@ export default function CamadaBDGD({
                         <div
                           style={
                             card
-                          }
+                          
+}
                         >
                           <div
                             style={
@@ -6416,7 +7527,8 @@ export default function CamadaBDGD({
                             {
                               potencia
                             }
-                          </div>
+                          
+</div>
                         </div>
 
                         <div
@@ -6434,7 +7546,8 @@ export default function CamadaBDGD({
 
                           <div
                             style={
-                              estiloValor
+                              
+estiloValor
                             }
                           >
                             {
@@ -6452,7 +7565,8 @@ export default function CamadaBDGD({
                             style={
                               estiloLabel
                             }
-                          >
+                          
+>
                             Tensão secundária
                           </div>
 
@@ -6470,7 +7584,8 @@ export default function CamadaBDGD({
                         <div
                           style={
                             card
-                          }
+                          
+}
                         >
                           <div
                             style={
@@ -6488,7 +7603,8 @@ export default function CamadaBDGD({
                             {fases}
                           </div>
                         </div>
-                      </div>
+                      
+</div>
                     </div>
                   )}
 
@@ -6497,7 +7613,7 @@ export default function CamadaBDGD({
                   <div
                     style={{
                       marginBottom:
-                        14,
+                        9,
                     }}
                   >
                     <div
@@ -6506,7 +7622,8 @@ export default function CamadaBDGD({
                       }
                     >
                       ANÁLISE DE REDE
-                    </div>
+                    
+</div>
 
                     <div
                       style={{
@@ -6517,13 +7634,14 @@ export default function CamadaBDGD({
                           "1fr 1fr",
 
                         gap:
-                          7,
+                          5,
                       }}
                     >
                       <button
                         type="button"
                         onClick={() =>
-                          analisarElementoSelecionado(
+                          
+analisarElementoSelecionado(
                             "MONTANTE"
                           )
                         }
@@ -6541,7 +7659,8 @@ export default function CamadaBDGD({
                             7,
 
                           background:
-                            topologia
+                            
+topologia
                               ? "#2a1b05"
                               : "#17212c",
 
@@ -6559,7 +7678,8 @@ export default function CamadaBDGD({
                             700,
 
                           fontSize:
-                            11,
+                            
+11,
                         }}
                       >
                         ↖ Montante
@@ -6576,7 +7696,8 @@ export default function CamadaBDGD({
                           !topologia
                         }
                         style={{
-                          padding:
+                          
+padding:
                             "9px 8px",
 
                           border:
@@ -6612,7 +7733,8 @@ export default function CamadaBDGD({
 
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={() 
+=>
                           analisarElementoSelecionado(
                             "CONECTADA"
                           )
@@ -6665,7 +7787,8 @@ export default function CamadaBDGD({
                             return;
                           }
 
-                          map.flyTo(
+                          
+map.flyTo(
                             [
                               latitude,
                               longitude,
@@ -6683,7 +7806,8 @@ export default function CamadaBDGD({
                             }
                           );
                         }}
-                        disabled={
+                        
+disabled={
                           !latitudeOk ||
                           !longitudeOk
                         }
@@ -6698,10 +7822,11 @@ export default function CamadaBDGD({
                             7,
 
                           background:
-                            "#101b27",
+                            "#0f172a",
 
                           color:
-                            "#cbd5e1",
+                            
+"#475569",
 
                           cursor:
                             latitudeOk &&
@@ -6719,14 +7844,15 @@ export default function CamadaBDGD({
                         📍 Localizar
                       </button>
                     </div>
-                  </div>
+                  
+</div>
 
                   {/* MANOBRA */}
 
                   <div
                     style={{
                       marginBottom:
-                        14,
+                        9,
                     }}
                   >
                     <div
@@ -6752,13 +7878,13 @@ export default function CamadaBDGD({
                               7,
 
                             background:
-                              "#1e293b",
+                              "#f1f5f9",
 
                             border:
                               "1px solid #334155",
 
                             color:
-                              "#94a3b8",
+                              "#64748b",
 
                             fontSize:
                               10,
@@ -6770,7 +7896,8 @@ export default function CamadaBDGD({
                               8,
                           }}
                         >
-                          Este equipamento não possui comando de abertura/fechamento no modelo operacional.
+                          Este equipamento 
+não possui comando de abertura/fechamento no modelo operacional.
                         </div>
                       )}
 
@@ -6785,7 +7912,8 @@ export default function CamadaBDGD({
                           gap:
                             7,
                         }}
-                      >
+                      
+>
                         <button
                           type="button"
                           onClick={() =>
@@ -6799,7 +7927,8 @@ export default function CamadaBDGD({
                               "ABERTO" ||
                             estadoOperacional ===
                               "INDISPONIVEL" ||
-                            estadoOperacional ===
+                            estadoOperacional 
+===
                               "BYPASSADO"
                           }
                           style={{
@@ -6816,7 +7945,8 @@ export default function CamadaBDGD({
                               "#3b0a0a",
 
                             color:
-                              estadoOperacional ===
+                              
+estadoOperacional ===
                               "ABERTO"
                                 ? "#64748b"
                                 : "#fca5a5",
@@ -6832,7 +7962,8 @@ export default function CamadaBDGD({
                               800,
 
                             fontSize:
-                              11,
+                              
+11,
                           }}
                         >
                           ⛔ ABRIR
@@ -6848,7 +7979,8 @@ export default function CamadaBDGD({
                           disabled={
                             !equipamentoManobravel ||
                             estadoOperacional ===
-                              "FECHADO" ||
+                              "FECHADO" 
+||
                             estadoOperacional ===
                               "INDISPONIVEL" ||
                             estadoOperacional ===
@@ -6878,7 +8010,8 @@ export default function CamadaBDGD({
                               estadoOperacional !==
                                 "FECHADO"
                                 ? "pointer"
-                                : "not-allowed",
+                                : 
+"not-allowed",
 
                             fontWeight:
                               800,
@@ -6895,7 +8028,8 @@ export default function CamadaBDGD({
                         <div
                           style={{
                             marginTop:
-                              9,
+                              
+9,
 
                             padding:
                               10,
@@ -6912,7 +8046,8 @@ export default function CamadaBDGD({
                             color:
                               "#fde68a",
                           }}
-                        >
+                        
+>
                           <div
                             style={{
                               fontSize:
@@ -6946,7 +8081,8 @@ export default function CamadaBDGD({
                             no equipamento{" "}
                             <strong>
                               {
-                                manobraPendente.id
+                                
+manobraPendente.id
                               }
                             </strong>
                             ?
@@ -6964,7 +8100,8 @@ export default function CamadaBDGD({
                                 0.9,
                             }}
                           >
-                            Estado:{" "}
+                            Estado:{" 
+"}
                             {
                               manobraPendente.estadoAtual
                             }{" "}
@@ -6980,7 +8117,8 @@ export default function CamadaBDGD({
                           <div
                             style={{
                               display:
-                                "grid",
+                                
+"grid",
 
                               gridTemplateColumns:
                                 "1fr 1fr",
@@ -6997,7 +8135,8 @@ export default function CamadaBDGD({
                               onClick={
                                 cancelarManobra
                               }
-                              style={{
+                              
+style={{
                                 padding:
                                   "8px 7px",
 
@@ -7011,10 +8150,11 @@ export default function CamadaBDGD({
                                   "#17202b",
 
                                 color:
-                                  "#cbd5e1",
+                                  "#475569",
 
                                 cursor:
-                                  "pointer",
+                                  
+"pointer",
 
                                 fontWeight:
                                   700,
@@ -7030,7 +8170,8 @@ export default function CamadaBDGD({
                               type="button"
                               onClick={() =>
                                 executarManobra(
-                                  manobraPendente.acao
+                                  
+manobraPendente.acao
                                 )
                               }
                               style={{
@@ -7047,7 +8188,8 @@ export default function CamadaBDGD({
                                   "#052e16",
 
                                 color:
-                                  "#86efac",
+                                  
+"#86efac",
 
                                 cursor:
                                   "pointer",
@@ -7065,7 +8207,8 @@ export default function CamadaBDGD({
                         </div>
                       )}
 
-                      <textarea
+                      
+<textarea
                         value={
                           observacaoOperacional
                         }
@@ -7079,7 +8222,8 @@ export default function CamadaBDGD({
                         }
                         placeholder="Observação da manobra..."
                         rows={2}
-                        style={{
+                        
+style={{
                           width:
                             "100%",
 
@@ -7102,7 +8246,7 @@ export default function CamadaBDGD({
                             "vertical",
 
                           background:
-                            "#101b27",
+                            "#0f172a",
 
                           color:
                             "#e2e8f0",
@@ -7115,7 +8259,8 @@ export default function CamadaBDGD({
 
                           fontSize:
                             10,
-                        }}
+                        
+}}
                       />
 
                       <div
@@ -7133,7 +8278,8 @@ export default function CamadaBDGD({
                             1.4,
                         }}
                       >
-                        A manobra altera somente o estado operacional simulado do equipamento no Power Grid Monitor. Nenhum comando físico é enviado à rede.
+                        A manobra altera 
+somente o estado operacional simulado do equipamento no Power Grid Monitor. Nenhum comando físico é enviado à rede.
                       </div>
                     </div>
                   </div>
@@ -7162,11 +8308,12 @@ export default function CamadaBDGD({
                           "#fbbf24",
 
                         fontSize:
-                          11,
+                          10,
 
                         fontWeight:
                           600,
-                      }}
+                      
+}}
                     >
                       ↖ Rede a montante:{" "}
                       {
@@ -7180,7 +8327,8 @@ export default function CamadaBDGD({
                       }{" "}
                       ponto(s).
                     </div>
-                  )}
+                  
+)}
 
                   {redeConectada && (
                     <div
@@ -7198,13 +8346,14 @@ export default function CamadaBDGD({
                           "1px solid #7e22ce",
 
                         background:
-                          "#241032",
+                          
+"#241032",
 
                         color:
                           "#d8b4fe",
 
                         fontSize:
-                          11,
+                          10,
 
                         fontWeight:
                           600,
@@ -7214,7 +8363,8 @@ export default function CamadaBDGD({
                       {
                         redeConectada.quantidadeTrechos ??
                         0
-                      }{" "}
+                      }{" 
+"}
                       trecho(s),{" "}
                       {
                         redeConectada.quantidadePontos ??
@@ -7230,7 +8380,8 @@ export default function CamadaBDGD({
                         marginTop:
                           10,
 
-                        padding:
+                        
+padding:
                           9,
 
                         borderRadius:
@@ -7246,9 +8397,10 @@ export default function CamadaBDGD({
                           "#86efac",
 
                         fontSize:
-                          11,
+                          10,
 
-                        fontWeight:
+                        
+fontWeight:
                           600,
                       }}
                     >
@@ -7256,12 +8408,16 @@ export default function CamadaBDGD({
                     </div>
                   )}
 
-                  <button
+                  </>
+                  )}
+
+                  {tipo !== "TRECHO" && <button
                     type="button"
                     onClick={
                       limparAnalise
                     }
-                    style={{
+                    
+style={{
                       width:
                         "100%",
 
@@ -7291,13 +8447,14 @@ export default function CamadaBDGD({
                     }}
                   >
                     Fechar ficha
-                  </button>
+                  </button>}
                 </div>
               </>
             );
           })()}
         </div>
-      )}
+      
+)}
 
       {/* ================================================== */}
       {/* MAPA */}
@@ -7310,12 +8467,13 @@ export default function CamadaBDGD({
           {mostrarRedeMT &&
             ssdmtFiltrado && (
               <GeoJSON
-                key={
+                
+key={
                   `bdgd-ssdmt-${Array.from(
                     alimentadoresFiltro
                   )
                     .sort()
-                    .join("-")}`
+                    .join("-")}-${versaoEstadoOperacional}`
                 }
                 data={
                   ssdmtFiltrado
@@ -7326,7 +8484,8 @@ export default function CamadaBDGD({
                     false
                   )
                 }
-                onEachFeature={
+                
+onEachFeature={
                   aoCriarTrecho
                 }
               />
@@ -7344,7 +8503,8 @@ export default function CamadaBDGD({
                 indice
               ) => {
                 const coordenadas =
-                  obterCoordenadasItem(
+                  
+obterCoordenadasItem(
                     subestacao
                   );
 
@@ -7362,7 +8522,8 @@ export default function CamadaBDGD({
                   ) ??
                   `subestacao-${indice}`;
 
-                return (
+                return 
+(
                   <CircleMarker
                     key={
                       `subestacao-${id}`
@@ -7380,7 +8541,8 @@ export default function CamadaBDGD({
                       weight:
                         2,
 
-                      fillColor:
+                      
+fillColor:
                         "#0891b2",
 
                       fillOpacity:
@@ -7398,7 +8560,8 @@ export default function CamadaBDGD({
                         }}
                       >
                         <strong>
-                          🔷 Subestação
+                          🔷 
+Subestação
                         </strong>
 
                         <div>
@@ -7416,7 +8579,8 @@ export default function CamadaBDGD({
 
           {/* EQUIPAMENTOS */}
 
-          {renderizarEquipamentos()}
+          
+{renderizarEquipamentos()}
 
           {/* PONNOT */}
 
@@ -7452,7 +8616,8 @@ export default function CamadaBDGD({
                     ) ||
                     coordenadas.length <
                       2
-                  ) {
+                  ) 
+{
                     return null;
                   }
 
@@ -7470,7 +8635,8 @@ export default function CamadaBDGD({
                     !Number.isFinite(
                       latitude
                     ) ||
-                    !Number.isFinite(
+                    
+!Number.isFinite(
                       longitude
                     )
                   ) {
@@ -7487,7 +8653,8 @@ export default function CamadaBDGD({
                     <CircleMarker
                       key={
                         `ponnot-${id}-${indice}`
-                      }
+                      
+}
                       center={[
                         latitude,
                         longitude,
@@ -7505,7 +8672,8 @@ export default function CamadaBDGD({
                         fillColor:
                           "#ff9800",
 
-                        fillOpacity:
+                        
+fillOpacity:
                           1,
                       }}
                       eventHandlers={{
@@ -7521,7 +8689,8 @@ export default function CamadaBDGD({
                             });
 
                             setFichaOperacional(
-                              null
+                              
+null
                             );
 
                             setRedeJusante(
@@ -7539,7 +8708,8 @@ export default function CamadaBDGD({
                             setCaminhoEletrico(
                               null
                             );
-                          },
+                          
+},
                       }}
                     >
                       <Popup>
@@ -7557,7 +8727,8 @@ export default function CamadaBDGD({
                             lineHeight:
                               1.5,
                           }}
-                        >
+                        
+>
                           <div
                             style={{
                               fontSize:
@@ -7591,7 +8762,8 @@ export default function CamadaBDGD({
                               Tipo:
                             </strong>{" "}
                             {
-                              propriedades.TIP_INST ??
+                              propriedades.TIP_INST 
+??
                               "-"
                             }
                           </div>
@@ -7608,7 +8780,8 @@ export default function CamadaBDGD({
 
                           <div>
                             <strong>
-                              Estrutura:
+                              
+Estrutura:
                             </strong>{" "}
                             {
                               propriedades.ESTR ??
@@ -7624,7 +8797,8 @@ export default function CamadaBDGD({
                               propriedades.MAT ??
                               "-"
                             }
-                          </div>
+                          
+</div>
                         </div>
                       </Popup>
                     </CircleMarker>
@@ -7642,7 +8816,8 @@ export default function CamadaBDGD({
               .filter(
                 itemTopologiaPermitido
               )
-              .map(
+              
+.map(
                 (
                   terminal,
                   indice
@@ -7660,7 +8835,8 @@ export default function CamadaBDGD({
 
                   const id =
                     normalizarId(
-                      typeof terminal ===
+                      typeof terminal 
+===
                         "object"
                         ? terminal.id ??
                           terminal.pontoId ??
@@ -7678,7 +8854,8 @@ export default function CamadaBDGD({
                         coordenadas
                       }
                       radius={
-                        4
+                        
+4
                       }
                       pathOptions={{
                         color:
@@ -7696,7 +8873,8 @@ export default function CamadaBDGD({
                     >
                       <Popup>
                         <div
-                          style={{
+                          
+style={{
                             fontFamily:
                               "Arial,sans-serif",
 
@@ -7714,7 +8892,8 @@ export default function CamadaBDGD({
                             </strong>{" "}
                             {id}
                           </div>
-                        </div>
+                        
+</div>
                       </Popup>
                     </CircleMarker>
                   );
@@ -7732,7 +8911,8 @@ export default function CamadaBDGD({
                 itemTopologiaPermitido
               )
               .map(
-                (
+                
+(
                   derivacao,
                   indice
                 ) => {
@@ -7750,7 +8930,8 @@ export default function CamadaBDGD({
                   if (
                     !coordenadas
                   ) {
-                    return null;
+                    return 
+null;
                   }
 
                   const id =
@@ -7768,7 +8949,8 @@ export default function CamadaBDGD({
                         coordenadas
                       }
                       radius={
-                        5
+                        
+5
                       }
                       pathOptions={{
                         color:
@@ -7786,7 +8968,8 @@ export default function CamadaBDGD({
                     >
                       <Popup>
                         <div
-                          style={{
+                          
+style={{
                             fontFamily:
                               "Arial,sans-serif",
 
@@ -7821,7 +9004,8 @@ export default function CamadaBDGD({
                 }
               )}
 
-          {/* ANÁLISES */}
+          {/* ANÁLISES 
+*/}
 
           {renderizarRedeMontante()}
 
@@ -7835,7 +9019,8 @@ export default function CamadaBDGD({
 
       {/* ================================================== */}
       {/* AVISO DE ZOOM */}
-      {/* ================================================== */}
+      {/* ================================================== 
+*/}
 
       {zoomAtual <
         ZOOM_MINIMO_REDE && (
@@ -7853,7 +9038,8 @@ export default function CamadaBDGD({
             transform:
               "translateX(-50%)",
 
-            zIndex:
+            
+zIndex:
               2500,
 
             background:
@@ -7871,7 +9057,8 @@ export default function CamadaBDGD({
             color:
               "#94a3b8",
 
-            fontFamily:
+            
+fontFamily:
               "Arial,sans-serif",
 
             fontSize:
@@ -7887,6 +9074,7 @@ export default function CamadaBDGD({
           🔎 Aproxime o mapa para visualizar a rede elétrica
         </div>
       )}
-    </>
+    
+</>
   );
 }
