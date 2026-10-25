@@ -34,22 +34,26 @@
 // 10. Equipamentos INDISPONIVEIS/BYPASSADOS não podem ser
 //     candidatos.
 // 11. ID/PLAQUETA dos equipamentos devem ser preservados.
-// 12. A topologia deve suportar múltiplos alimentadores.
+// 12. A topologia deve suportar 
+múltiplos alimentadores.
 // 13. Interligações devem ser avaliadas pela BDGD real.
 // 14. Nunca criar interligação artificial.
 // 15. Equipamento só pode ser candidato se existir
 //     fisicamente na BDGD.
-// 16. Não assumir equipamento FECHADO como candidato.
-// 17. Estado operacional explícito tem prioridade.
-// 18. Estado da própria interligação BDGD pode complementar
-//     o estado operacional quando disponível.
-// 19. Ausência de estado NÃO significa FECHADO.
-// 20. Ausência de estado NÃO significa ABERTO.
+// 16. Equipamentos de manobra começam FECHADOS na simulação local,
+//     salvo quando existe posição explícita nos dados ou manobra do operador.
+// 17. Estado operacional explícito tem prioridade sobre o padrão inicial.
+// 18. Estado da própria interligação 
+BDGD pode complementar o estado
+//     operacional quando disponível.
+// 19. FECHADO por padrão é uma premissa do simulador, não telemetria SCADA.
+// 20. ABERTO/INDISPONIVEL só são atribuídos por dado explícito ou manobra.
 // ==========================================================
 
 import SubestacoesRepository from "../repositories/subestacoesRepository";
 import AlimentadoresRepository from "../repositories/alimentadoresRepository";
-import TrechosRepository from "../repositories/trechosRepository";
+import TrechosRepository from "../
+repositories/trechosRepository";
 import EquipamentosRepository from "../repositories/equipamentosRepository";
 
 import {
@@ -88,7 +92,8 @@ const estadoRede = {
     },
 };
 
-// ==========================================================
+// =============================
+=============================
 // UTILITÁRIOS
 // ==========================================================
 
@@ -432,7 +437,8 @@ function inicializarRede() {
 
         estadoRede.subestacoes =
             clonar(
-                SubestacoesRepository.listar(),
+                
+SubestacoesRepository.listar(),
                 []
             );
 
@@ -510,7 +516,8 @@ export function getAlimentadores() {
             ? (primeiro(item, ["id", "codigo", "alimentador", "ALIMENTADOR", "CTMT", "ctmt"]) ?? item)
             : item;
         const chave = normalizarCodigo(valor);
-        if (chave && !resultado.some(existente => normalizarCodigo(
+        if (chave && !resultado.some(existente => 
+normalizarCodigo(
             typeof existente === "object" && existente !== null
                 ? (primeiro(existente, ["id", "codigo", "alimentador", "ALIMENTADOR", "CTMT", "ctmt"]) ?? existente)
                 : existente
@@ -544,7 +551,8 @@ export function getEquipamentos() {
     );
 }
 
-// ==========================================================
+// 
+==========================================================
 // AUXILIAR PARA CONSOLIDAR COLEÇÕES
 // ==========================================================
 
@@ -558,7 +566,8 @@ function identificarChaveItem(
         item === undefined
     ) {
         return `IDX_${indice}`;
-    }
+    
+}
 
     const id =
         primeiro(
@@ -576,7 +585,8 @@ function identificarChaveItem(
                 "UNSEMT",
                 "UNTRMT",
                 "UNTRAT",
-            ]
+            
+]
         );
 
     if (id !== null) {
@@ -612,7 +622,8 @@ function mesclarColecao(
         mapa.set(
             chave,
             item
-        );
+        
+);
     }
 
     for (
@@ -630,7 +641,8 @@ function mesclarColecao(
         ) {
 
             mapa.set(
-                chave,
+                
+chave,
                 item
             );
 
@@ -665,7 +677,8 @@ function mesclarColecao(
 
         resultado.push(
             valor
-        );
+        
+);
     }
 
     return resultado;
@@ -786,7 +799,8 @@ function consolidarTopologia(
             nova?.alimentadores
         ),
 
-        anterior?.alimentador,
+        
+anterior?.alimentador,
 
         nova?.alimentador,
 
@@ -804,7 +818,8 @@ function consolidarTopologia(
             ];
     }
 
-    const circuitos =
+    const circuitos 
+=
         new Set();
 
     [
@@ -860,6 +875,94 @@ function consolidarTopologia(
 }
 
 // ==========================================================
+// PADRÃO INICIAL DOS EQUIPAMENTOS DE MANOBRA
+// ==========================================================
+// A aplicação não está ligada ao SCADA. Para que a simulação de
+// energização tenha um estado inicial determinístico, chaves e religadores
+// começam FECHADOS. Campos cadastrais como POS/SITCONT não são telemetria.
+// Uma manobra do operador 
+substitui o padrão e não é sobrescrita por recarga.
+
+const TIPOS_EQUIPAMENTO_MANOBRA = new Set([
+    "CHAVE_LAMINA",
+    "CHAVE_FUSIVEL",
+    "CHAVE_SECCIONADORA",
+    "RELIGADOR",
+]);
+
+function inicializarEstadosPadraoEquipamentos(topologia) {
+    if (!topologia) return { inicializados: 0, preservados: 0 };
+
+    const candidatos = new 
+Map();
+    const colecoes = [
+        topologia.unidadesSeccionadoras,
+        topologia.equipamentosOperacionais,
+        topologia.equipamentos,
+    ];
+
+    for (const colecao of colecoes) {
+        for (const equipamento of lista(colecao)) {
+            if (!equipamento) continue;
+            const tipo = classificarEquipamento(equipamento);
+            if 
+(!TIPOS_EQUIPAMENTO_MANOBRA.has(tipo)) continue;
+
+            const ids = obterIdentificadoresEquipamento(equipamento);
+            const idPrincipal = normalizarId(
+                obterIdOperacionalEquipamento(equipamento) ||
+                equipamento?.plaqueta || equipamento?.unsemtId ||
+                equipamento?.unidadeId || equipamento?.id ||
+                equipamento?.COD_ID || equipamento?.codId || ids[0]
+            );
+            if (!idPrincipal) 
+continue;
+
+            const chave = obterChaveEstadoEquipamento(idPrincipal);
+            if (!chave) continue;
+
+            // POS/SITCONT da BDGD são atributos de cadastro, não posição
+            // operacional em tempo real. O estado inicial da simulação é fechado.
+            if (!candidatos.has(chave)) {
+                candidatos.set(chave, { id: idPrincipal, chave, tipo });
+            }
+        }
+    }
+
+    let inicializados = 0;
+    let preservados = 0;
+    const mapa = estadoRede.operacao.equipamentos;
+
+    for (const candidato of candidatos.values()) {
+        const atual = mapa[candidato.chave] || mapa[candidato.id];
+        // Preserve estados criados por manobra do operador. Estados de
+        // cadastro ou de padrão antigo não prevalecem sobre a premissa inicial.
+        if (atual && !["PADRAO_INICIAL_SIMULADO", 
+"CADASTRO"].includes(atual.origem)) {
+            preservados += 1;
+            continue;
+        }
+
+        const estado = "FECHADO";
+        mapa[candidato.chave] = {
+            equipamentoId: candidato.id,
+            equipamentoIdNormalizado: candidato.chave,
+            estado,
+            estadoAnterior: atual?.estado ?? null,
+            origem: "PADRAO_INICIAL_SIMULADO",
+            atualizadoEm: null,
+            observacao: "Premissa 
+inicial do simulador: equipamento considerado FECHADO; não representa leitura SCADA.",
+        };
+        estadoRede.operacao.equipamentosDesligados =
+            estadoRede.operacao.equipamentosDesligados.filter((id) => id !== candidato.chave);
+        inicializados += 1;
+    }
+
+    return { inicializados, preservados, total: candidatos.size };
+}
+
+// ==========================================================
 // TOPOLOGIA
 // ==========================================================
 
@@ -881,6 +984,15 @@ export function registrarTopologiaBDGD(
             topologia
         );
 
+    const diagnosticoEstadosIniciais = inicializarEstadosPadraoEquipamentos(
+        estadoRede.topologiaBDGD
+    );
+    console.info("⚙️ [Power Grid Monitor] Estado inicial dos equipamentos de manobra:", 
+{
+        ...diagnosticoEstadosIniciais,
+        premissa: "FECHADO como estado inicial simulado; campos cadastrais não são telemetria SCADA",
+    });
+
     estadoRede.operacao
         .ultimaAtualizacao =
         new Date();
@@ -889,7 +1001,8 @@ export function registrarTopologiaBDGD(
         "🧠 [Power Grid Monitor] TOPOLOGIA BDGD CONSOLIDADA:",
         {
             alimentador:
-                estadoRede.topologiaBDGD?.alimentador ??
+                
+estadoRede.topologiaBDGD?.alimentador ??
                 null,
 
             alimentadores:
@@ -903,7 +1016,8 @@ export function registrarTopologiaBDGD(
                 ).length,
 
             trechos:
-                lista(
+                
+lista(
                     estadoRede.topologiaBDGD?.trechos
                 ).length,
 
@@ -915,7 +1029,8 @@ export function registrarTopologiaBDGD(
             equipamentosOperacionais:
                 lista(
                     estadoRede.topologiaBDGD?.equipamentosOperacionais
-                ).length,
+                
+).length,
 
             interligacoes:
                 lista(
@@ -929,7 +1044,8 @@ export function registrarTopologiaBDGD(
 
 export function limparTopologiaBDGD() {
 
-    estadoRede.topologiaBDGD =
+    estadoRede.topologiaBDGD 
+=
         null;
 
     return null;
@@ -944,7 +1060,8 @@ export function possuiTopologiaBDGD() {
 
     return Boolean(
         estadoRede.topologiaBDGD
-    );
+    
+);
 }
 // ==========================================================
 // ESTADO OPERACIONAL
@@ -958,7 +1075,8 @@ const ESTADOS_VALIDOS = [
 
     "INDISPONIVEL",
 
-    "BYPASSADO",
+    
+"BYPASSADO",
 
 ];
 
@@ -1043,11 +1161,12 @@ export function normalizarEstadoEquipamento(
 
 // ==========================================================
 // ESTADO EXPLÍCITO
-// ==========================================================
+// 
+==========================================================
 //
-// Procura somente evidência real de estado.
-//
-// Ausência de informação não vira FECHADO.
+// Procura evidência explícita de estado. Quando não há evidência,
+// a camada operacional aplica FECHADO como premissa inicial simulada
+// somente aos equipamentos de manobra conhecidos.
 //
 // ==========================================================
 
@@ -1088,7 +1207,8 @@ function obterEstadoExplicito(
     const camposEstado = [
 
         "estado",
-        "estadoOperacional",
+        
+"estadoOperacional",
         "estadoDispositivo",
 
         "status",
@@ -1133,7 +1253,8 @@ function obterEstadoExplicito(
                 "posicao", "POSICAO", "POS",
                 "posicaoOperacional", "POSICAO_OPERACIONAL",
             ].includes(campo);
-            if (!estado && campoPosicao) {
+            if (!estado && campoPosicao) 
+{
                 const codigoPosicao = normalizarTexto(valor);
                 if (codigoPosicao === "1") estado = "FECHADO";
                 if (codigoPosicao === "0") estado = "ABERTO";
@@ -1148,7 +1269,8 @@ function obterEstadoExplicito(
                     estado,
 
                     origemCampo:
-                        campo,
+                        
+campo,
 
                 };
             }
@@ -1166,7 +1288,8 @@ function obterEstadoExplicito(
             fonte?.open === true
         ) {
 
-            return {
+            return 
+{
 
                 estado:
                     "ABERTO",
@@ -1210,71 +1333,110 @@ function obterChaveEstadoEquipamento(
 export function consultarEstadoEquipamento(
     equipamentoId
 ) {
+    const id = normalizarId(equipamentoId);
+    if (!id) return null;
 
-    const id =
-        normalizarId(
-            equipamentoId
-        );
+    const chave = obterChaveEstadoEquipamento(id);
+    const mapaOperacional = 
+estadoRede.operacao.equipamentos || {};
+    const registroDireto = mapaOperacional[chave] ?? mapaOperacional[id] ?? null;
 
-    if (!id) {
-        return null;
-    }
-
-    const chave =
-        obterChaveEstadoEquipamento(
-            id
-        );
-
-    const operacional =
-        estadoRede
-            .operacao
-            .equipamentos?.[
-                chave
-            ] ??
-        estadoRede
-            .operacao
-            .equipamentos?.[
-                id
-            ];
-
+    // Uma manobra explícita deve vencer qualquer estado inicial criado para
+    // outro identificador equivalente do mesmo equipamento.
+    const origemDireta = normalizarTexto(registroDireto?.origem);
     if (
-        operacional
+        registroDireto &&
+        origemDireta &&
+        origemDireta !== "PADRAO_INICIAL_SIMULADO" 
+&&
+        origemDireta !== "CADASTRO"
     ) {
-
-        return {
-            ...operacional,
-        };
+        return { ...registroDireto };
     }
 
     const equipamentoCadastro = buscarEquipamento(id);
-    const estadoCadastro = obterEstadoExplicito(equipamentoCadastro);
     const equipamentoBDGD = buscarEquipamentoBDGD(id);
+    const equipamentoParaClassificar = equipamentoBDGD || equipamentoCadastro;
+
+    // Reúne as identidades equivalentes (plaqueta, UNSEMT, ID interno e ID
+    // operacional). Isso evita que, 
+por exemplo, o padrão FECHADO de um alias
+    // esconda o ABERTO registrado em outro alias após a manobra.
+    const idsEquivalentes = new Set([
+        id,
+        chave,
+        obterIdOperacionalEquipamento(equipamentoBDGD),
+        obterIdOperacionalEquipamento(equipamentoCadastro),
+        ...obterIdentificadoresEquipamento(equipamentoBDGD),
+        
+...obterIdentificadoresEquipamento(equipamentoCadastro),
+    ].map((valor) => obterChaveEstadoEquipamento(valor)).filter(Boolean));
+
+    const registrosEquivalentes = Object.values(mapaOperacional).filter((registro) => {
+        if (!registro || typeof registro !== "object") return false;
+        const idsRegistro = [
+            registro.equipamentoId,
+            registro.equipamentoIdNormalizado,
+        ].map((valor) => 
+obterChaveEstadoEquipamento(valor)).filter(Boolean);
+        return idsRegistro.some((valor) => idsEquivalentes.has(valor));
+    });
+
+    registrosEquivalentes.sort((a, b) => {
+        const prioridade = (registro) => {
+            const origem = normalizarTexto(registro?.origem);
+            if (origem && origem !== "PADRAO_INICIAL_SIMULADO" && origem !== "CADASTRO") return 2;
+            if (origem === "CADASTRO") return 1;
+            return 0;
+        
+};
+        const diferenca = prioridade(b) - prioridade(a);
+        if (diferenca) return diferenca;
+        const dataA = a?.atualizadoEm ? new Date(a.atualizadoEm).getTime() : 0;
+        const dataB = b?.atualizadoEm ? new Date(b.atualizadoEm).getTime() : 0;
+        return dataB - dataA;
+    });
+
+    for (const registro of registrosEquivalentes) {
+        const estado = normalizarEstadoEquipamento(registro?.estado);
+        if (estado) return { ...registro, 
+estado };
+    }
+
+    if (registroDireto) return { ...registroDireto };
+
+    const tipoEquipamentoSemEstado = classificarEquipamento(equipamentoParaClassificar);
+
+    // A BDGD é cadastro, não telemetria. Para os equipamentos de manobra
+    // reconhecidos, o padrão inicial do simulador é FECHADO.
+    if (TIPOS_EQUIPAMENTO_MANOBRA.has(tipoEquipamentoSemEstado)) 
+{
+        return {
+            equipamentoId: id,
+            estado: "FECHADO",
+            conhecido: true,
+            origem: "PADRAO_INICIAL_SIMULADO",
+            origemCampo: null,
+            atualizadoEm: null,
+            observacao: "Premissa inicial do simulador: FECHADO. Não representa leitura SCADA; uma manobra do operador atualiza este estado.",
+        };
+    }
+
+    const estadoCadastro = 
+obterEstadoExplicito(equipamentoCadastro);
     const estadoExplicito = estadoCadastro?.estado
         ? estadoCadastro
         : obterEstadoExplicito(equipamentoBDGD ?? equipamentoCadastro);
 
     if (estadoExplicito?.estado) {
-
         return {
-
-            equipamentoId:
-                id,
-
-            estado:
-                estadoExplicito.estado,
-
-            origem:
-                "CADASTRO",
-
-            origemCampo:
-                estadoExplicito
-                    .origemCampo,
-
-            atualizadoEm:
-                null,
-
-            observacao:
-                null,
+            equipamentoId: id,
+            estado: estadoExplicito.estado,
+            origem: "CADASTRO",
+            origemCampo: estadoExplicito.origemCampo,
+            atualizadoEm: null,
+            observacao: 
+null,
         };
     }
 
@@ -1284,7 +1446,7 @@ export function consultarEstadoEquipamento(
         conhecido: false,
         origem: "DESCONHECIDO",
         atualizadoEm: null,
-        observacao: "Estado físico não informado; não é seguro presumir ABERTO ou FECHADO.",
+        observacao: "Não foi possível determinar o estado deste equipamento.",
     };
 }
 
@@ -1306,7 +1468,8 @@ export function atualizarEstadoEquipamento(
     opcoes = {}
 ) {
 
-    const id =
+    const id 
+=
         normalizarId(
             equipamentoId
         );
@@ -1357,7 +1520,8 @@ export function atualizarEstadoEquipamento(
             sucesso:
                 false,
 
-            mensagem:
+            
+mensagem:
                 "Estado operacional inválido.",
 
         };
@@ -1373,7 +1537,8 @@ export function atualizarEstadoEquipamento(
             id
         );
 
-    const registro = {
+    const registro = 
+{
 
         equipamentoId:
             id,
@@ -1408,7 +1573,8 @@ export function atualizarEstadoEquipamento(
 
     if (
         novoEstado === "ABERTO" ||
-        novoEstado === "INDISPONIVEL"
+        novoEstado === 
+"INDISPONIVEL"
     ) {
 
         if (
@@ -1426,7 +1592,8 @@ export function atualizarEstadoEquipamento(
                 .push(
                     chave
                 );
-        }
+        
+}
 
     } else {
 
@@ -1444,7 +1611,8 @@ export function atualizarEstadoEquipamento(
     }
 
     estadoRede
-        .operacao
+        
+.operacao
         .historico
         .push({
 
@@ -1460,9 +1628,29 @@ export function atualizarEstadoEquipamento(
         });
 
     estadoRede
-        .operacao
+        
+.operacao
         .ultimaAtualizacao =
         new Date();
+
+    // Notifica os componentes do mapa sobre qualquer alteração de estado
+    // feita pelo modelo central, inclusive por formulários externos à camada.
+    if (
+        typeof window !== "undefined" &&
+        typeof CustomEvent !== "undefined"
+    ) {
+        window.dispatchEvent(
+            new 
+CustomEvent("power-grid-estado-equipamento-alterado", {
+                detail: {
+                    id,
+                    equipamentoId: id,
+                    estado: novoEstado,
+                    registro,
+                },
+            })
+        );
+    }
 
     return {
 
@@ -1470,7 +1658,8 @@ export function atualizarEstadoEquipamento(
             true,
 
         equipamentoId:
-            id,
+            
+id,
 
         equipamentoIdNormalizado:
             chave,
@@ -1487,7 +1676,8 @@ export function executarManobraEquipamento(
     opcoes = {}
 ) {
 
-    const comando =
+    const comando 
+=
         normalizarTexto(
             acao
         );
@@ -1505,7 +1695,8 @@ export function executarManobraEquipamento(
             mensagem:
                 "Ação inválida.",
 
-        };
+        
+};
     }
 
     const equipamento =
@@ -1521,7 +1712,8 @@ export function executarManobraEquipamento(
                 false,
 
             mensagem:
-                `Equipamento ${equipamentoId} não encontrado na rede.`,
+                `Equipamento ${equipamentoId} não encontrado na 
+rede.`,
 
         };
     }
@@ -1539,7 +1731,8 @@ export function executarManobraEquipamento(
         return {
 
             sucesso:
-                false,
+                
+false,
 
             bloqueada:
                 true,
@@ -1572,7 +1765,8 @@ export function executarManobraEquipamento(
     const novoEstado =
         comando === "ABRIR"
             ? "ABERTO"
-            : "FECHADO";
+            : 
+"FECHADO";
 
     if (
         estadoAtual?.estado ===
@@ -1590,7 +1784,8 @@ export function executarManobraEquipamento(
             equipamentoId:
                 normalizarId(
                     equipamentoId
-                ),
+                
+),
 
             estado:
                 estadoAtual,
@@ -1624,7 +1819,8 @@ export function executarManobraEquipamento(
         !resultado?.sucesso
     ) {
 
-        return resultado;
+        return 
+resultado;
     }
 
     const estadoFinal =
@@ -1642,7 +1838,8 @@ export function executarManobraEquipamento(
         estadoAtual:
             estadoFinal,
 
-        estado:
+        
+estado:
             estadoFinal,
 
         acao:
@@ -1658,7 +1855,8 @@ export function desligarEquipamento(
 
     return executarManobraEquipamento(
         equipamentoId,
-        "ABRIR",
+        
+"ABRIR",
         opcoes
     );
 }
@@ -1675,7 +1873,8 @@ export function ligarEquipamento(
     );
 }
 
-export function equipamentoEstaAberto(
+export function 
+equipamentoEstaAberto(
     equipamentoId
 ) {
 
@@ -1692,7 +1891,8 @@ export function equipamentoEstaFechado(
 ) {
 
     return (
-        consultarEstadoEquipamento(
+        
+consultarEstadoEquipamento(
             equipamentoId
         )?.estado ===
         "FECHADO"
@@ -1709,7 +1909,8 @@ export function equipamentoEstaDisponivel(
         )?.estado;
 
     return (
-        estado === "ABERTO" ||
+        estado === "ABERTO" 
+||
         estado === "FECHADO"
     );
 }
@@ -1717,6 +1918,783 @@ export function equipamentoEstaDisponivel(
 export function obterMapaEstadosEquipamentos() {
 
     return listarEstadosEquipamentos();
+}
+
+
+// ==========================================================
+// ESTADO DE ENERGIZAÇÃO DOS TRECHOS
+// 
+==========================================================
+// Calcula o estado elétrico da rede a partir das fontes reais
+// identificadas na topologia e dos estados operacionais atuais.
+//
+// Regras:
+// - Não inventa fontes nem conexões.
+// - Chaves/religadores sem posição explícita começam FECHADOS na simulação local.
+// - Uma manobra explícita ABRIR/FECHAR prevalece sobre o padrão inicial.
+// - ABERTO/INDISPONIVEL bloqueiam a passagem.
+// - Equipamento com estado 
+desconhecido cria uma incerteza:
+//   trechos cuja energização não possa ser provada ficam
+//   INDETERMINADO e conservam a cor original no mapa.
+// - O grafo considera todos os alimentadores em conjunto, para
+//   aproveitar conectividade real entre pontos PAC compartilhados.
+// ==========================================================
+
+function normalizarPontoEnergizacao(valor) {
+
+    const texto = 
+normalizarId(valor);
+
+    if (!texto) return "";
+
+    // Mesma regra de normalização PAC usada na topologiaBDGD.
+    const match = texto.match(/^(.*?)M(?:-[^\s-]+)?$/i);
+
+    return normalizarId(match?.[1] ?? texto);
+}
+
+function criarChaveArestaEnergizacao(pontoA, pontoB) {
+
+    const a = 
+normalizarPontoEnergizacao(pontoA);
+    const b = normalizarPontoEnergizacao(pontoB);
+
+    if (!a || !b || a === b) return null;
+
+    return [a, b].sort().join("::");
+}
+
+function obterNoTrechoEnergizacao(topologia, trecho, extremidade, pontosInterligacao) {
+
+    const inicial = extremidade === "INICIAL";
+    const resolvido = 
+normalizarPontoEnergizacao(
+        inicial
+            ? trecho?.pontoInicial ?? trecho?.PAC_1
+            : trecho?.pontoFinal ?? trecho?.PAC_2
+    );
+
+    const original = normalizarPontoEnergizacao(
+        inicial
+            ? trecho?.pontoInicialOriginal ?? trecho?.PN_CON_1
+            : trecho?.pontoFinalOriginal ?? trecho?.PN_CON_2
+    );
+
+    const indice = 
+topologia?.indicePontosNormalizados || {};
+    const pontos = topologia?.pontos || {};
+
+    // `pontoInicial/pontoFinal` são resolvidos pelo topologiaBDGD com base
+    // no PONNOT real e no CTMT. Devem prevalecer sobre PN_CON bruto quando
+    // a resolução encontrou a feição real; caso contrário o bruto segue como
+    // fallback, sem inventar um ponto novo.
+    if (resolvido && pontos[resolvido]) return resolvido;
+    if (!original) return 
+resolvido;
+
+    const existePontoReal = Boolean(
+        pontos[original] ||
+        (Array.isArray(indice[original]) && indice[original].length > 0) ||
+        pontosInterligacao.has(original)
+    );
+
+    return existePontoReal ? original : (resolvido || original);
+}
+
+function obterFontesEnergizacao(topologia, nosConhecidos) {
+
+    const fontes = new 
+Set();
+    const colecoes = [
+        topologia?.origensConfirmadas,
+        topologia?.origensConfiguradas,
+        topologia?.origensAutomaticasDetectadas,
+        topologia?.orientacaoEletrica?.origensConfirmadas,
+    ];
+
+    for (const colecao of colecoes) {
+        for (const item of lista(colecao)) {
+            const id = 
+normalizarPontoEnergizacao(
+                typeof item === "object" && item
+                    ? item.pontoId ?? item.id ?? item.COD_ID
+                    : item
+            );
+
+            if (id && nosConhecidos.has(id)) fontes.add(id);
+        }
+    }
+
+    const origemUnica = normalizarPontoEnergizacao(
+        topologia?.origemAutomatica?.pontoId 
+??
+        topologia?.origemAutomatica?.id
+    );
+
+    if (origemUnica && nosConhecidos.has(origemUnica)) {
+        fontes.add(origemUnica);
+    }
+
+    return [...fontes];
+}
+
+function adicionarArestaGrafoEnergizacao(grafo, pontoA, pontoB, metadados = {}) {
+    const a = 
+normalizarPontoEnergizacao(pontoA);
+    const b = normalizarPontoEnergizacao(pontoB);
+    if (!a || !b || a === b) return false;
+
+    if (!grafo.has(a)) grafo.set(a, []);
+    if (!grafo.has(b)) grafo.set(b, []);
+
+    grafo.get(a).push({ destino: b, ...metadados });
+    grafo.get(b).push({ destino: a, ...metadados });
+    return true;
+}
+
+function 
+percorrerGrafoEnergizacao(fontes, adjacencia) {
+    const visitados = new Set();
+    const fila = [];
+
+    for (const fonte of fontes) {
+        if (adjacencia.has(fonte) && !visitados.has(fonte)) {
+            visitados.add(fonte);
+            fila.push(fonte);
+        }
+    }
+
+    for (let indice = 0; indice < fila.length; indice += 1) {
+        const atual = fila[indice];
+        for (const conexao of adjacencia.get(atual) || []) {
+            const destino = 
+normalizarPontoEnergizacao(conexao?.destino);
+            if (destino && !visitados.has(destino)) {
+                visitados.add(destino);
+                fila.push(destino);
+            }
+        }
+    }
+
+    return visitados;
+}
+
+function obterEstadoDispositivoEnergizacao(equipamento, ids = []) {
+    const aliases = [...new Set((Array.isArray(ids) ? ids : [ids])
+        .map((id) => 
+obterChaveEstadoEquipamento(id))
+        .filter(Boolean))];
+
+    // IMPORTANTE: consultarEstadoEquipamento() devolve FECHADO como padrão
+    // para equipamentos de manobra sem registro operacional. Portanto, não
+    // devemos consultar um alias por vez e retornar esse padrão imediatamente:
+    // outro alias do mesmo ativo pode ter o ABERTO gravado pela manobra.
+    // Primeiro procuramos registros operacionais efetivamente gravados.
+    const registros = 
+Object.values(estadoRede.operacao?.equipamentos || {})
+        .filter((registro) => registro && typeof registro === "object");
+
+    const correspondentes = registros.filter((registro) => {
+        const idsRegistro = [
+            registro.equipamentoId,
+            registro.equipamentoIdNormalizado,
+        ].map((id) => obterChaveEstadoEquipamento(id)).filter(Boolean);
+        return idsRegistro.some((id) => aliases.includes(id));
+    });
+
+    const prioridadeRegistro = (registro) => {
+        const origem = normalizarTexto(registro?.origem);
+        // Estado de manobra explícito prevalece sobre a premissa FECHADO.
+        if (origem && origem !== "PADRAO_INICIAL_SIMULADO" && origem !== "CADASTRO") return 2;
+        if (origem === "CADASTRO") return 1;
+        return 0;
+    };
+
+    correspondentes.sort((a, b) => {
+        const prioridade = prioridadeRegistro(b) - 
+prioridadeRegistro(a);
+        if (prioridade) return prioridade;
+        const dataA = a?.atualizadoEm ? new Date(a.atualizadoEm).getTime() : 0;
+        const dataB = b?.atualizadoEm ? new Date(b.atualizadoEm).getTime() : 0;
+        return dataB - dataA;
+    });
+
+    for (const registro of correspondentes) {
+        const estado = normalizarEstadoEquipamento(registro.estado);
+        if (estado) return estado;
+    
+}
+
+    // Nenhuma manobra explícita encontrada: só agora consultamos os aliases
+    // para obter estado cadastral conhecido ou o padrão inicial FECHADO.
+    for (const id of (Array.isArray(ids) ? ids : [ids])) {
+        const consultado = consultarEstadoEquipamento(id);
+        const estado = normalizarEstadoEquipamento(consultado?.estado);
+        if (estado) return estado;
+    }
+
+    const estadoExplicito = 
+normalizarEstadoEquipamento(obterEstadoExplicito(equipamento)?.estado);
+    if (estadoExplicito) return estadoExplicito;
+
+    return TIPOS_EQUIPAMENTO_MANOBRA.has(classificarEquipamento(equipamento))
+        ? "FECHADO"
+        : null;
+}
+
+// Normaliza o identificador do PAC sem remover seus sufixos elétricos.
+// Ex.: 1089849M-152 e 1089849M-152S precisam continuar sendo nós 
+distintos
+// quando representam os dois lados de uma chave.
+function normalizarPacEletrico(valor) {
+    const texto = normalizarId(valor);
+    return texto ? texto.toUpperCase() : "";
+}
+
+function obterBasePacEletrico(valor) {
+    const texto = normalizarPacEletrico(valor);
+    if (!texto) return "";
+    const match = texto.match(/^(.*?)M(?:-[^\s-]+)?$/i);
+    return normalizarId(match?.[1] 
+?? texto);
+}
+
+function obterCircuitoPacEletrico(valor) {
+    const texto = normalizarPacEletrico(valor);
+    const match = texto.match(/M-(\d{2,6})([A-Z]*)$/i);
+    return match?.[1] ?? null;
+}
+
+function obterPacBrutoTrecho(trecho, extremidade) {
+    const propriedades = trecho?.propriedades || trecho?.properties || {};
+    const inicial = extremidade === 
+"INICIAL";
+    const valor = inicial
+        ? propriedades.PAC_1 ?? propriedades.PAC1 ?? trecho?.PAC_1 ?? trecho?.PAC1
+        : propriedades.PAC_2 ?? propriedades.PAC2 ?? trecho?.PAC_2 ?? trecho?.PAC2;
+    return normalizarPacEletrico(valor);
+}
+
+function obterPacBrutoDispositivo(equipamento, extremidade) {
+    const p = equipamento?.propriedades || equipamento?.properties || 
+equipamento;
+    const unidade = equipamento?.unidadeSeccionadora || equipamento?.unidade || {};
+    const up = unidade?.propriedades || unidade?.properties || unidade;
+    const inicial = extremidade === "INICIAL";
+    // Campos brutos vêm primeiro. pac1/pac2 já podem ter sido normalizados
+    // para um mesmo PONNOT e não preservam, sozinhos, o lado do dispositivo.
+    const valor = inicial
+        ? p?.PAC_1 ?? p?.PAC1 ?? equipamento?.pac1Original ?? equipamento?.PAC_1 
+??
+          up?.PAC_1 ?? up?.PAC1 ?? unidade?.pac1Original ?? equipamento?.pac1
+        : p?.PAC_2 ?? p?.PAC2 ?? equipamento?.pac2Original ?? equipamento?.PAC_2 ??
+          up?.PAC_2 ?? up?.PAC2 ?? unidade?.pac2Original ?? equipamento?.pac2;
+    return normalizarPacEletrico(valor);
+}
+
+function obterPontoFonteEnergizacao(ponto) {
+    const p = ponto?.propriedades || ponto?.properties || ponto || 
+{};
+    return normalizarTexto(
+        p.TIP_PN ?? p.TIP_PON ?? p.TIPO_PONTO ?? p.TIPO ?? ponto?.tipo
+    );
+}
+
+function obterCircuitoFonteEnergizacao(ponto) {
+    const p = ponto?.propriedades || ponto?.properties || ponto || {};
+    const valor = ponto?.circuito ?? p.CTMT ?? p.ctmt ?? p.CT_COD_OP ?? p.CT_COD_OPER;
+    const texto = normalizarId(valor);
+    if (!texto) return 
+null;
+    const match = texto.match(/(\d{2,6})(?:[A-Z]*)$/i);
+    return match?.[1] ?? texto;
+}
+
+function criarArestaPacEnergizacao(a, b) {
+    const inicio = normalizarPacEletrico(a);
+    const fim = normalizarPacEletrico(b);
+    if (!inicio || !fim || inicio === fim) return null;
+    return [inicio, fim].sort().join("::");
+}
+
+export function 
+calcularEstadosEnergizacaoTrechos(
+    topologia = estadoRede.topologiaBDGD
+) {
+    const vazio = (motivo = "TOPOLOGIA_NAO_DISPONIVEL") => ({
+        estados: {},
+        diagnostico: {
+            calculado: false,
+            motivo,
+            fontes: [],
+            quantidadeFontes: 0,
+            energizados: 0,
+            desenergizados: 0,
+            indeterminados: 0,
+            
+equipamentosSeccionadoresAbertos: 0,
+            equipamentosSeccionadoresDesconhecidos: 0,
+        },
+    });
+    if (!topologia) return vazio();
+
+    const todosTrechos = lista(topologia.trechos);
+    const grafoFisico = new Map();
+    const grafoGarantido = new Map();
+    const grafoPossivel = new Map();
+    const nosConhecidos = new Set();
+    const arestasTrechos = [];
+    const mapaNosPorBase = new 
+Map();
+
+    const registrarNo = (no) => {
+        const id = normalizarPacEletrico(no);
+        if (!id) return "";
+        nosConhecidos.add(id);
+        const base = obterBasePacEletrico(id);
+        if (base) {
+            const listaBase = mapaNosPorBase.get(base) || new Set();
+            listaBase.add(id);
+            mapaNosPorBase.set(base, listaBase);
+        }
+        return id;
+    
+};
+
+    // Equipamentos de manobra são consolidados por identidade operacional.
+    // Os PACs brutos preservam a diferença entre os lados de uma chave,
+    // mesmo quando ambos se referem à mesma base PONNOT.
+    const equipamentosPorChave = new Map();
+    const colecoesEquipamentos = [
+        topologia?.unidadesSeccionadoras,
+        topologia?.equipamentosOperacionais,
+        
+topologia?.equipamentos,
+    ];
+
+    for (const colecao of colecoesEquipamentos) {
+        for (const equipamento of lista(colecao)) {
+            if (!equipamento) continue;
+            const tipo = classificarEquipamento(equipamento);
+            if (!["CHAVE_LAMINA", "CHAVE_FUSIVEL", "CHAVE_SECCIONADORA", "RELIGADOR"].includes(tipo)) continue;
+
+            const ids = [...new Set([
+                
+obterIdOperacionalEquipamento(equipamento),
+                normalizarId(equipamento?.id),
+                normalizarId(equipamento?.COD_ID),
+                normalizarId(equipamento?.codId),
+                normalizarId(equipamento?.unidadeId),
+                normalizarId(equipamento?.unsemtId),
+                normalizarId(equipamento?.codIdUNSEMT),
+                
+normalizarId(equipamento?.COD_ID_UNSEMT),
+                normalizarId(equipamento?.unidadeSeccionadora?.id),
+            ].filter(Boolean))];
+            const chave = normalizarCodigoEquipamento(ids[0] || "");
+            if (!chave || equipamentosPorChave.has(chave)) continue;
+
+            const pac1 = obterPacBrutoDispositivo(equipamento, "INICIAL");
+            const pac2 = obterPacBrutoDispositivo(equipamento, 
+"FINAL");
+            const estado = obterEstadoDispositivoEnergizacao(equipamento, ids);
+            const dispositivo = {
+                equipamento,
+                ids,
+                tipo,
+                pac1,
+                pac2,
+                basePac1: obterBasePacEletrico(pac1),
+                basePac2: obterBasePacEletrico(pac2),
+                chaveAresta: criarArestaPacEnergizacao(pac1, pac2),
+                estado,
+            
+};
+            equipamentosPorChave.set(chave, dispositivo);
+            registrarNo(pac1);
+            registrarNo(pac2);
+        }
+    }
+    const dispositivos = [...equipamentosPorChave.values()];
+
+    // Cada SSDMT passa a usar PAC_1/PAC_2 brutos quando presentes. Só recorre
+    // a PN_CON_1/PN_CON_2 quando a informação PAC é ausente ou não separa nós.
+    for (const trecho of 
+todosTrechos) {
+        const id = normalizarId(trecho?.id ?? trecho?.COD_ID ?? trecho?.codId);
+        if (!id) continue;
+
+        let inicio = obterPacBrutoTrecho(trecho, "INICIAL");
+        let fim = obterPacBrutoTrecho(trecho, "FINAL");
+        let origemNos = "PAC_BDGD";
+        if (!inicio || !fim || inicio === fim) {
+            // Prioriza os extremos já resolvidos pela topologia para um PONNOT
+            // real no circuito 
+correspondente. PN_CON original fica como fallback
+            // para preservar a referência em diagnósticos de dados incompletos.
+            inicio = normalizarPacEletrico(
+                trecho?.pontoInicial ?? trecho?.pontoInicialOriginal ?? trecho?.PN_CON_1
+            );
+            fim = normalizarPacEletrico(
+                trecho?.pontoFinal ?? trecho?.pontoFinalOriginal ?? trecho?.PN_CON_2
+            );
+            origemNos = 
+"PONNOT_RESOLVIDO_COM_FALLBACK_BDGD";
+        }
+        inicio = registrarNo(inicio);
+        fim = registrarNo(fim);
+        const chaveAresta = criarArestaPacEnergizacao(inicio, fim);
+        arestasTrechos.push({ id, inicio, fim, chaveAresta, origemNos, valida: Boolean(chaveAresta) });
+    }
+
+    const dispositivosPorPar = new Map();
+    const dispositivosPontoUnico = [];
+    for (const dispositivo of dispositivos) {
+        if (dispositivo.pac1 && 
+dispositivo.pac2 && dispositivo.pac1 !== dispositivo.pac2 && dispositivo.chaveAresta) {
+            const listaPar = dispositivosPorPar.get(dispositivo.chaveAresta) || [];
+            listaPar.push(dispositivo);
+            dispositivosPorPar.set(dispositivo.chaveAresta, listaPar);
+        } else if (dispositivo.pac1 && dispositivo.pac2 && dispositivo.pac1 === dispositivo.pac2) {
+            dispositivosPontoUnico.push({
+                ids: dispositivo.ids,
+                tipo: 
+dispositivo.tipo,
+                estado: dispositivo.estado,
+                pac1: dispositivo.pac1,
+                pac2: dispositivo.pac2,
+                motivo: "PAC_BRUTO_IDENTICO_SEM_REPRESENTACAO_DOS_DOIS_LADOS",
+            });
+        }
+    }
+
+    const adicionar = (grafo, a, b, metadados = {}) => {
+        if (!grafo.has(a)) grafo.set(a, []);
+        if (!grafo.has(b)) grafo.set(b, []);
+        grafo.get(a).push({ destino: b, ...metadados });
+        grafo.get(b).push({ destino: a, ...metadados 
+});
+    };
+
+    // PACs diferentes de um mesmo PONNOT são interligados automaticamente
+    // apenas quando não existe um dispositivo de manobra que os separe.
+    // Se existe uma chave no ponto, somente a aresta PAC1-PAC2 do dispositivo
+    // pode unir seus lados; uma junção genérica criaria um bypass da chave.
+    const basesComDispositivo = new Set();
+    for (const dispositivo of dispositivos) 
+{
+        if (
+            dispositivo.basePac1 &&
+            dispositivo.basePac1 === dispositivo.basePac2 &&
+            dispositivo.pac1 !== dispositivo.pac2
+        ) {
+            basesComDispositivo.add(dispositivo.basePac1);
+        }
+    }
+    for (const [base, nosSet] of mapaNosPorBase.entries()) {
+        if (basesComDispositivo.has(base)) continue;
+        const nos = 
+[...nosSet];
+        if (nos.length < 2) continue;
+        const primeiro = nos[0];
+        for (let i = 1; i < nos.length; i += 1) {
+            const outro = nos[i];
+            adicionar(grafoFisico, primeiro, outro, { tipo: "ALIAS_PONNOT", base });
+            adicionar(grafoGarantido, primeiro, outro, { tipo: "ALIAS_PONNOT", base });
+            adicionar(grafoPossivel, primeiro, outro, { tipo: "ALIAS_PONNOT", base });
+        }
+    }
+
+    // Trechos físicos: se um trecho 
+usar exatamente o mesmo par PAC de um
+    // dispositivo, seu estado fica subordinado ao equipamento; caso contrário,
+    // o próprio SSDMT é uma conexão permanente.
+    const paresTrechos = new Set();
+    for (const aresta of arestasTrechos) {
+        if (!aresta.valida) continue;
+        const controladores = aresta.chaveAresta
+            ? (dispositivosPorPar.get(aresta.chaveAresta) || [])
+            : [];
+        aresta.controladaPorDispositivo = 
+controladores.length > 0;
+        aresta.dispositivosControladores = controladores;
+        paresTrechos.add(aresta.chaveAresta);
+
+        adicionar(grafoFisico, aresta.inicio, aresta.fim, {
+            tipo: "TRECHO", trechoId: aresta.id,
+        });
+        const permiteGarantido = controladores.length === 0 ||
+            controladores.every(d => d.estado === "FECHADO" || d.estado === "BYPASSADO");
+        const permitePossivel = 
+controladores.length === 0 ||
+            controladores.every(d => d.estado !== "ABERTO" && d.estado !== "INDISPONIVEL");
+        if (permiteGarantido) adicionar(grafoGarantido, aresta.inicio, aresta.fim, {
+            tipo: controladores.length ? "TRECHO_CONTROLADO" : "TRECHO", trechoId: aresta.id,
+        });
+        if (permitePossivel) adicionar(grafoPossivel, aresta.inicio, aresta.fim, {
+            tipo: controladores.length ? "TRECHO_CONTROLADO" : "TRECHO", trechoId: aresta.id,
+        });
+    
+}
+
+    // Arestas de equipamento. Os extremos são os PACs brutos, não a base
+    // PONNOT normalizada. Abrir a chave remove exatamente essa conexão elétrica.
+    for (const dispositivo of dispositivos) {
+        const { pac1, pac2, estado, chaveAresta, ids, tipo } = dispositivo;
+        if (!pac1 || !pac2 || pac1 === pac2 || !chaveAresta) continue;
+        // Se o SSDMT já representa exatamente o par da chave, ele foi controlado
+        // acima. Não é adicionada 
+uma segunda aresta paralela que possa contornar a abertura.
+        if (paresTrechos.has(chaveAresta)) continue;
+        adicionar(grafoFisico, pac1, pac2, { tipo: "DISPOSITIVO", equipamentoId: ids[0], equipamentoTipo: tipo });
+        if (estado === "FECHADO" || estado === "BYPASSADO") {
+            adicionar(grafoGarantido, pac1, pac2, { tipo: "DISPOSITIVO", equipamentoId: ids[0], equipamentoTipo: tipo });
+            adicionar(grafoPossivel, pac1, pac2, { tipo: "DISPOSITIVO", equipamentoId: ids[0], equipamentoTipo: tipo 
+});
+        } else if (estado !== "ABERTO" && estado !== "INDISPONIVEL") {
+            adicionar(grafoPossivel, pac1, pac2, { tipo: "DISPOSITIVO", equipamentoId: ids[0], equipamentoTipo: tipo });
+        }
+    }
+
+    // Fontes: PSA é a indicação preferencial de saída de circuito MT. PIS é
+    // fallback apenas quando não há PSA identificável. A orientação radial não
+    // é exigida; o grafo de conectividade aceita ciclos e caminhos 
+alternativos.
+    const fontesConfiguradas = [];
+    for (const item of lista(topologia?.origensConfiguradas)) {
+        const metodo = normalizarTexto(item?.metodo);
+        if (metodo === "CONFIGURADA_MANUALMENTE" || metodo === "VITE_CMG_PONTOS_ORIGEM") {
+            const id = normalizarId(typeof item === "object" && item ? item.pontoId ?? item.id : item);
+            if (id) fontesConfiguradas.push({ pontoId: id, tipo: "CONFIGURADA", circuito: null, evidencias: item?.evidencias 
+|| [] });
+        }
+    }
+
+    const pontos = topologia?.pontos || {};
+    const pontosPSA = [];
+    const pontosPIS = [];
+    for (const [id, ponto] of Object.entries(pontos)) {
+        const tipo = obterPontoFonteEnergizacao(ponto);
+        const registro = { pontoId: normalizarId(id), tipo, circuito: obterCircuitoFonteEnergizacao(ponto) };
+        if (!registro.pontoId) continue;
+        if (tipo === "PSA") 
+pontosPSA.push(registro);
+        else if (tipo === "PIS") pontosPIS.push(registro);
+    }
+    let candidatosFonte = fontesConfiguradas.length
+        ? fontesConfiguradas
+        : (pontosPSA.length ? pontosPSA : pontosPIS);
+
+    // Compatibilidade com orientações previamente configuradas quando os campos
+    // TIP_PN não estão disponíveis no recorte carregado.
+    if (candidatosFonte.length === 0) {
+        const vistos = new Set();
+        for (const colecao of 
+[topologia?.origensAutomaticasDetectadas, topologia?.origensConfirmadas,
+            topologia?.orientacaoEletrica?.origensConfirmadas]) {
+            for (const item of lista(colecao)) {
+                const pontoId = normalizarId(typeof item === "object" && item ? item.pontoId ?? item.id ?? item.COD_ID : item);
+                if (pontoId && !vistos.has(pontoId)) {
+                    vistos.add(pontoId);
+                    candidatosFonte.push({ pontoId, tipo: "ORIGEM_TOPOLOGIA", circuito: 
+obterCircuitoFonteEnergizacao(pontos[pontoId]) });
+                }
+            }
+        }
+    }
+
+    const fontesVinculadas = [];
+    const fontesAmbiguas = [];
+    for (const fonte of candidatosFonte) {
+        const pontoId = normalizarPontoEnergizacao(fonte.pontoId);
+        if (!pontoId) continue;
+        let candidatos = [...(mapaNosPorBase.get(pontoId) || [])];
+        if 
+(nosConhecidos.has(pontoId)) candidatos = [...new Set([...candidatos, pontoId])];
+
+        const circuito = normalizarId(fonte.circuito) || obterCircuitoFonteEnergizacao(pontos[pontoId]);
+        if (circuito) {
+            const mesmoCircuito = candidatos.filter(no => obterCircuitoPacEletrico(no) === circuito);
+            const semSufixoLado = mesmoCircuito.filter(no => new RegExp(`M-${circuito}$`, "i").test(no));
+            if (semSufixoLado.length) candidatos = 
+semSufixoLado;
+            else if (mesmoCircuito.length) candidatos = mesmoCircuito;
+        }
+        candidatos = [...new Set(candidatos)];
+        if (candidatos.length === 1) {
+            fontesVinculadas.push({ ...fonte, pontoId, no: candidatos[0], metodoLigacao: "PAC_EXATO_OU_BASE_E_CIRCUITO" });
+        } else if (candidatos.length > 1) {
+            fontesAmbiguas.push({ ...fonte, pontoId, candidatos });
+        }
+    
+}
+
+    const nosFonte = [...new Set(fontesVinculadas.map(f => f.no))];
+    const percorrer = (fontes, grafo) => {
+        const visitados = new Set();
+        const fila = [];
+        for (const fonte of fontes) {
+            if (grafo.has(fonte) && !visitados.has(fonte)) {
+                visitados.add(fonte);
+                fila.push(fonte);
+            }
+        }
+        for (let i = 0; i < fila.length; i += 1) {
+            for (const ligacao of 
+grafo.get(fila[i]) || []) {
+                const destino = normalizarPacEletrico(ligacao?.destino);
+                if (destino && !visitados.has(destino)) {
+                    visitados.add(destino);
+                    fila.push(destino);
+                }
+            }
+        }
+        return visitados;
+    };
+
+    const nosFisicosAlimentados = percorrer(nosFonte, grafoFisico);
+    const nosGarantidos = percorrer(nosFonte, 
+grafoGarantido);
+    const nosPossiveis = percorrer(nosFonte, grafoPossivel);
+    const estados = {};
+    let energizados = 0;
+    let desenergizados = 0;
+    let indeterminados = 0;
+
+    for (const aresta of arestasTrechos) {
+        let estado = "INDETERMINADO";
+        let motivo = "EXTREMIDADES_OU_FONTE_NAO_COMPROVADAS";
+        if (aresta.valida) {
+            const iniGarantido = nosGarantidos.has(aresta.inicio);
+            const fimGarantido = 
+nosGarantidos.has(aresta.fim);
+            const iniPossivel = nosPossiveis.has(aresta.inicio);
+            const fimPossivel = nosPossiveis.has(aresta.fim);
+            const componenteFonte = nosFisicosAlimentados.has(aresta.inicio) && nosFisicosAlimentados.has(aresta.fim);
+            const controladoresAbertos = (aresta.dispositivosControladores || []).length > 0 &&
+                aresta.dispositivosControladores.every(d => d.estado === "ABERTO" || d.estado === "INDISPONIVEL");
+
+            if (iniGarantido && 
+fimGarantido) {
+                estado = "ENERGIZADO";
+                motivo = "CAMINHO_CONFIRMADO_ATE_FONTE";
+            } else if (controladoresAbertos && (iniPossivel !== fimPossivel) && componenteFonte) {
+                estado = "DESENERGIZADO";
+                motivo = "TRECHO_CONTROLADO_POR_DISPOSITIVO_ABERTO";
+            } else if (componenteFonte && !iniPossivel && !fimPossivel) {
+                estado = "DESENERGIZADO";
+                motivo = 
+"SEM_CAMINHO_DISPONIVEL_ATE_FONTE_APOS_MANOBRA";
+            } else {
+                motivo = componenteFonte
+                    ? "ESTADO_DE_EQUIPAMENTO_OU_CAMINHO_AMBIGUO"
+                    : "FONTE_NAO_COMPROVADA_NO_COMPONENTE";
+            }
+        }
+
+        estados[aresta.id] = {
+            trechoId: aresta.id,
+            estado,
+            motivo,
+            pontoInicial: aresta.inicio 
+|| null,
+            pontoFinal: aresta.fim || null,
+            origemNos: aresta.origemNos,
+            controladaPorDispositivo: Boolean(aresta.controladaPorDispositivo),
+            equipamentosControladores: (aresta.dispositivosControladores || []).map(d => ({
+                id: d.ids[0], tipo: d.tipo, estado: d.estado, pac1: d.pac1, pac2: d.pac2,
+            })),
+        };
+        if (estado === "ENERGIZADO") energizados += 1;
+        else if (estado === 
+"DESENERGIZADO") desenergizados += 1;
+        else indeterminados += 1;
+    }
+
+    const dispositivosAbertos = dispositivos.filter(d => d.estado === "ABERTO" || d.estado === "INDISPONIVEL");
+    const dispositivosDesconhecidos = dispositivos.filter(d => !d.estado);
+    const dispositivosSemPAC = dispositivos.filter(d => !d.pac1 || !d.pac2 || d.pac1 === d.pac2);
+
+    return {
+        estados,
+        diagnostico: {
+            calculado: 
+true,
+            fontes: fontesVinculadas,
+            quantidadeFontes: nosFonte.length,
+            fontesAmbiguas,
+            quantidadeFontesAmbiguas: fontesAmbiguas.length,
+            quantidadeTrechos: arestasTrechos.length,
+            energizados,
+            desenergizados,
+            indeterminados,
+            equipamentosSeccionadoresAbertos: dispositivosAbertos.length,
+            idsEquipamentosAbertos: dispositivosAbertos.map(d => ({
+                id: d.ids[0], ids: d.ids, tipo: d.tipo, estado: 
+d.estado,
+                pac1Bruto: d.pac1, pac2Bruto: d.pac2,
+                pacsBrutosDistintos: Boolean(d.pac1 && d.pac2 && d.pac1 !== d.pac2),
+                pacsNormalizamParaMesmoPonto: Boolean(d.basePac1 && d.basePac1 === d.basePac2),
+            })),
+            dispositivosPontoSemOrientacao: dispositivosSemPAC.map(d => ({
+                ids: d.ids, tipo: d.tipo, estado: d.estado, pac1Bruto: d.pac1, pac2Bruto: d.pac2,
+                motivo: 
+"PAC_BRUTO_AUSENTE_OU_IDENTICO",
+            })),
+            dispositivosPacsMesmoPontoMasSeparados: dispositivos.filter(d => d.basePac1 && d.basePac1 === d.basePac2 && d.pac1 !== d.pac2).map(d => ({
+                ids: d.ids, tipo: d.tipo, estado: d.estado, pac1Bruto: d.pac1, pac2Bruto: d.pac2,
+                basePONNOT: d.basePac1,
+                chaveEletricaRepresentada: Boolean(d.chaveAresta),
+            })),
+            
+trechosAssociadosPorPACEmDispositivosAbertos: dispositivosAbertos.map(d => ({
+                ids: d.ids,
+                tipo: d.tipo,
+                estado: d.estado,
+                pac1Bruto: d.pac1,
+                pac2Bruto: d.pac2,
+                trechosPAC1: arestasTrechos.filter(a => a.inicio === d.pac1 || a.fim === d.pac1).map(a => ({
+                    trechoId: a.id,
+                    pontoInicial: a.inicio,
+                    pontoFinal: a.fim,
+                    estadoCalculado: estados[a.id]?.estado ?? null,
+                    motivo: estados[a.id]?.motivo ?? 
+null,
+                })),
+                trechosPAC2: arestasTrechos.filter(a => a.inicio === d.pac2 || a.fim === d.pac2).map(a => ({
+                    trechoId: a.id,
+                    pontoInicial: a.inicio,
+                    pontoFinal: a.fim,
+                    estadoCalculado: estados[a.id]?.estado ?? null,
+                    motivo: estados[a.id]?.motivo ?? null,
+                })),
+            })),
+            equipamentosSeccionadoresDesconhecidos: 
+dispositivosDesconhecidos.length,
+            equipamentosComPACValido: dispositivos.filter(d => d.pac1 && d.pac2).length,
+            equipamentosSemPACValido: dispositivosSemPAC.length,
+            estadosDispositivos: dispositivos.map(d => ({
+                ids: d.ids,
+                idOperacionalUsado: d.ids[0] ?? null,
+                tipo: d.tipo,
+                estadoAplicado: d.estado,
+                pac1Bruto: d.pac1,
+                pac2Bruto: d.pac2,
+                basePac1: d.basePac1,
+                basePac2: d.basePac2,
+            
+})),
+            paresDeChavesCoincidentesComTrecho: arestasTrechos.filter(a => a.controladaPorDispositivo).length,
+            interligacoesBDGD: lista(topologia.interligacoes).length,
+            nosGrafo: nosConhecidos.size,
+            nosFisicamenteAlimentados: nosFisicosAlimentados.size,
+            nosEnergizadosGarantidos: nosGarantidos.size,
+            nosComEnergiaPossivel: nosPossiveis.size,
+            criterio: 
+"GRAFO_PAC_BRUTO_COM_ESTADOS_DE_DISPOSITIVOS_E_FONTES_PSA_REAIS",
+        },
+    };
 }
 
 export function consultarEstadoOperacional() {
@@ -1729,7 +2707,8 @@ export function consultarEstadoOperacional() {
         equipamentosDesligados:
             [
                 ...(
-                    estadoRede
+                    
+estadoRede
                         .operacao
                         .equipamentosDesligados ||
                     []
@@ -1755,6 +2734,11 @@ export function resetarEstadosEquipamentos() {
         .equipamentosDesligados = [];
 
     estadoRede.operacao.alimentadoresDesenergizados = {};
+
+    // Restaurar também a premissa inicial: equipamentos de manobra
+    // fechados quando não existir posição explícita no cadastro.
+    
+inicializarEstadosPadraoEquipamentos(estadoRede.topologiaBDGD);
 
     estadoRede
         .operacao
@@ -1782,7 +2766,8 @@ export function consultarCorrenteAlimentador(
     alimentador
 ) {
 
-    const id =
+    const id 
+=
         normalizarId(
             alimentador
         );
@@ -1799,7 +2784,8 @@ export function consultarCorrenteAlimentador(
         : null;
 }
 
-export function obterCorrenteAlimentador(
+export function 
+obterCorrenteAlimentador(
     alimentador
 ) {
 
@@ -1815,7 +2801,8 @@ export function atualizarCorrenteAlimentador(
 
     const id =
         normalizarId(
-            alimentador
+            
+alimentador
         );
 
     const valor =
@@ -1833,7 +2820,8 @@ export function atualizarCorrenteAlimentador(
             sucesso:
                 false,
 
-            mensagem:
+            
+mensagem:
                 "Alimentador ou corrente inválidos.",
 
         };
@@ -1867,7 +2855,8 @@ export function consultarCorrenteTrecho(
     trecho
 ) {
 
-    const id =
+    const id 
+=
         normalizarId(
             trecho
         );
@@ -1884,7 +2873,8 @@ export function consultarCorrenteTrecho(
         : null;
 }
 
-export function obterCorrenteTrecho(
+export function 
+obterCorrenteTrecho(
     trecho
 ) {
 
@@ -1901,7 +2891,8 @@ export function atualizarCorrenteTrecho(
     const id =
         normalizarId(
             trecho
-        );
+        
+);
 
     const valor =
         numero(
@@ -1919,7 +2910,8 @@ export function atualizarCorrenteTrecho(
                 false,
 
             mensagem:
-                "Trecho ou corrente inválidos.",
+                "Trecho ou corrente 
+inválidos.",
 
         };
     }
@@ -1937,7 +2929,8 @@ export function atualizarCorrenteTrecho(
     return {
 
         sucesso:
-            true,
+            
+true,
 
         trecho:
             id,
@@ -1951,7 +2944,8 @@ export function atualizarCorrenteTrecho(
 // BUSCA DE EQUIPAMENTOS
 // ==========================================================
 
-function buscarNaColecao(
+function 
+buscarNaColecao(
     colecao,
     id
 ) {
@@ -1969,7 +2963,8 @@ function buscarNaColecao(
         colecao
     ).find(
         item =>
-            equipamentoCorrespondeId(
+            
+equipamentoCorrespondeId(
                 item,
                 alvo
             )
@@ -1987,7 +2982,8 @@ function buscarEquipamentoBDGD(
         return null;
     }
 
-    const colecoes = [
+    const colecoes = 
+[
 
         topologia.equipamentosOperacionais,
 
@@ -2020,7 +3016,8 @@ function buscarEquipamentoBDGD(
 
             return resultado;
         }
-    }
+    
+}
 
     return null;
 }
@@ -2054,7 +3051,8 @@ export function buscarEquipamento(
         buscarEquipamentoBDGD(
             alvo
         ) ||
-        null
+        
+null
     );
 }
 
@@ -2084,7 +3082,8 @@ export function existeEquipamento(
 
 export function buscarSubestacao(
     id
-) {
+) 
+{
 
     const alvo =
         normalizarId(
@@ -2119,7 +3118,8 @@ export function buscarAlimentador(
             item =>
                 normalizarId(
                     item?.id
-                ) === alvo ||
+                ) === alvo 
+||
                 normalizarId(
                     item?.codigo
                 ) === alvo ||
@@ -2137,7 +3137,8 @@ export function buscarTrecho(
 ) {
 
     const alvo =
-        normalizarId(
+        
+normalizarId(
             id
         );
 
@@ -2155,7 +3156,8 @@ export function buscarTrecho(
                     normalizarId(
                         item?.codId
                     ) === alvo
-            );
+            
+);
 
     const topologia = estadoRede.topologiaBDGD;
     const trechoBDGD = topologia
@@ -2165,7 +3167,8 @@ export function buscarTrecho(
     return cadastro || trechoBDGD || null;
 }
 
-export function existeTrecho(
+export function 
+existeTrecho(
     id
 ) {
 
@@ -2197,7 +3200,8 @@ export function buscarPontoRede(
 }
 
 export function buscarTrechoRede(
-    id
+    
+id
 ) {
 
     return buscarTrecho(
@@ -2231,7 +3235,8 @@ export function buscarConexoesEquipamento(
         );
 
     if (!equipamento) {
-        return [];
+        return 
+[];
     }
 
     const pac1 =
@@ -2249,7 +3254,8 @@ export function buscarConexoesEquipamento(
             [
                 "pac2",
                 "PAC_2"
-            ]
+            
+]
         );
 
     const resultado = [];
@@ -2267,7 +3273,8 @@ export function buscarConexoesEquipamento(
 
         resultado.push(
             ...buscarConexoesRede(
-                ponto
+                
+ponto
             )
         );
     }
@@ -2279,7 +3286,8 @@ export function buscarConexoesEquipamento(
 // TRECHOS / EQUIPAMENTOS
 // ==========================================================
 
-export function buscarTrechosAlimentador(alimentador) {
+export function buscarTrechosAlimentador(alimentador) 
+{
     const alvo = normalizarCodigo(alimentador);
     if (!alvo) return [];
     const topologia = estadoRede.topologiaBDGD;
@@ -2289,7 +3297,8 @@ export function buscarTrechosAlimentador(alimentador) {
     );
     return colecao.filter(trecho =>
         normalizarCodigo(primeiro(trecho, [
-            "alimentador", "ALIMENTADOR", "CT_COD_OP", "CT_COD_OPER",
+            "alimentador", "ALIMENTADOR", "CT_COD_OP", 
+"CT_COD_OPER",
             "CTMT", "ctmt", "circuito", "CIRCUITO",
         ])) === alvo
     );
@@ -2301,7 +3310,8 @@ export function buscarEquipamentosAlimentador(alimentador) {
     const topologia = estadoRede.topologiaBDGD;
     const colecao = mesclarColecao(
         estadoRede.equipamentos,
-        lista(topologia?.equipamentosOperacionais).concat(
+        
+lista(topologia?.equipamentosOperacionais).concat(
             lista(topologia?.equipamentos),
             lista(topologia?.unidadesSeccionadoras),
             lista(topologia?.transformadores),
@@ -2310,7 +3320,8 @@ export function buscarEquipamentosAlimentador(alimentador) {
         )
     );
     return colecao.filter(equipamento =>
-        normalizarCodigo(obterAlimentadorEquipamento(equipamento)) === alvo
+        normalizarCodigo(obterAlimentadorEquipamento(equipamento)) === 
+alvo
     );
 }
 
@@ -2320,7 +3331,8 @@ export function buscarEquipamentosTelecomandados(alimentador = null) {
         : mesclarColecao(
             estadoRede.equipamentos,
             lista(estadoRede.topologiaBDGD?.equipamentosOperacionais).concat(
-                lista(estadoRede.topologiaBDGD?.equipamentos),
+                
+lista(estadoRede.topologiaBDGD?.equipamentos),
                 lista(estadoRede.topologiaBDGD?.unidadesSeccionadoras)
             )
         );
@@ -2338,7 +3350,8 @@ export function buscarEquipamentosTelecomandados(alimentador = null) {
     });
 }
 
-// ==========================================================
+// 
+==========================================================
 // CAPACIDADE
 // ==========================================================
 
@@ -2347,7 +3360,8 @@ export function capacidadePorBitola(bitola) {
 }
 
 export function calcularCapacidadeTrecho(trechoId) {
-    const detalhes = obterDetalhesCapacidadeTrecho(trechoId);
+    const detalhes = 
+obterDetalhesCapacidadeTrecho(trechoId);
     return detalhes?.conhecida ? detalhes.capacidade : null;
 }
 
@@ -2357,7 +3371,8 @@ export function validarCargaTrecho(trechoId, corrente) {
         ? correnteConvertida
         : null;
     const detalhes = obterDetalhesCapacidadeTrecho(trechoId);
-    const capacidade = numero(detalhes?.capacidade);
+    const capacidade = 
+numero(detalhes?.capacidade);
 
     if (i === null) {
         return {
@@ -2365,7 +3380,7 @@ export function validarCargaTrecho(trechoId, corrente) {
             permitido: false,
             corrente: null,
             capacidade: capacidade && capacidade > 0 ? capacidade : null,
-            limite: capacidade && capacidade > 0 ? capacidade * 0.8 : null,
+            limite: capacidade && capacidade > 0 ? capacidade * FATOR_LIMITE_OPERACIONAL_CONDUTOR : null,
             motivo: "Corrente não informada; a carga não pode ser validada.",
         };
     }
@@ -2383,7 +3398,7 @@ export function validarCargaTrecho(trechoId, corrente) {
         };
     }
 
-    const limite = capacidade * 0.8;
+    const limite = capacidade * FATOR_LIMITE_OPERACIONAL_CONDUTOR;
     const carregamento = (i / capacidade) * 100;
     const dentroDoLimite = i <= limite;
     const capacidadeConfirmada = detalhes.capacidadeEstimativa !== true;
@@ -2392,7 +3407,8 @@ export function validarCargaTrecho(trechoId, corrente) {
         conhecida: true,
         confirmada: capacidadeConfirmada,
         // Uma estimativa pode apontar sobrecarga (bloquear), mas nunca
-        // libera a manobra automaticamente enquanto não houver capacidade
+        // libera a manobra 
+automaticamente enquanto não houver capacidade
         // técnica confirmada no cadastro/SEGCON.
         permitido: !dentroDoLimite
             ? false
@@ -2404,7 +3420,8 @@ export function validarCargaTrecho(trechoId, corrente) {
         origem: detalhes.origem,
         capacidadeEstimativa: detalhes.capacidadeEstimativa === true,
         avisoCapacidade: detalhes.avisoCapacidade ?? null,
-        motivo: !dentroDoLimite
+        motivo: 
+!dentroDoLimite
             ? `Corrente de ${i} A supera o limite operacional de ${limite} A.`
             : (!capacidadeConfirmada ? detalhes.avisoCapacidade : null),
         detalhes,
@@ -2418,7 +3435,8 @@ export function validarEquipamentoBDGD(
 
     const codigo =
         normalizarId(
-            codigoInformado
+            
+codigoInformado
         );
 
     if (!codigo) {
@@ -2453,7 +3471,8 @@ export function validarEquipamentoBDGD(
         !possuiTopologiaBDGD()
     ) {
 
-        return {
+        return 
+{
 
             informado:
                 true,
@@ -2471,7 +3490,8 @@ export function validarEquipamentoBDGD(
                 null,
 
             ficha:
-                null,
+                
+null,
 
             motivo:
                 "Topologia BDGD ainda não foi registrada.",
@@ -2504,7 +3524,8 @@ export function validarEquipamentoBDGD(
                 null,
 
             motivo:
-                `Equipamento ${codigo} não encontrado na BDGD.`,
+                `Equipamento ${codigo} não encontrado na 
+BDGD.`,
 
         };
     }
@@ -2520,7 +3541,8 @@ export function validarEquipamentoBDGD(
         );
 
     const esperado =
-        normalizarCodigo(
+        
+normalizarCodigo(
             alimentadorEsperado
         );
 
@@ -2538,7 +3560,8 @@ export function validarEquipamentoBDGD(
         return {
 
             informado:
-                true,
+                
+true,
 
             valido:
                 false,
@@ -2568,7 +3591,8 @@ export function validarEquipamentoBDGD(
         informado:
             true,
 
-        valido:
+        
+valido:
             true,
 
         existeBDGD:
@@ -2586,7 +3610,8 @@ export function validarEquipamentoBDGD(
         alimentadorEsperado:
             alimentadorEsperado ?? null,
 
-        motivo:
+        
+motivo:
             `Equipamento ${codigo} validado com sucesso na BDGD.`,
 
     };
@@ -2599,7 +3624,8 @@ export function validarEquipamentoBDGD(
 export function buscarMontante(
     pontoId,
     opcoes = {}
-) {
+) 
+{
 
     if (
         !estadoRede.topologiaBDGD
@@ -2616,7 +3642,8 @@ export function buscarMontante(
 
             estadosEquipamentos:
                 opcoes?.estadosEquipamentos ??
-                obterMapaEstadosEquipamentos(),
+                
+obterMapaEstadosEquipamentos(),
 
             respeitarEstadoOperacional:
                 opcoes?.respeitarEstadoOperacional !== false,
@@ -2632,7 +3659,8 @@ export function buscarJusante(
 
     if (
         !estadoRede.topologiaBDGD
-    ) {
+    ) 
+{
         return null;
     }
 
@@ -2648,7 +3676,8 @@ export function buscarJusante(
                 obterMapaEstadosEquipamentos(),
 
             respeitarEstadoOperacional:
-                opcoes?.respeitarEstadoOperacional !== false,
+                
+opcoes?.respeitarEstadoOperacional !== false,
 
         }
     );
@@ -2664,7 +3693,8 @@ export function buscarCaminhoEletrico(
         !estadoRede.topologiaBDGD
     ) {
 
-        return {
+        return 
+{
 
             encontrado:
                 false,
@@ -2680,7 +3710,8 @@ export function buscarCaminhoEletrico(
     }
 
     return buscarCaminhoNavegador(
-        estadoRede.topologiaBDGD,
+        
+estadoRede.topologiaBDGD,
         origem,
         destino,
         {
@@ -2694,7 +3725,8 @@ export function buscarCaminhoEletrico(
             respeitarEstadoOperacional:
                 opcoes?.respeitarEstadoOperacional !== false,
 
-        }
+        
+}
     );
 }
 
@@ -2710,7 +3742,8 @@ export function buscarRedeConectada(
     }
 
     return buscarRedeConectadaNavegador(
-        estadoRede.topologiaBDGD,
+        
+estadoRede.topologiaBDGD,
         pontoId,
         {
 
@@ -2724,7 +3757,8 @@ export function buscarRedeConectada(
                 opcoes?.respeitarEstadoOperacional !== false,
 
         }
-    );
+    
+);
 }
 
 // ==========================================================
@@ -2737,7 +3771,8 @@ export function buscarPQTDoPontoRede(
 
     const ponto =
         buscarPontoRede(
-            pontoId
+            
+pontoId
         );
 
     if (!ponto) {
@@ -2771,7 +3806,8 @@ export function buscarTransformadoresDoPontoRede(
             .topologiaBDGD
             ?.transformadores
     ).filter(
-        transformador => {
+        transformador => 
+{
 
             const valores = [
 
@@ -2788,7 +3824,8 @@ export function buscarTransformadoresDoPontoRede(
             return valores.some(
                 valor =>
                     normalizarCodigo(
-                        valor
+                        
+valor
                     ) === alvo
             );
         }
@@ -2800,7 +3837,8 @@ export function filtrarRedePorAlimentador(alimentador) {
     const topologia = estadoRede.topologiaBDGD;
     if (!alvo) return { alimentador, pontos: [], trechos: [], equipamentos: [] };
 
-    const pontos = lista(topologia?.pontos).filter(ponto =>
+    const pontos = 
+lista(topologia?.pontos).filter(ponto =>
         normalizarCodigo(primeiro(ponto, ["alimentador", "ALIMENTADOR", "CTMT", "ctmt", "circuito", "CIRCUITO"])) === alvo
     );
     const trechos = buscarTrechosAlimentador(alimentador);
@@ -2820,7 +3858,8 @@ function obterPacsInterligacao(interligacao) {
     const fontes = [
         interligacao,
         interligacao?.equipamento,
-        interligacao?.equipamentoOperacional,
+        
+interligacao?.equipamentoOperacional,
         interligacao?.equipamentoInterligacao,
         interligacao?.dispositivo,
         interligacao?.equipamentoA,
@@ -2833,7 +3872,8 @@ function obterPacsInterligacao(interligacao) {
         "pacs", "PACS",
         "pac1", "PAC_1", "pac2", "PAC_2",
         "pacA", "PAC_A", "pacB", "PAC_B",
-        "ponto1", "ponto2", "pontoBase", "pontoId",
+        "ponto1", "ponto2", 
+"pontoBase", "pontoId",
         "pontoAssociado", "ponto",
         "PAC", "pac",
         "PN_CON_1", "PN_CON_2",
@@ -2848,7 +3888,8 @@ function obterPacsInterligacao(interligacao) {
         if (valor === null || valor === undefined) return;
 
         if (Array.isArray(valor)) {
-            for (const item of valor) adicionar(item);
+            for (const item of valor) 
+adicionar(item);
             return;
         }
 
@@ -2861,7 +3902,8 @@ function obterPacsInterligacao(interligacao) {
             return;
         }
 
-        const pac = obterPac(valor);
+        const pac = 
+obterPac(valor);
         const chave = normalizarCodigo(pac);
         if (!pac || !chave || chaves.has(chave)) return;
 
@@ -2889,7 +3931,8 @@ function obterTipoUnidadeInterno(
     const valor =
         primeiro(
             equipamento,
-            [
+            
+[
                 "TIP_UNID",
                 "tipUnid",
                 "tipoUnidade"
@@ -2906,7 +3949,8 @@ function obterIdOperacionalEquipamento(
 ) {
 
     if (!equipamento) {
-        return "";
+        return 
+"";
     }
 
     const tipo =
@@ -2960,7 +4004,8 @@ function obterIdOperacionalEquipamento(
                     "COD_ID",
                     "codId",
                 ]
-            )
+            
+)
         );
     }
 
@@ -3008,7 +4053,8 @@ export function obterFichaOperacional(
 
     const codId =
         normalizarId(
-            primeiro(
+            
+primeiro(
                 equipamento,
                 [
                     "COD_ID",
@@ -3044,7 +4090,8 @@ export function obterFichaOperacional(
                 equipamento
             ),
 
-        alimentador:
+        
+alimentador:
             obterAlimentadorEquipamento(
                 equipamento
             ),
@@ -3061,7 +4108,8 @@ export function obterFichaOperacional(
             ),
 
         pac2:
-            obterPac(
+            
+obterPac(
                 primeiro(
                     equipamento,
                     [
@@ -3095,7 +4143,8 @@ export function obterFichaCompletaEquipamento(
     const equipamento =
         buscarEquipamento(
             equipamentoId
-        );
+        
+);
 
     const id =
         obterIdOperacionalEquipamento(
@@ -3112,7 +4161,8 @@ export function obterFichaCompletaEquipamento(
             primeiro(
                 equipamento,
                 [
-                    "COD_ID",
+                    
+"COD_ID",
                     "codId"
                 ]
             )
@@ -3130,7 +4180,8 @@ export function obterFichaCompletaEquipamento(
             ),
 
         equipamentoId:
-            id ||
+            id 
+||
             ficha?.equipamentoId ||
             normalizarId(
                 equipamentoId
@@ -3148,7 +4199,8 @@ export function obterFichaCompletaEquipamento(
             null,
 
         codId:
-            codId ||
+            codId 
+||
             ficha?.codId ||
             ficha?.COD_ID ||
             null,
@@ -3166,7 +4218,8 @@ export function obterFichaCompletaEquipamento(
 
         circuito:
             primeiro(
-                equipamento,
+                
+equipamento,
                 [
                     "circuito",
                     "CIRCUITO",
@@ -3184,7 +4237,8 @@ export function obterFichaCompletaEquipamento(
                 numero(
                     primeiro(
                         equipamento,
-                        [
+                        
+[
                             "TLCD",
                             "tlcd"
                         ]
@@ -3199,7 +4253,8 @@ export function obterFichaCompletaEquipamento(
 
 // ==========================================================
 // AUXILIARES DE EQUIPAMENTO
-// ==========================================================
+// 
+==========================================================
 
 function obterIdEquipamento(
     equipamento
@@ -3214,7 +4269,8 @@ function obterPlaquetaEquipamento(
     equipamento
 ) {
 
-    if (!equipamento) {
+    if (!equipamento) 
+{
         return "";
     }
 
@@ -3231,7 +4287,8 @@ function obterPlaquetaEquipamento(
     }
 
     const valor =
-        primeiro(
+        
+primeiro(
             equipamento,
             [
 
@@ -3267,7 +4324,8 @@ function obterTIPUNID(
             equipamento,
             [
                 "TIP_UNID",
-                "tipUnid",
+                
+"tipUnid",
                 "tipoUnidade"
             ]
         );
@@ -3285,7 +4343,8 @@ function obterPac(
         valor === null ||
         valor === undefined
     ) {
-        return null;
+        return 
+null;
     }
 
     const texto =
@@ -3303,7 +4362,8 @@ function obterPac(
         );
 
     return normalizarId(
-        match?.[1] ||
+        match?.[1] 
+||
         texto
     );
 }
@@ -3320,7 +4380,8 @@ function obterAlimentadorEquipamento(
                 "ALIMENTADOR",
                 "CT_COD_OP",
                 "CT_COD_OPER",
-                "CTMT",
+                
+"CTMT",
                 "ctmt",
                 "circuito",
                 "CIRCUITO"
@@ -3333,7 +4394,8 @@ function obterAlimentadorEquipamento(
 // CLASSIFICAÇÃO
 // ==========================================================
 
-export function classificarEquipamento(
+export function 
+classificarEquipamento(
     equipamento
 ) {
 
@@ -3366,7 +4428,8 @@ export function classificarEquipamento(
     }
 }
 
-// ==========================================================
+// 
+==========================================================
 // INTERLIGAÇÕES OFICIAIS
 // ==========================================================
 
@@ -3379,7 +4442,8 @@ export function buscarInterligacoes() {
     );
 }
 
-function obterAlimentadorInterligacaoA(
+function 
+obterAlimentadorInterligacaoA(
     item
 ) {
 
@@ -3397,7 +4461,8 @@ function obterAlimentadorInterligacaoA(
         item?.circuito1 ??
         null
 
-    );
+    
+);
 }
 
 function obterAlimentadorInterligacaoB(
@@ -3414,7 +4479,8 @@ function obterAlimentadorInterligacaoB(
         item?.CTMT_B ??
         item?.ctmtB ??
         item?.ctmt_2 ??
-        item?.circuitoB ??
+        item?.circuitoB 
+??
         item?.circuito2 ??
         null
 
@@ -3425,7 +4491,8 @@ function obterAlimentadorInterligacaoB(
 // EQUIPAMENTO DA INTERLIGAÇÃO
 // ==========================================================
 
-function obterReferenciasEquipamentosInterligacao(item) {
+function obterReferenciasEquipamentosInterligacao(item) 
+{
     if (!item || typeof item !== "object") return [];
 
     const resultado = [];
@@ -3435,7 +4502,8 @@ function obterReferenciasEquipamentosInterligacao(item) {
         "equipamentoA", "equipamentoB", "equipmentA", "equipmentB",
         "unidadeA", "unidadeB", "unidadeId", "UNIDADE_ID",
         // Referências diretas de equipamento/chave.
-        "equipamentoId", "idEquipamento", "ID_EQUIPAMENTO",
+        "equipamentoId", "idEquipamento", 
+"ID_EQUIPAMENTO",
         "equipamentoOperacional", "equipamentoInterligacao",
         "idEquipamentoInterligacao", "COD_EQUIPAMENTO", "COD_EQUIP",
         "codEquipamento", "PQT", "pqt", "plaqueta", "PLAQUETA",
@@ -3444,7 +4512,8 @@ function obterReferenciasEquipamentosInterligacao(item) {
         "COD_ID_UNTRMT", "COD_ID", "codId", "UNSEMT", "UNTRMT", "UNTRAT",
         "equipamento", "dispositivo",
     ];
-    const fontes = [
+    const fontes = 
+[
         item,
         item?.properties,
         item?.propriedades,
@@ -3457,7 +4526,8 @@ function obterReferenciasEquipamentosInterligacao(item) {
         if (Array.isArray(valor)) {
             for (const itemArray of valor) adicionar(itemArray, profundidade + 1);
             return;
-        }
+        
+}
 
         if (typeof valor === "object") {
             for (const campo of [
@@ -3465,7 +4535,8 @@ function obterReferenciasEquipamentosInterligacao(item) {
                 "plaqueta", "PLAQUETA", "unidadeId", "UNIDADE_ID", "unsemtId",
                 "UNSEMT_ID", "codIdUNSEMT", "COD_ID_UNSEMT", "untrmtId",
                 "UNTRMT_ID", "codIdUNTRMT", "COD_ID_UNTRMT",
-                "properties", "propriedades", "props", "unidadeSeccionadora",
+                "properties", "propriedades", "props", 
+"unidadeSeccionadora",
                 "unidade", "transformador", "equipamentoOperacional", "dispositivo",
             ]) {
                 const interno = valor?.[campo];
@@ -3476,7 +4547,8 @@ function obterReferenciasEquipamentosInterligacao(item) {
             return;
         }
 
-        const referencia = normalizarId(valor);
+        const referencia = 
+normalizarId(valor);
         const chave = normalizarCodigoEquipamento(referencia);
         if (!referencia || !chave || chaves.has(chave)) return;
 
@@ -3488,7 +4560,8 @@ function obterReferenciasEquipamentosInterligacao(item) {
     }
 
     for (const fonte of fontes) {
-        for (const campo of camposFisicos) {
+        for (const campo of 
+camposFisicos) {
             adicionar(fonte?.[campo]);
         }
     }
@@ -3497,7 +4570,8 @@ function obterReferenciasEquipamentosInterligacao(item) {
     // Ele será confirmado pela busca na topologia BDGD antes de ser aceito.
     const idGenerico = item?.id ?? item?.ID;
     if (idGenerico !== null && idGenerico !== undefined && !/^IL[-_\s]?\d+$/i.test(normalizarId(idGenerico))) {
-        adicionar(idGenerico);
+        
+adicionar(idGenerico);
     }
 
     return resultado;
@@ -3508,7 +4582,8 @@ function obterEquipamentoInterligacao(item) {
     if (referencias.length) return referencias[0];
 
     // Retorno para diagnóstico apenas; nunca é usado sozinho como equipamento físico.
-    return normalizarId(item?.id ?? item?.ID ?? "");
+    return normalizarId(item?.id ?? 
+item?.ID ?? "");
 }
 
 function obterEquipamentosFisicosTopologiaBDGD() {
@@ -3520,7 +4595,8 @@ function obterEquipamentosFisicosTopologiaBDGD() {
         topologia.equipamentos,
         topologia.unidadesSeccionadoras,
         topologia.transformadores,
-        topologia.reguladores,
+        
+topologia.reguladores,
         topologia.capacitores,
     ];
 
@@ -3531,7 +4607,8 @@ function obterEquipamentosFisicosTopologiaBDGD() {
     for (const equipamento of mesclados) {
         if (!equipamento || typeof equipamento !== "object") continue;
 
-        const id = obterIdEquipamento(equipamento) || primeiro(equipamento, [
+        const id = obterIdEquipamento(equipamento) || primeiro(equipamento, 
+[
             "COD_ID", "codId", "id", "ID", "unsemtId", "UNSEMT_ID",
             "untrmtId", "UNTRMT_ID", "plaqueta", "PLAQUETA",
         ]);
@@ -3545,7 +4622,8 @@ function obterEquipamentosFisicosTopologiaBDGD() {
     return resultado;
 }
 
-function obterCodigosLadosInterligacao(interligacao) {
+function 
+obterCodigosLadosInterligacao(interligacao) {
     const valores = [
         obterAlimentadorInterligacaoA(interligacao),
         obterAlimentadorInterligacaoB(interligacao),
@@ -3558,7 +4636,8 @@ function obterCodigosLadosInterligacao(interligacao) {
         interligacao?.ctmtA,
         interligacao?.ctmtB,
         interligacao?.ctmt_1,
-        interligacao?.ctmt_2,
+        
+interligacao?.ctmt_2,
     ];
 
     return new Set(valores.map(normalizarCodigo).filter(Boolean));
@@ -3570,7 +4649,8 @@ function resolverEquipamentosPorInterligacao(interligacao) {
             equipamentos: [],
             metodo: null,
             motivo: "TOPOLOGIA_NAO_DISPONIVEL",
-            referencias: [],
+            referencias: 
+[],
             pacs: [],
             equipamentosCompativeis: [],
         };
@@ -3582,7 +4662,8 @@ function resolverEquipamentosPorInterligacao(interligacao) {
 
     // Preferência absoluta: códigos explicitamente associados ao registro
     // e confirmados nas coleções físicas da BDGD.
-    for (const referencia of referencias) {
+    for (const referencia of 
+referencias) {
         const equipamento = buscarEquipamentoBDGD(referencia);
         if (!equipamento) continue;
 
@@ -3592,7 +4673,8 @@ function resolverEquipamentosPorInterligacao(interligacao) {
 
         idsLocalizados.add(chave);
         localizados.push(equipamento);
-    }
+    
+}
 
     if (localizados.length) {
         return {
@@ -3605,7 +4687,8 @@ function resolverEquipamentosPorInterligacao(interligacao) {
         };
     }
 
-    // O código IL-n identifica o registro da interligação, não o equipamento.
+    // O código IL-n identifica o registro da interligação, não o 
+equipamento.
     // Busca pelo PAC só é aceita se houver exatamente uma chave/religador real
     // e compatível nas coleções carregadas da BDGD.
     const pacs = obterPacsInterligacao(interligacao);
@@ -3614,7 +4697,8 @@ function resolverEquipamentosPorInterligacao(interligacao) {
         return {
             equipamentos: [],
             metodo: null,
-            motivo: "INTERLIGACAO_SEM_REFERENCIA_FISICA",
+            motivo: 
+"INTERLIGACAO_SEM_REFERENCIA_FISICA",
             referencias,
             pacs,
             equipamentosCompativeis: [],
@@ -3626,7 +4710,8 @@ function resolverEquipamentosPorInterligacao(interligacao) {
         return {
             equipamentos: [],
             metodo: null,
-            motivo: "INTERLIGACAO_SEM_ALIMENTADORES_OU_CIRCUITOS_CONFIRMAVEIS",
+            motivo: 
+"INTERLIGACAO_SEM_ALIMENTADORES_OU_CIRCUITOS_CONFIRMAVEIS",
             referencias,
             pacs,
             equipamentosCompativeis: [],
@@ -3651,7 +4736,8 @@ function resolverEquipamentosPorInterligacao(interligacao) {
     // Se a BDGD não informa esse vínculo, mantemos a interligação sem resolução.
     const compativeisPorPAC = equipamentosNoPAC.filter(equipamento => {
         const alimentadorEquipamento = normalizarCodigo(obterAlimentadorEquipamento(equipamento));
-        return Boolean(alimentadorEquipamento && codigosLados.has(alimentadorEquipamento));
+        return Boolean(alimentadorEquipamento && 
+codigosLados.has(alimentadorEquipamento));
     });
 
     const unicos = [];
@@ -3664,7 +4750,8 @@ function resolverEquipamentosPorInterligacao(interligacao) {
     }
 
     if (unicos.length === 1) {
-        return {
+        return 
+{
             equipamentos: unicos,
             metodo: "PAC_UNICO_CONFIRMADO_NA_BDGD",
             motivo: null,
@@ -3678,7 +4765,8 @@ function resolverEquipamentosPorInterligacao(interligacao) {
         return {
             equipamentos: [],
             metodo: null,
-            motivo: "PAC_AMBIGUO_MULTIPLOS_EQUIPAMENTOS_REAIS",
+            motivo: 
+"PAC_AMBIGUO_MULTIPLOS_EQUIPAMENTOS_REAIS",
             referencias,
             pacs,
             equipamentosCompativeis: unicos.map(equipamento => ({
@@ -3686,7 +4774,8 @@ function resolverEquipamentosPorInterligacao(interligacao) {
                 plaqueta: obterPlaquetaEquipamento(equipamento),
                 tipUnid: obterTIPUNID(equipamento),
                 alimentador: obterAlimentadorEquipamento(equipamento),
-                pacs: obterPacsEquipamento(equipamento),
+                pacs: 
+obterPacsEquipamento(equipamento),
             })),
         };
     }
@@ -3695,13 +4784,15 @@ function resolverEquipamentosPorInterligacao(interligacao) {
     let equipamentosCompativeis = [];
 
     if (equipamentosNoPAC.length && !compativeisPorPAC.length) {
-        motivo = "PAC_COM_EQUIPAMENTO_REAL_MAS_SEM_LADO_COMPATIVEL_CONFIRMADO";
+        motivo = 
+"PAC_COM_EQUIPAMENTO_REAL_MAS_SEM_LADO_COMPATIVEL_CONFIRMADO";
         equipamentosCompativeis = equipamentosNoPAC.map(equipamento => ({
             id: obterIdEquipamento(equipamento),
             plaqueta: obterPlaquetaEquipamento(equipamento),
             tipUnid: obterTIPUNID(equipamento),
             alimentador: obterAlimentadorEquipamento(equipamento) || null,
-            pacs: obterPacsEquipamento(equipamento),
+            pacs: 
+obterPacsEquipamento(equipamento),
         }));
     }
 
@@ -3716,7 +4807,8 @@ function resolverEquipamentosPorInterligacao(interligacao) {
 }
 
 function localizarEquipamentoPorInterligacao(interligacao) {
-    return resolverEquipamentosPorInterligacao(interligacao).equipamentos[0] ?? null;
+    return 
+resolverEquipamentosPorInterligacao(interligacao).equipamentos[0] ?? null;
 }
 
 // ==========================================================
@@ -3728,7 +4820,8 @@ function obterEstadoInterligacao(
 ) {
 
     if (!item) {
-        return null;
+        return 
+null;
     }
 
     const estadoDireto =
@@ -3744,7 +4837,8 @@ function obterEstadoInterligacao(
     }
 
     // "Normalmente aberta/fechada" descreve a configuração nominal,
-    // não necessariamente a posição física atual. Não a usamos como
+    // não necessariamente a posição física atual. Não a usamos 
+como
     // evidência de estado operacional presente.
     return null;
 }
@@ -3760,7 +4854,8 @@ function interligacaoExplicitamenteAberta(
 
     return (
         estado ===
-        "ABERTO"
+        
+"ABERTO"
     );
 }
 
@@ -3776,7 +4871,8 @@ function interligacaoExplicitamenteFechada(
     return (
         estado ===
         "FECHADO"
-    );
+    
+);
 }
 
 export function buscarInterligacoesAlimentador(
@@ -3793,7 +4889,8 @@ export function buscarInterligacoesAlimentador(
             item => {
 
                 const a =
-                    normalizarCodigo(
+                    
+normalizarCodigo(
                         obterAlimentadorInterligacaoA(
                             item
                         )
@@ -3809,7 +4906,8 @@ export function buscarInterligacoesAlimentador(
                 return (
                     a === alvo ||
                     b === alvo
-                );
+                
+);
             }
         );
 }
@@ -3827,7 +4925,8 @@ export function possuiInterligacao(
     const d =
         normalizarCodigo(
             destino
-        );
+        
+);
 
     return buscarInterligacoes()
         .some(
@@ -3843,7 +4942,8 @@ export function possuiInterligacao(
                 const b =
                     normalizarCodigo(
                         obterAlimentadorInterligacaoB(
-                            item
+                            
+item
                         )
                     );
 
@@ -3861,7 +4961,8 @@ export function possuiInterligacao(
         );
 }
 
-export function buscarCaminhoAlimentadores(
+export function 
+buscarCaminhoAlimentadores(
     origem,
     destino
 ) {
@@ -3895,7 +4996,8 @@ export function buscarCaminhoAlimentadores(
                     );
 
                 return (
-                    (
+                    
+(
                         a === o &&
                         b === d
                     ) ||
@@ -3910,7 +5012,8 @@ export function buscarCaminhoAlimentadores(
 
 // ==========================================================
 // PACS DA INTERLIGAÇÃO
-// ==========================================================
+// 
+==========================================================
 // RESOLUÇÃO SEGURA DE PACS, REDES E ESTADO DO CANDIDATO
 // ==========================================================
 
@@ -3922,7 +5025,8 @@ function obterPacsEquipamento(equipamento) {
         equipamento?.properties,
         equipamento?.propriedades,
         equipamento?.props,
-        equipamento?.unidadeSeccionadora,
+        
+equipamento?.unidadeSeccionadora,
         equipamento?.unidade,
         equipamento?.equipamento,
         equipamento?.equipamentoOperacional,
@@ -3933,7 +5037,8 @@ function obterPacsEquipamento(equipamento) {
         "PAC_1", "pac1", "PAC_2", "pac2",
         "PAC", "pac", "PON_ID", "PONNOT",
         "ponto1", "ponto2", "pontoAssociado", "pontoId",
-        "PN_CON_1", "PN_CON_2", "pontoOrigem", "pontoDestino",
+        "PN_CON_1", "PN_CON_2", "pontoOrigem", 
+"pontoDestino",
         "PAC_ORIGEM", "PAC_DESTINO",
     ];
     const resultado = [];
@@ -3944,7 +5049,8 @@ function obterPacsEquipamento(equipamento) {
             if (!pac) continue;
             const chave = normalizarCodigo(obterPac(pac));
             if (chave && !resultado.some(item => normalizarCodigo(item) === chave)) {
-                resultado.push(normalizarId(pac));
+                
+resultado.push(normalizarId(pac));
             }
         }
     }
@@ -3956,7 +5062,8 @@ function obterRedeDoPonto(pontoId, opcoes = {}) {
     try {
         return buscarRedeConectada(pontoId, {
             ...opcoes,
-            respeitarEstadoOperacional: opcoes?.respeitarEstadoOperacional === true,
+            respeitarEstadoOperacional: 
+opcoes?.respeitarEstadoOperacional === true,
             permitirTravessiaEntreAlimentadores: opcoes?.permitirTravessiaEntreAlimentadores !== false,
             permitirTravessiaEntreCircuitos: opcoes?.permitirTravessiaEntreCircuitos !== false,
         }) || null;
@@ -3975,7 +5082,8 @@ function obterAlimentadoresDaRede(rede) {
             if (interno !== null) adicionar(interno);
             return;
         }
-        const item = normalizarId(valor);
+        const item = 
+normalizarId(valor);
         if (item && !valores.some(existente => normalizarCodigo(existente) === normalizarCodigo(item))) {
             valores.push(item);
         }
@@ -3986,7 +5094,8 @@ function obterAlimentadoresDaRede(rede) {
     const grupos = [
         lista(rede?.pontos), lista(rede?.listaPontos),
         lista(rede?.trechos), lista(rede?.listaTrechos),
-        lista(rede?.equipamentos), lista(rede?.equipamentosOperacionais),
+        lista(rede?.equipamentos), 
+lista(rede?.equipamentosOperacionais),
     ];
     for (const grupo of grupos) {
         for (const item of grupo) {
@@ -3997,7 +5106,8 @@ function obterAlimentadoresDaRede(rede) {
 }
 
 function equipamentoBloqueado(equipamento) {
-    if (!equipamento) return true;
+    if (!equipamento) return 
+true;
     const id = obterIdEquipamento(equipamento);
     const estadoOperacional = id ? consultarEstadoEquipamento(id) : null;
     const estadoCadastro = obterEstadoExplicito(equipamento)?.estado ?? null;
@@ -4005,7 +5115,8 @@ function equipamentoBloqueado(equipamento) {
 
     if (estado === "INDISPONIVEL" || estado === "BYPASSADO") return true;
 
-    const fontes = [equipamento, equipamento?.properties, equipamento?.propriedades, equipamento?.props].filter(Boolean);
+    const fontes = [equipamento, 
+equipamento?.properties, equipamento?.propriedades, equipamento?.props].filter(Boolean);
     return fontes.some(fonte =>
         fonte?.indisponivel === true || fonte?.isUnavailable === true ||
         fonte?.bypassado === true || fonte?.bypass === true || fonte?.emBypass === true
@@ -4013,13 +5124,15 @@ function equipamentoBloqueado(equipamento) {
 }
 
 function candidatoInterligacaoEstaAberto(equipamento, interligacao) {
-    const id = obterIdEquipamento(equipamento);
+    const id = 
+obterIdEquipamento(equipamento);
     const estadoEquipamento = id ? consultarEstadoEquipamento(id) : null;
     const estadoCadastro = obterEstadoExplicito(equipamento)?.estado ?? null;
     const estadoInterligacao = obterEstadoInterligacao(interligacao);
 
     // Estado de operação/cadastro explicitamente observado tem prioridade.
-    const estado = estadoEquipamento?.estado ?? estadoCadastro ?? estadoInterligacao ?? null;
+    const estado = estadoEquipamento?.estado ?? estadoCadastro ?? estadoInterligacao ?? 
+null;
     return {
         conhecido: ESTADOS_VALIDOS.includes(estado),
         estado,
@@ -4028,7 +5141,8 @@ function candidatoInterligacaoEstaAberto(equipamento, interligacao) {
     };
 }
 
-function redeContemPonto(
+function 
+redeContemPonto(
     rede,
     ponto
 ) {
@@ -4046,7 +5160,8 @@ function redeContemPonto(
 
     return lista(
         rede?.pontos
-    ).some(
+    
+).some(
         item => {
 
             const ids = [
@@ -4064,7 +5179,8 @@ function redeContemPonto(
 
             return ids.some(
                 valor =>
-                    normalizarCodigo(
+                    
+normalizarCodigo(
                         obterPac(
                             valor
                         )
@@ -4095,7 +5211,8 @@ function identificarAreaAfetada(
             [],
 
         pac1:
-            null,
+            
+null,
 
         pac2:
             null,
@@ -4113,7 +5230,8 @@ function identificarAreaAfetada(
             null,
 
         redeAfetada:
-            null,
+            
+null,
 
         redeReceptor:
             null,
@@ -4131,7 +5249,8 @@ function identificarAreaAfetada(
             0,
 
         criterio:
-            null,
+            
+null,
 
         metodo:
             null,
@@ -4192,7 +5311,8 @@ function identificarAreaAfetada(
     const estadosComFalhaAberta = {
         ...obterMapaEstadosEquipamentos(),
         [chaveFalha]: {
-            equipamentoId: obterIdEquipamento(equipamentoFalha),
+            equipamentoId: 
+obterIdEquipamento(equipamentoFalha),
             equipamentoIdNormalizado: chaveFalha,
             estado: "ABERTO",
             origem: "SIMULACAO_DELIMITACAO_AREA",
@@ -4204,7 +5324,8 @@ function identificarAreaAfetada(
     for (const pontoId of pacs) {
         const rede = obterRedeDoPonto(pontoId, {
             estadosEquipamentos: estadosComFalhaAberta,
-            respeitarEstadoOperacional: true,
+            
+respeitarEstadoOperacional: true,
             permitirTravessiaEntreAlimentadores: true,
             permitirTravessiaEntreCircuitos: true,
         });
@@ -4218,7 +5339,8 @@ function identificarAreaAfetada(
                 rede
             );
 
-        redes.push({
+        
+redes.push({
 
             pontoId,
 
@@ -4235,7 +5357,8 @@ function identificarAreaAfetada(
                     item =>
                         normalizarCodigo(
                             item
-                        ) ===
+                        ) 
+===
                         normalizarCodigo(
                             alimentadorOcorrencia
                         )
@@ -4252,7 +5375,8 @@ function identificarAreaAfetada(
                 ).length,
 
         });
-    }
+    
+}
 
     if (
         redes.length === 0
@@ -4270,7 +5394,8 @@ function identificarAreaAfetada(
 
             pac2:
                 pacs[1] ??
-                null,
+                
+null,
 
             pacsCompletos:
                 pacs.length >= 2,
@@ -4285,7 +5410,8 @@ function identificarAreaAfetada(
         (
             a,
             b
-        ) => {
+        ) => 
+{
 
             const origemA =
                 a.possuiAlimentadorOcorrencia
@@ -4301,7 +5427,8 @@ function identificarAreaAfetada(
                 origemA !== origemB
             ) {
 
-                return (
+                return 
+(
                     origemB -
                     origemA
                 );
@@ -4318,7 +5445,8 @@ function identificarAreaAfetada(
         redes.find(
             item =>
                 item.possuiAlimentadorOcorrencia
-        ) ||
+        ) 
+||
         redes[0];
 
     const ladoReceptor =
@@ -4335,7 +5463,8 @@ function identificarAreaAfetada(
                         )
                 )
         ) ||
-        null;
+        
+null;
 
     const receptores =
         ladoReceptor
@@ -4366,7 +5495,8 @@ function identificarAreaAfetada(
             pacs[0] ??
             null,
 
-        pac2:
+        
+pac2:
             pacs[1] ??
             null,
 
@@ -4416,7 +5546,8 @@ function identificarAreaAfetada(
 
         criterio:
             ladoAfetado?.possuiAlimentadorOcorrencia
-                ? "ALIMENTADOR_OCORRENCIA"
+                ? 
+"ALIMENTADOR_OCORRENCIA"
                 : "CONECTIVIDADE_FISICA",
 
         metodo:
@@ -4428,7 +5559,8 @@ function identificarAreaAfetada(
 }
 
 // ==========================================================
-// LISTAR CANDIDATOS DE RECOMPOSIÇÃO
+// LISTAR CANDIDATOS DE 
+RECOMPOSIÇÃO
 // ==========================================================
 
 function listarCandidatosRecomposicao(ocorrencia) {
@@ -4437,7 +5569,8 @@ function listarCandidatosRecomposicao(ocorrencia) {
 
     const interligacoes = buscarInterligacoes();
     const equipamentoDesarme = normalizarCodigoEquipamento(
-        ocorrencia?.equipamentoDesarme ??
+        ocorrencia?.equipamentoDesarme 
+??
         ocorrencia?.equipamentoDesarmeId ??
         ocorrencia?.equipamento ??
         ""
@@ -4452,7 +5585,8 @@ function listarCandidatosRecomposicao(ocorrencia) {
         resolvidasPorPACUnico: 0,
         ambiguasPorPAC: 0,
         semReferenciaFisica: 0,
-        bloqueadas: 0,
+        bloqueadas: 
+0,
         fechadas: 0,
         semEstado: 0,
         tipoInvalido: 0,
@@ -4466,7 +5600,8 @@ function listarCandidatosRecomposicao(ocorrencia) {
         const equipamentos = resolucao.equipamentos ?? [];
 
         if (!equipamentos.length) {
-            diagnostico.naoLocalizadas++;
+            
+diagnostico.naoLocalizadas++;
             if (resolucao.motivo === "PAC_AMBIGUO_MULTIPLOS_EQUIPAMENTOS_REAIS") {
                 diagnostico.ambiguasPorPAC++;
             }
@@ -4475,13 +5610,15 @@ function listarCandidatosRecomposicao(ocorrencia) {
             }
 
             if (diagnostico.detalhesRejeitados.length < 20) {
-                diagnostico.detalhesRejeitados.push({
+                
+diagnostico.detalhesRejeitados.push({
                     motivo: resolucao.motivo ?? "EQUIPAMENTO_NAO_LOCALIZADO",
                     interligacao,
                     referenciaRegistro: normalizarId(interligacao?.id ?? interligacao?.ID ?? ""),
                     referenciasFisicasTentadas: resolucao.referencias ?? [],
                     pacs: resolucao.pacs ?? obterPacsInterligacao(interligacao),
-                    equipamentosCompativeis: resolucao.equipamentosCompativeis ?? [],
+                    equipamentosCompativeis: resolucao.equipamentosCompativeis ?? 
+[],
                 });
             }
             continue;
@@ -4502,7 +5639,8 @@ function listarCandidatosRecomposicao(ocorrencia) {
             const tip = obterTIPUNID(equipamento);
             if (![19, 22, 32, 34].includes(tip)) {
                 diagnostico.tipoInvalido++;
-                if (diagnostico.detalhesRejeitados.length < 20) {
+                if 
+(diagnostico.detalhesRejeitados.length < 20) {
                     diagnostico.detalhesRejeitados.push({
                         motivo: "TIP_UNID_NAO_MANOBRAVEL",
                         interligacao,
@@ -4513,7 +5651,8 @@ function listarCandidatosRecomposicao(ocorrencia) {
                 continue;
             }
 
-            const id = obterIdEquipamento(equipamento);
+            const id = 
+obterIdEquipamento(equipamento);
             if (!id) continue;
 
             const chave = normalizarCodigoEquipamento(id);
@@ -4525,7 +5664,8 @@ function listarCandidatosRecomposicao(ocorrencia) {
             }
 
             if (equipamentoBloqueado(equipamento)) {
-                diagnostico.bloqueadas++;
+                
+diagnostico.bloqueadas++;
                 if (diagnostico.detalhesRejeitados.length < 20) {
                     diagnostico.detalhesRejeitados.push({
                         motivo: "EQUIPAMENTO_BLOQUEADO",
@@ -4534,7 +5674,8 @@ function listarCandidatosRecomposicao(ocorrencia) {
                     });
                 }
                 continue;
-            }
+            
+}
 
             const estadoCandidato = candidatoInterligacaoEstaAberto(equipamento, interligacao);
 
@@ -4542,7 +5683,8 @@ function listarCandidatosRecomposicao(ocorrencia) {
             if (estadoCandidato.conhecido && !estadoCandidato.aberto) {
                 if (estadoCandidato.estado === "FECHADO") diagnostico.fechadas++;
                 if (diagnostico.detalhesRejeitados.length < 20) {
-                    diagnostico.detalhesRejeitados.push({
+                    
+diagnostico.detalhesRejeitados.push({
                         motivo: "INTERLIGACAO_NAO_ABERTA",
                         id,
                         plaqueta: obterPlaquetaEquipamento(equipamento),
@@ -4552,7 +5694,8 @@ function listarCandidatosRecomposicao(ocorrencia) {
                         metodoResolucao: resolucao.metodo,
                     });
                 }
-                continue;
+                
+continue;
             }
 
             if (!estadoCandidato.conhecido) diagnostico.semEstado++;
@@ -4560,7 +5703,8 @@ function listarCandidatosRecomposicao(ocorrencia) {
             // Deduplica por equipamento físico. Dá preferência a uma associação
             // confirmada por identificador e, em seguida, a estado ABERTO conhecido.
             const anterior = mapa.get(chave);
-            const pesoResolucao = resolucao.metodo === "IDENTIFICADOR_FISICO_BDGD" ? 2 : 1;
+            const pesoResolucao = resolucao.metodo === "IDENTIFICADOR_FISICO_BDGD" ? 2 : 
+1;
             const pesoAnterior = anterior?.metodoResolucao === "IDENTIFICADOR_FISICO_BDGD" ? 2 : 1;
             const estadoAberto = estadoCandidato.aberto ? 1 : 0;
             const estadoAnteriorAberto = anterior?.estadoCandidato?.aberto ? 1 : 0;
@@ -4568,7 +5712,8 @@ function listarCandidatosRecomposicao(ocorrencia) {
             if (!anterior || (pesoResolucao + estadoAberto) >= (pesoAnterior + estadoAnteriorAberto)) {
                 mapa.set(chave, {
                     equipamento,
-                    interligacao,
+                    
+interligacao,
                     estadoCandidato,
                     metodoResolucao: resolucao.metodo,
                 });
@@ -4582,7 +5727,8 @@ function listarCandidatosRecomposicao(ocorrencia) {
             ...registro.equipamento,
             __interligacaoBDGD: registro.interligacao,
             __estadoCandidato: registro.estadoCandidato,
-            __metodoResolucaoInterligacao: registro.metodoResolucao,
+            
+__metodoResolucaoInterligacao: registro.metodoResolucao,
         });
     }
 
@@ -4593,7 +5739,8 @@ function listarCandidatosRecomposicao(ocorrencia) {
 
 // ==========================================================
 // VALIDAR CANDIDATO TOPOLÓGICO
-// ==========================================================
+// 
+==========================================================
 //
 // IMPORTANTE:
 //
@@ -4608,7 +5755,8 @@ function listarCandidatosRecomposicao(ocorrencia) {
 // NÃO usamos a existência de dois PACs como requisito
 // para provar a existência dos dois lados.
 //
-// Os dois lados elétricos são determinados pela interligação
+// Os dois lados elétricos são 
+determinados pela interligação
 // oficial:
 //
 //     Alimentador A <-> Alimentador B
@@ -4637,7 +5785,8 @@ function validarCandidatoTopologico(
                 false,
 
             motivo:
-                "Equipamento candidato sem referência física PAC/PONNOT.",
+                "Equipamento candidato sem referência física 
+PAC/PONNOT.",
 
         };
     }
@@ -4650,7 +5799,8 @@ function validarCandidatoTopologico(
     // ======================================================
     // PRIMEIRA OPÇÃO:
     // usar a interligação já resolvida em listarCandidatos
-    // ======================================================
+    // 
+======================================================
 
     let interligacao =
         candidato?.__interligacaoBDGD ??
@@ -4661,7 +5811,8 @@ function validarCandidatoTopologico(
     // procurar pela identidade do equipamento
     // ======================================================
 
-    if (
+    if 
+(
         !interligacao
     ) {
 
@@ -4678,7 +5829,8 @@ function validarCandidatoTopologico(
                     item => {
 
                         const idInterligacao =
-                            normalizarCodigoEquipamento(
+                            
+normalizarCodigoEquipamento(
                                 obterEquipamentoInterligacao(
                                     item
                                 )
@@ -4695,7 +5847,8 @@ function validarCandidatoTopologico(
             null;
     }
 
-    if (
+    if 
+(
         !interligacao
     ) {
 
@@ -4710,7 +5863,8 @@ function validarCandidatoTopologico(
         };
     }
 
-    // ======================================================
+    // 
+======================================================
     // ALIMENTADORES OFICIAIS A/B
     // ======================================================
 
@@ -4741,7 +5895,8 @@ function validarCandidatoTopologico(
 
         return {
 
-            valido:
+            
+valido:
                 false,
 
             motivo:
@@ -4771,7 +5926,8 @@ function validarCandidatoTopologico(
                 false,
 
             motivo:
-                "A interligação oficial aponta para o mesmo alimentador nos dois lados.",
+                "A interligação oficial aponta para o mesmo alimentador nos dois 
+lados.",
 
             comprovacao:
                 {
@@ -4787,7 +5943,8 @@ function validarCandidatoTopologico(
         };
     }
 
-    // ======================================================
+    // 
+======================================================
     // A OCORRÊNCIA PRECISA ESTAR EM UM DOS LADOS
     // ======================================================
 
@@ -4829,7 +5986,8 @@ function validarCandidatoTopologico(
         };
     }
 
-    // ======================================================
+    // 
+======================================================
     // ALIMENTADOR RECEPTOR
     // ======================================================
 
@@ -4840,7 +5998,8 @@ function validarCandidatoTopologico(
 
     // ======================================================
     // PAC FÍSICO DA INTERLIGAÇÃO
-    // ======================================================
+    // 
+======================================================
 
     const pacInterligacao =
         pacs[0] ??
@@ -4851,7 +6010,8 @@ function validarCandidatoTopologico(
     // ======================================================
 
     const idEquipamentoCandidato = obterIdEquipamento(candidato);
-    const chaveCandidato = obterChaveEstadoEquipamento(idEquipamentoCandidato);
+    const chaveCandidato = 
+obterChaveEstadoEquipamento(idEquipamentoCandidato);
     const estadosComCandidatoAberto = {
         ...obterMapaEstadosEquipamentos(),
         [chaveCandidato]: {
@@ -4871,7 +6031,8 @@ function validarCandidatoTopologico(
         });
 
                 const alimentadores =
-                    obterAlimentadoresDaRede(
+                    
+obterAlimentadoresDaRede(
                         rede
                     );
 
@@ -4887,7 +6048,8 @@ function validarCandidatoTopologico(
 
                         alimentadores.some(
                             alimentador =>
-                                normalizarCodigo(
+                                
+normalizarCodigo(
                                     alimentador
                                 ) ===
                                 alimentadorOcorrencia
@@ -4901,7 +6063,8 @@ function validarCandidatoTopologico(
                                     alimentador
                                 ) ===
                                 normalizarCodigo(
-                                    alimentadorReceptor
+                                    
+alimentadorReceptor
                                 )
                         ),
 
@@ -4914,7 +6077,8 @@ function validarCandidatoTopologico(
 
     let ladoAfetado =
         lados.find(
-            lado =>
+            lado 
+=>
                 lado.possuiAlimentadorOcorrencia
         ) ??
         null;
@@ -4926,7 +6090,8 @@ function validarCandidatoTopologico(
     let ladoReceptor =
         lados.find(
             lado =>
-                lado.possuiAlimentadorReceptor
+                
+lado.possuiAlimentadorReceptor
         ) ??
         null;
 
@@ -4938,7 +6103,8 @@ function validarCandidatoTopologico(
         pacs.length === 1;
 
     // ======================================================
-    // PAC1 = PAC2
+    // PAC1 = 
+PAC2
     // ======================================================
 
     const possuiPACDuplicado =
@@ -4951,7 +6117,8 @@ function validarCandidatoTopologico(
         );
 
     // ======================================================
-    // CASO PAC ÚNICO OU PAC DUPLICADO
+    // CASO PAC ÚNICO OU PAC 
+DUPLICADO
     // ======================================================
 
     if (
@@ -5015,7 +6182,8 @@ function validarCandidatoTopologico(
             )
         );
 
-    if (
+    if 
+(
         !ladoAfetado &&
         alimentadorEquipamento ===
             alimentadorOcorrencia
@@ -5033,7 +6201,8 @@ function validarCandidatoTopologico(
             alimentadores:
                 [
                     alimentadorOcorrencia
-                ],
+                
+],
 
             pertenceArea:
                 true,
@@ -5050,7 +6219,8 @@ function validarCandidatoTopologico(
             normalizarCodigo(
                 alimentadorReceptor
             )
-    ) {
+    ) 
+{
 
         ladoReceptor = {
 
@@ -5080,7 +6250,8 @@ function validarCandidatoTopologico(
     // ======================================================
 
     if (
-        !ladoAfetado
+        
+!ladoAfetado
     ) {
 
         ladoAfetado = {
@@ -5098,7 +6269,8 @@ function validarCandidatoTopologico(
                 ],
 
             pertenceArea:
-                true,
+                
+true,
 
             origem:
                 "ALIMENTADOR_OCORRENCIA",
@@ -5109,7 +6281,8 @@ function validarCandidatoTopologico(
     if (!ladoReceptor && (possuiPACUnico || possuiPACDuplicado)) {
         // Com um único ponto físico disponível não há como separar os
         // lados pelo PAC; os alimentadores A/B oficiais continuam sendo
-        // necessários e a simulação de caminho é uma condição adicional.
+        // necessários e a simulação de caminho é uma condição 
+adicional.
         ladoReceptor = {
             pac: pacInterligacao,
             rede: lados[0]?.rede ?? null,
@@ -5122,7 +6295,8 @@ function validarCandidatoTopologico(
     if (!ladoReceptor) {
         return {
             valido: false,
-            motivo: "A interligação possui mais de um PAC, mas a topologia não comprovou qual PAC pertence ao alimentador receptor.",
+            motivo: "A interligação possui mais de um PAC, mas a topologia não comprovou qual 
+PAC pertence ao alimentador receptor.",
             comprovacao: {
                 alimentadorA: alimentadorInterligacaoA,
                 alimentadorB: alimentadorInterligacaoB,
@@ -5134,7 +6308,8 @@ function validarCandidatoTopologico(
 
     // ======================================================
     // DEFINIÇÃO DOS PONTOS
-    // ======================================================
+    // 
+======================================================
 
     const pontoAfetado =
         areaAfetada?.pontoAfetado ??
@@ -5149,7 +6324,8 @@ function validarCandidatoTopologico(
     if (
         !pontoAfetado ||
         !pontoReceptor
-    ) {
+    ) 
+{
 
         return {
 
@@ -5164,7 +6340,8 @@ function validarCandidatoTopologico(
 
     // ======================================================
     // ALIMENTADOR RECEPTOR
-    // ======================================================
+    // 
+======================================================
 
     if (
         !alimentadorReceptor
@@ -5192,7 +6369,8 @@ function validarCandidatoTopologico(
             equipamento:
                 obterIdEquipamento(
                     candidato
-                ),
+                
+),
 
             tipo:
                 classificarEquipamento(
@@ -5210,7 +6388,8 @@ function validarCandidatoTopologico(
             alimentadorOcorrencia:
                 areaAfetada
                     ?.alimentadorAfetado ??
-                null,
+                
+null,
 
             alimentadorA:
                 alimentadorInterligacaoA,
@@ -5264,7 +6443,8 @@ function validarCandidatoTopologico(
                     true,
 
                 alimentadorA:
-                    alimentadorInterligacaoA,
+                    
+alimentadorInterligacaoA,
 
                 alimentadorB:
                     alimentadorInterligacaoB,
@@ -5296,7 +6476,8 @@ function validarCandidatoTopologico(
                 pacDuplicado:
                     possuiPACDuplicado,
 
-                redePossuiAlimentadorOcorrencia:
+                
+redePossuiAlimentadorOcorrencia:
                     lados.some(
                         lado =>
                             lado.possuiAlimentadorOcorrencia
@@ -5324,7 +6505,8 @@ function criarEstadosSimulados(
     const estados =
         obterMapaEstadosEquipamentos();
 
-    const chave =
+    const chave 
+=
         obterChaveEstadoEquipamento(
             equipamentoId
         );
@@ -5341,7 +6523,8 @@ function criarEstadosSimulados(
             equipamentoIdNormalizado:
                 chave,
 
-            estado:
+            
+estado:
                 "FECHADO",
 
             origem:
@@ -5358,7 +6541,8 @@ function validarCaminhoSimulado(
     equipamentoId
 ) {
 
-    if (
+    if 
+(
         !pontoOrigem ||
         !pontoDestino
     ) {
@@ -5375,7 +6559,8 @@ function validarCaminhoSimulado(
             motivo:
                 "Pontos de origem/destino não definidos.",
 
-        };
+        
+};
     }
 
     const caminho =
@@ -5392,7 +6577,8 @@ function validarCaminhoSimulado(
                         equipamentoId
                     ),
 
-                respeitarEstadoOperacional:
+                
+respeitarEstadoOperacional:
                     true,
 
                 permitirTravessiaEntreAlimentadores:
@@ -5415,7 +6601,8 @@ function validarCaminhoSimulado(
 export function descobrirCandidatosRecomposicao(ocorrencia, opcoes = {}) {
     const equipamentoDesarmeId = normalizarId(
         ocorrencia?.equipamentoDesarme ??
-        ocorrencia?.equipamentoDesarmeId ??
+        
+ocorrencia?.equipamentoDesarmeId ??
         ocorrencia?.equipamento ??
         ""
     );
@@ -5449,7 +6636,8 @@ export function descobrirCandidatosRecomposicao(ocorrencia, opcoes = {}) {
             continue;
         }
 
-        const equipamentoId = obterIdEquipamento(candidato);
+        const equipamentoId = 
+obterIdEquipamento(candidato);
         if (!equipamentoId || !buscarEquipamentoBDGD(equipamentoId)) continue;
 
         const estadoCandidato = candidato?.__estadoCandidato ??
@@ -5471,7 +6659,8 @@ export function descobrirCandidatosRecomposicao(ocorrencia, opcoes = {}) {
             interligacaoBDGD: topologia.interligacao,
             comprovacaoTopologica: topologia.comprovacao,
             topologiaValidada: true,
-            alimentadorAfetado: areaAfetada.alimentadorAfetado ?? alimentadorOcorrencia,
+            alimentadorAfetado: areaAfetada.alimentadorAfetado 
+?? alimentadorOcorrencia,
             alimentadorReceptor: topologia.alimentadorReceptor,
             pontoAfetado: topologia.pontoAfetado,
             pontoReceptor: topologia.pontoReceptor,
@@ -5480,7 +6669,8 @@ export function descobrirCandidatosRecomposicao(ocorrencia, opcoes = {}) {
             estadoConhecido: estadoCandidato?.conhecido === true,
             estadoOrigem: estadoCandidato?.origem ?? "DESCONHECIDO",
             caminhoSimulado,
-            caminhoEletrico: caminhoSimulado,
+            caminhoEletrico: 
+caminhoSimulado,
             caminhoComprovado: caminhoSimulado?.encontrado === true,
             motivoTopologia: caminhoSimulado?.encontrado === true
                 ? null
@@ -5488,18 +6678,25 @@ export function descobrirCandidatosRecomposicao(ocorrencia, opcoes = {}) {
         });
     }
 
-    console.log("[Power Grid Monitor] RESULTADO DA DESCOBERTA DE RECOMPOSIÇÃO:", {
+    console.log("[Power Grid Monitor] RESULTADO DA DESCOBERTA DE 
+RECOMPOSIÇÃO:", {
         equipamentoDesarmeId,
         alimentadorOcorrencia,
         candidatosEncontrados: resultado.length,
         candidatosComCaminhoComprovado: resultado.filter(item => item.caminhoComprovado).length,
+        candidatosComEstadoConhecido: resultado.filter(item => item.estadoConhecido).length,
+        origensConfirmadas: estadoRede.topologiaBDGD?.orientacaoEletrica?.origensConfirmadas?.map(item => item.pontoId) ?? [],
+        pontosOrientados: 
+estadoRede.topologiaBDGD?.orientacaoEletrica?.quantidadePontos ?? 0,
+        componentesBloqueados: estadoRede.topologiaBDGD?.orientacaoEletrica?.componentesBloqueados?.length ?? 0,
     });
     return resultado;
 }
 
 // ==========================================================
 // CAPACIDADE / BITOLA DOS TRECHOS
-// ==========================================================
+// 
+==========================================================
 //
 // A capacidade deve ser obtida prioritariamente a partir
 // da informação real da BDGD:
@@ -5513,7 +6710,8 @@ export function descobrirCandidatosRecomposicao(ocorrencia, opcoes = {}) {
 //
 // TIP_CND NÃO É A BITOLA.
 //
-// TIP_CND é o identificador do segmento de condutor,
+// TIP_CND é o identificador do 
+segmento de condutor,
 // que pode ser resolvido em SEGCON.
 //
 // ==========================================================
@@ -5537,6 +6735,12 @@ const CAPACIDADES_BITOLA = {
 
 };
 
+// Margem operacional atualmente usada pelo modelo (80% da capacidade cadastrada).
+// Validar este fator com o critério técnico/operacional vigente da Neoenergia antes
+// de usar recomendações como autorização para uma manobra real.
+const 
+FATOR_LIMITE_OPERACIONAL_CONDUTOR = 0.8;
+
 function normalizarValorNumerico(
     valor
 ) {
@@ -5550,7 +6754,8 @@ function obterTrechoParaCapacidade(
     trechoId
 ) {
 
-    const id =
+    const id 
+=
         normalizarId(
             trechoId
         );
@@ -5567,7 +6772,8 @@ function obterTrechoParaCapacidade(
     ) {
 
         const trechoBDGD =
-            buscarTrechoBDGD(topologia, id) ??
+            buscarTrechoBDGD(topologia, id) 
+??
             buscarNaColecao(topologia?.trechos, id) ??
             buscarNaColecao(topologia?.listaTrechos, id) ??
             topologia?.trechos?.[id] ??
@@ -5580,7 +6786,8 @@ function obterTrechoParaCapacidade(
 
             return trechoBDGD;
         }
-    }
+    
+}
 
     return (
         buscarTrecho(
@@ -5591,131 +6798,78 @@ function obterTrechoParaCapacidade(
 }
 
 // ==========================================================
-// LOCALIZAR SEGCON DO TRECHO
+// LOCALIZAR CADASTRO SEGCON DO TRECHO
+// ==========================================================
+// A camada BDGD já enriquece 
+cada trecho com cadastroCondutor / propriedadesCondutor.
+// O motor deve consumir esses mesmos objetos primeiro, antes de procurar um índice global.
 // ==========================================================
 
-function obterSegmentoCondutorDoTrecho(
-    trecho
-) {
+function obterSegmentoCondutorDoTrecho(trecho) {
+    if (!trecho || typeof trecho !== "object") return null;
 
-    if (
-        !trecho
-    ) {
-        return null;
+    const candidatosDiretos = [
+        trecho.segmentoCondutor,
+        trecho.cadastroCondutor,
+        
+trecho.propriedadesCondutor,
+        trecho.propriedades?.cadastroCondutor,
+        trecho.properties?.cadastroCondutor,
+        trecho.propriedades?.propriedadesCondutor,
+        trecho.properties?.propriedadesCondutor,
+    ];
+
+    for (const candidato of candidatosDiretos) {
+        if (!candidato || typeof candidato !== "object" || 
+Array.isArray(candidato)) continue;
+        const temDadosCondutor = [
+            "COD_ID", "codId", "R_REGUL", "CNOM", "CMAX", "BIT_FAS_1", "BIT_FAS_2", "BIT_FAS_3",
+        ].some(campo => candidato[campo] !== null && candidato[campo] !== undefined && String(candidato[campo]).trim() !== "");
+        if (temDadosCondutor) return candidato;
     }
 
-    if (
-        trecho?.segmentoCondutor &&
-        typeof trecho.segmentoCondutor ===
-            "object"
-    ) {
+    const tipCnd = primeiro(trecho, [
+        "codigoCondutor", "segmentoCondutorId", "TIP_CND", "tipCnd", "condutor", 
+"CONDUTOR",
+    ]) ?? primeiro(trecho.propriedades, ["TIP_CND", "TIPCND", "tipCnd"]);
 
-        return trecho.segmentoCondutor;
+    if (tipCnd === null || tipCnd === undefined || String(tipCnd).trim() === "") return null;
+
+    const id = normalizarId(tipCnd);
+    const topologia = estadoRede.topologiaBDGD;
+    if (!topologia || !id) return null;
+
+    const segmentos = topologia.segmentosCondutores;
+    if (segmentos) {
+        if (!Array.isArray(segmentos) && segmentos[id]) return 
+segmentos[id];
+        const lista = Array.isArray(segmentos) ? segmentos : Object.values(segmentos);
+        const encontrado = lista.find(item => {
+            const codigo = primeiro(item, ["COD_ID", "codId", "id", "TIP_CND"]);
+            return normalizarId(codigo) === id;
+        });
+        if (encontrado) return encontrado;
     }
 
-    const tipCnd =
-        primeiro(
-            trecho,
-            [
-                "segmentoCondutorId",
-                "TIP_CND",
-                "tipCnd",
-                "condutor",
-                "CONDUTOR"
-            ]
+    // Último fallback: localizar o mesmo código de condutor em 
+outro trecho já enriquecido.
+    // Não atribui cadastro por bitola semelhante; somente por igualdade exata do código TIP_CND.
+    const trechos = topologia.trechos && typeof topologia.trechos === "object"
+        ? Object.values(topologia.trechos)
+        : [];
+    for (const item of trechos) {
+        const codigoItem = normalizarId(
+            item?.codigoCondutor ?? item?.propriedades?.TIP_CND ?? item?.TIP_CND ?? item?.condutor
         );
-
-    if (
-        tipCnd === null ||
-        tipCnd === undefined ||
-        String(tipCnd).trim() === ""
-    ) {
-
-        return null;
+        if (codigoItem !== id) continue;
+        const cadastro = 
+item?.cadastroCondutor ?? item?.propriedadesCondutor ?? item?.segmentoCondutor;
+        if (cadastro && typeof cadastro === "object") return cadastro;
     }
 
-    const id =
-        normalizarId(
-            tipCnd
-        );
-
-    const topologia =
-        estadoRede.topologiaBDGD;
-
-    if (
-        !topologia
-    ) {
-        return null;
-    }
-
-    const segmentos =
-        topologia?.segmentosCondutores;
-
-    if (
-        !segmentos
-    ) {
-        return null;
-    }
-
-    if (
-        !Array.isArray(
-            segmentos
-        )
-    ) {
-
-        return (
-            segmentos?.[id] ??
-            Object.values(
-                segmentos
-            ).find(
-                item => {
-
-                    const codigo =
-                        primeiro(
-                            item,
-                            [
-                                "COD_ID",
-                                "codId",
-                                "id",
-                                "TIP_CND"
-                            ]
-                        );
-
-                    return (
-                        normalizarId(
-                            codigo
-                        ) === id
-                    );
-                }
-            ) ??
-            null
-        );
-    }
-
-    return segmentos.find(
-        item => {
-
-            const codigo =
-                primeiro(
-                    item,
-                    [
-                        "COD_ID",
-                        "codId",
-                        "id",
-                        "TIP_CND"
-                    ]
-                );
-
-            return (
-                normalizarId(
-                    codigo
-                ) === id
-            );
-        }
-    ) || null;
+    return null;
 }
 
-// ==========================================================
 // CAPACIDADE POR BITOLA
 // ==========================================================
 
@@ -5740,7 +6894,8 @@ function capacidadePorBitolaLocal(
             )
             .trim();
 
-    // Captura somente bitolas reconhecidas. O lookaround evita
+    // Captura somente bitolas 
+reconhecidas. O lookaround evita
     // converter separadores (por exemplo, "/240") em parte do número.
     const encontrados = [
         ...texto.matchAll(/\b(240|150|95|70|35)\b/g),
@@ -5749,7 +6904,8 @@ function capacidadePorBitolaLocal(
     if (encontrados.length > 0) {
         const capacidades = encontrados
             .map(valor => CAPACIDADES_BITOLA[String(valor)] ?? null)
-            .filter(valor => Number.isFinite(valor) && valor > 0);
+            .filter(valor => Number.isFinite(valor) && valor > 
+0);
 
         if (capacidades.length > 0) {
             // Para uma indicação composta, adota-se o menor valor da
@@ -5763,7 +6919,8 @@ function capacidadePorBitolaLocal(
             texto
         );
 
-    if (
+    if 
+(
         valor !== null
     ) {
 
@@ -5780,7 +6937,8 @@ function capacidadePorBitolaLocal(
     return null;
 }
 
-// ==========================================================
+// 
+==========================================================
 // DETALHAMENTO DA CAPACIDADE REAL DO TRECHO
 // ==========================================================
 
@@ -5793,7 +6951,8 @@ export function obterDetalhesCapacidadeTrecho(
             trechoId
         );
 
-    if (
+    if 
+(
         !trecho
     ) {
 
@@ -5810,7 +6969,8 @@ export function obterDetalhesCapacidadeTrecho(
             motivo:
                 "Trecho não encontrado no modelo/topologia BDGD.",
 
-            capacidade:
+            
+capacidade:
                 null,
 
             capacidadeNominal:
@@ -5828,7 +6988,8 @@ export function obterDetalhesCapacidadeTrecho(
             condutor:
                 null,
 
-            origem:
+            
+origem:
                 null,
 
         };
@@ -5843,9 +7004,10 @@ export function obterDetalhesCapacidadeTrecho(
     // CNOM
     // ------------------------------------------------------
 
-    const correnteNominalBruta = normalizarValorNumerico(
-        primeiro(trecho, ["correnteNominalCondutor", "CNOM"]) ??
-        primeiro(segmentoCondutor, ["correnteNominalCondutor", "CNOM"])
+    const correnteNominalBruta = 
+normalizarValorNumerico(
+        primeiro(trecho, ["correnteNominalCondutor", "correnteNominal", "CNOM"]) ??
+        primeiro(segmentoCondutor, ["correnteNominalCondutor", "correnteNominal", "CNOM"])
     );
     const correnteNominal = correnteNominalBruta !== null && correnteNominalBruta > 0
         ? correnteNominalBruta
@@ -5853,11 +7015,12 @@ export function obterDetalhesCapacidadeTrecho(
 
     // ------------------------------------------------------
     // CMAX
-    // ------------------------------------------------------
+    // 
+------------------------------------------------------
 
     const correnteMaximaBruta = normalizarValorNumerico(
-        primeiro(trecho, ["correnteMaximaCondutor", "CMAX"]) ??
-        primeiro(segmentoCondutor, ["correnteMaximaCondutor", "CMAX"])
+        primeiro(trecho, ["correnteMaximaCondutor", "correnteMaxima", "correnteAdmissivel", "CMAX"]) ??
+        primeiro(segmentoCondutor, ["correnteMaximaCondutor", "correnteMaxima", "correnteAdmissivel", "CMAX"])
     );
     const correnteMaxima = correnteMaximaBruta !== null && correnteMaximaBruta > 0
         ? correnteMaximaBruta
@@ -5868,9 +7031,10 @@ export function obterDetalhesCapacidadeTrecho(
     // ------------------------------------------------------
 
     const capacidadeDiretaBruta = normalizarValorNumerico(
-        primeiro(trecho, ["capacidade", "CAPACIDADE", "ampacidade", "AMPACIDADE", "capacidadeMaximaAmperes"])
+        primeiro(trecho, ["capacidade", "CAPACIDADE", "ampacidade", "AMPACIDADE", "capacidadeMaximaAmperes", "correnteAdmissivel", "correnteMaxima"])
     );
-    const capacidadeDireta = capacidadeDiretaBruta !== null && capacidadeDiretaBruta > 0
+    const capacidadeDireta = capacidadeDiretaBruta !== null 
+&& capacidadeDiretaBruta > 0
         ? capacidadeDiretaBruta
         : null;
 
@@ -5879,10 +7043,10 @@ export function obterDetalhesCapacidadeTrecho(
     // ------------------------------------------------------
 
     const valoresBitola = [
-        primeiro(trecho, ["bitola", "BITOLA", "bitolaCondutor", "BITOLA_CONDUTOR", "secao", "SECAO"]),
-        primeiro(segmentoCondutor, ["BIT_FAS_1"]),
-        primeiro(segmentoCondutor, ["BIT_FAS_2"]),
-        primeiro(segmentoCondutor, ["BIT_FAS_3"]),
+        primeiro(trecho, ["bitolaMm2", "BITOLA_MM2", "bitola", "BITOLA", "bitolaCondutor", "BITOLA_CONDUTOR", "secao", "SECAO"]),
+        primeiro(trecho, ["designacaoCondutor", 
+"descricaoCondutor"]),
+        primeiro(segmentoCondutor, ["bitolaMm2", "BITOLA_MM2", "BITOLA", "SECAO_MM2", "R_REGUL"]),
     ];
 
     const bitolasEncontradas = [];
@@ -5896,7 +7060,8 @@ export function obterDetalhesCapacidadeTrecho(
             valor === null ||
             valor === undefined
         ) {
-            continue;
+            
+continue;
         }
 
         const texto =
@@ -5913,7 +7078,8 @@ export function obterDetalhesCapacidadeTrecho(
                 /\b(?:240|150|95|70|35)\b/g
             );
 
-        if (
+        if 
+(
             matches
         ) {
 
@@ -5930,7 +7096,8 @@ export function obterDetalhesCapacidadeTrecho(
             )
         ];
 
-    // ------------------------------------------------------
+    // 
+------------------------------------------------------
     // CAPACIDADES DERIVADAS DAS BITOLAS
     // ------------------------------------------------------
 
@@ -5946,7 +7113,8 @@ export function obterDetalhesCapacidadeTrecho(
                     null
             )
             .filter(
-                capacidade =>
+                capacidade 
+=>
                     capacidade !== null &&
                     capacidade > 0
             );
@@ -5960,7 +7128,8 @@ export function obterDetalhesCapacidadeTrecho(
     //
     // Quando não existir CMAX, utiliza-se a capacidade
     // explícita ou derivada da bitola.
-    //
+    
+//
     // Quando houver mais de uma bitola/fase, usamos a menor
     // capacidade encontrada, pois é o elemento limitante.
     //
@@ -5974,7 +7143,8 @@ export function obterDetalhesCapacidadeTrecho(
             : null;
 
     // Ordem de confiança:
-    // 1. CMAX oficial do trecho/SEGCON;
+    // 1. CMAX oficial do 
+trecho/SEGCON;
     // 2. capacidade explícita cadastrada no próprio trecho;
     // 3. CNOM oficial do condutor;
     // 4. tabela estimada pela bitola, somente como último recurso.
@@ -5988,7 +7158,8 @@ export function obterDetalhesCapacidadeTrecho(
 
     const origem =
         correnteMaxima !== null
-            ? "SEGCON_CMAX"
+            ? 
+"SEGCON_CMAX"
 
             : capacidadeDireta !== null
                 ? "CAPACIDADE_TRECHO"
@@ -6000,6 +7171,26 @@ export function obterDetalhesCapacidadeTrecho(
                         ? "BITOLA_TRECHO_ESTIMADA"
 
                         : null;
+
+    // Para liberar uma recomposição, precisamos de ampacidade máxima
+    // explicitamente cadastrada (CMAX) ou de um campo de 
+capacidade máxima
+    // do próprio trecho. CNOM é a corrente nominal do cabo e não deve ser
+    // tratado automaticamente como limite máximo; bitola isolada também
+    // não determina uma ampacidade única sem condições de instalação.
+    const capacidadeConfirmada =
+        origem === "SEGCON_CMAX" ||
+        origem === "CAPACIDADE_TRECHO";
+
+    const capacidadeNaoConfirmada =
+        capacidade !== null && 
+capacidade > 0 && !capacidadeConfirmada;
+
+    const avisoCapacidade = origem === "SEGCON_CNOM"
+        ? "O cadastro contém CNOM, mas não foi confirmada CMAX. A corrente nominal não será tratada como capacidade máxima para liberar a recomposição."
+        : origem === "BITOLA_TRECHO_ESTIMADA"
+            ? "Capacidade estimada apenas pela bitola; confirme material, construção, instalação e critério térmico antes de usar como limite operacional."
+            : null;
 
     const bitolasCodigoBDGD =
         [
@@ -6017,15 +7208,17 @@ export function obterDetalhesCapacidadeTrecho(
             );
 
     const condutor =
-        segmentoCondutor ??
+        primeiro(trecho, ["designacaoCondutor", "descricaoCondutor"]) ??
+        primeiro(segmentoCondutor, ["R_REGUL", "DESIGNACAO_CONDUTOR", "DESIGNACAO"]) ??
         trecho?.condutor ??
         trecho?.CONDUTOR ??
-        primeiro(trecho, ["TIP_CND", "tipCnd"]) ??
+        primeiro(trecho, ["codigoCondutor", "TIP_CND", "tipCnd"]) ??
         null;
 
     return {
 
-        conhecida:
+        
+conhecida:
             capacidade !== null &&
             capacidade > 0,
 
@@ -6047,6 +7240,25 @@ export function obterDetalhesCapacidadeTrecho(
         capacidadeMaxima:
             correnteMaxima,
 
+        bitolaMm2:
+            normalizarValorNumerico(primeiro(trecho, ["bitolaMm2", "BITOLA_MM2"])) ??
+            normalizarValorNumerico(primeiro(segmentoCondutor, ["bitolaMm2", "BITOLA_MM2"])) ??
+            null,
+
+        designacaoCondutor:
+            primeiro(trecho, ["designacaoCondutor", "descricaoCondutor"]) 
+??
+            primeiro(segmentoCondutor, ["R_REGUL", "DESIGNACAO_CONDUTOR", "DESIGNACAO"]) ??
+            null,
+
+        codigoCondutor:
+            primeiro(trecho, ["codigoCondutor", "TIP_CND", "tipCnd"]) ??
+            primeiro(trecho?.propriedades, ["TIP_CND", "TIPCND", "tipCnd"]) ??
+            null,
+
+        cadastroCondutorEncontrado:
+            Boolean(segmentoCondutor),
+
         capacidadeDireta,
 
         bitolas:
@@ -6062,11 +7274,14 @@ export function obterDetalhesCapacidadeTrecho(
 
         origem,
 
-        capacidadeEstimativa: origem === "BITOLA_TRECHO_ESTIMADA",
+        capacidadeConfirmada,
 
-        avisoCapacidade: origem === "BITOLA_TRECHO_ESTIMADA"
-            ? "Capacidade estimada por tabela de bitola; confirmar material, construção, instalação e critério térmico antes de usar como limite operacional definitivo."
-            : null,
+        // Mantém o nome legado 
+para compatibilidade com as rotinas atuais:
+        // true significa que não há confirmação de ampacidade máxima.
+        capacidadeEstimativa: capacidadeNaoConfirmada,
+
+        avisoCapacidade,
 
         segmentoCondutor:
             segmentoCondutor
@@ -6085,7 +7300,8 @@ export function obterDetalhesCapacidadeTrecho(
 // A corrente adicionada pela recomposição não permanece somente
 // no trecho imediatamente próximo da interligação.
 //
-// Depois do fechamento da interligação, essa corrente passa a
+// Depois do fechamento da interligação, essa corrente passa 
+a
 // circular pelo alimentador receptor e atravessa a cadeia de
 // trechos a montante até alcançar a fonte.
 //
@@ -6100,7 +7316,8 @@ export function obterDetalhesCapacidadeTrecho(
 //    trecho montante 2
 //          ↓
 //    ponto montante
-//          ↓
+//          
+↓
 //    ... até a origem.
 //
 // IMPORTANTE:
@@ -6123,7 +7340,8 @@ function buscarRegistroMapaPorId(mapa, id) {
     const alvo = normalizarCodigo(id);
     for (const [chave, valor] of Object.entries(mapa)) {
         if (normalizarCodigo(chave) === alvo) return valor;
-        const codigo = primeiro(valor, ["id", "ID", "COD_ID", "codId"]);
+        const codigo = primeiro(valor, 
+["id", "ID", "COD_ID", "codId"]);
         if (codigo !== null && normalizarCodigo(codigo) === alvo) return valor;
     }
     return null;
@@ -6133,7 +7351,8 @@ function buscarRegistroOrientacaoPonto(mapa, id) {
     if (!mapa || typeof mapa !== "object" || !id) return null;
     if (mapa[id] !== undefined) return mapa[id];
     const alvo = normalizarCodigo(obterPac(id));
-    for (const [chave, valor] of Object.entries(mapa)) {
+    for (const [chave, valor] of Object.entries(mapa)) 
+{
         if (normalizarCodigo(obterPac(chave)) === alvo) return valor;
         const codigo = primeiro(valor, ["PAC", "pac", "PON_ID", "id", "ID", "COD_ID", "codId"]);
         if (codigo !== null && normalizarCodigo(obterPac(codigo)) === alvo) return valor;
@@ -6142,7 +7361,8 @@ function buscarRegistroOrientacaoPonto(mapa, id) {
 }
 
 // Compara alimentadores usando também o CTMT cadastrado na BDGD.
-// Em muitos GeoJSON, o trecho contém apenas CTMT numérico (ex.: 153),
+// Em muitos GeoJSON, o trecho contém apenas CTMT numérico 
+(ex.: 153),
 // enquanto a interligação usa o identificador operacional (ex.: CMG01C3).
 function localizarRegistroAlimentador(valor) {
     const alvo = normalizarCodigo(valor);
@@ -6152,7 +7372,8 @@ function localizarRegistroAlimentador(valor) {
     const colecao = [
         ...lista(estadoRede.alimentadores),
         ...lista(topologia?.alimentadores),
-    ];
+    
+];
 
     return colecao.find(item => {
         if (!item || typeof item !== "object") return false;
@@ -6163,7 +7384,8 @@ function localizarRegistroAlimentador(valor) {
         ];
         return identificadores.some(id =>
             id !== null && id !== undefined && normalizarCodigo(id) === alvo
-        );
+        
+);
     }) ?? null;
 }
 
@@ -6174,7 +7396,8 @@ function mesmoAlimentadorBDGD(valorA, valorB) {
     if (a === b) return true;
 
     const registroA = localizarRegistroAlimentador(valorA);
-    const registroB = localizarRegistroAlimentador(valorB);
+    const registroB = 
+localizarRegistroAlimentador(valorB);
     if (!registroA || !registroB) return false;
 
     // Duas chaves (nome operacional e CTMT) que apontam para o mesmo
@@ -6184,7 +7407,8 @@ function mesmoAlimentadorBDGD(valorA, valorB) {
             "alimentador", "ALIMENTADOR", "id", "codigo", "nome", "name", "COD_ID", "codId",
         ]) ?? ""
     );
-    const chaveA = chavePrincipal(registroA);
+    const chaveA = 
+chavePrincipal(registroA);
     const chaveB = chavePrincipal(registroB);
     if (chaveA && chaveB && chaveA === chaveB) return true;
 
@@ -6209,7 +7433,8 @@ function obterTrechosMontanteCandidato(
     const alimentadorReceptor =
         normalizarCodigo(
             candidato?.alimentadorReceptor
-        );
+        
+);
 
     if (
         !topologia
@@ -6242,7 +7467,8 @@ function obterTrechosMontanteCandidato(
                 "Ponto receptor não identificado.",
 
             trechos:
-                [],
+                
+[],
 
         };
     }
@@ -6260,11 +7486,24 @@ function obterTrechosMontanteCandidato(
                 false,
 
             motivo:
-                "A orientação elétrica da topologia BDGD não está disponível.",
+                "A orientação elétrica da 
+topologia BDGD não está disponível.",
 
             trechos:
                 [],
 
+        };
+    }
+
+    // A cadeia a montante só tem significado operacional quando a origem
+    // foi identificada por atributos explícitos da BDGD ou configurada manualmente.
+    if (orientacao?.origemConfirmada !== true) {
+        return 
+{
+            conhecida: false,
+            permitido: false,
+            motivo: "A origem da orientação elétrica não está confirmada. Identifique/configure o ponto fonte antes de liberar a recomposição.",
+            trechos: [],
         };
     }
 
@@ -6274,7 +7513,8 @@ function obterTrechosMontanteCandidato(
     const trechosOrientados =
         orientacao?.trechos ?? {};
 
-    if (
+    if 
+(
         Object.keys(
             pontosOrientados
         ).length === 0
@@ -6326,7 +7566,8 @@ function obterTrechosMontanteCandidato(
             )
         ) {
 
-            return {
+            return 
+{
 
                 conhecida:
                     false,
@@ -6342,7 +7583,8 @@ function obterTrechosMontanteCandidato(
 
         visitadosPontos.add(
             chavePonto
-        );
+        
+);
 
         const pontoOrientado = buscarRegistroOrientacaoPonto(
             pontosOrientados,
@@ -6359,7 +7601,8 @@ function obterTrechosMontanteCandidato(
                     false,
 
                 motivo:
-                    `O ponto ${chavePonto} não possui orientação elétrica na BDGD.`,
+                    `O ponto 
+${chavePonto} não possui orientação elétrica na BDGD.`,
 
                 trechos:
                     resultado,
@@ -6380,18 +7623,35 @@ function obterTrechosMontanteCandidato(
         );
 
         // --------------------------------------------------
-        // Chegamos à origem do alimentador.
-        // --------------------------------------------------
-
-        if (
-            !trechoMontanteId
-        ) {
+        // Só encerra a cadeia quando chega a uma origem confirmada.
+        // Um ponto sem predecessor, isoladamente, não prova que seja fonte.
+        // 
+--------------------------------------------------
+        if (!trechoMontanteId) {
+            const origensConfirmadas = Array.isArray(orientacao?.origensConfirmadas)
+                ? orientacao.origensConfirmadas
+                : [];
+            const raizListada = origensConfirmadas.some(item =>
+                normalizarId(typeof item === "object" && item ? item.pontoId : item) === chavePonto
+            );
+            const raizLegada = normalizarId(orientacao?.pontoOrigem) === chavePonto;
+            const raizConfirmada = pontoOrientado?.origem === true 
+&& (raizListada || raizLegada);
+            if (!raizConfirmada) {
+                return {
+                    conhecida: false,
+                    permitido: false,
+                    motivo: `A cadeia a montante chegou ao ponto ${chavePonto}, mas ele não está identificado como origem elétrica confirmada.`,
+                    trechos: resultado,
+                };
+            }
             break;
         }
 
         if (
             visitadosTrechos.has(
-                trechoMontanteId
+                
+trechoMontanteId
             )
         ) {
 
@@ -6406,7 +7666,8 @@ function obterTrechosMontanteCandidato(
                 trechos:
                     resultado,
 
-            };
+            
+};
         }
 
         visitadosTrechos.add(
@@ -6438,7 +7699,8 @@ function obterTrechosMontanteCandidato(
                     false,
 
                 motivo:
-                    `O trecho a montante ${trechoMontanteId} não foi encontrado na BDGD.`,
+                    `O trecho a montante ${trechoMontanteId} não foi 
+encontrado na BDGD.`,
 
                 trechos:
                     resultado,
@@ -6452,7 +7714,8 @@ function obterTrechosMontanteCandidato(
             ]));
         }
 
-        // --------------------------------------------------
+        // 
+--------------------------------------------------
         // Alimentador do trecho.
         // --------------------------------------------------
 
@@ -6469,7 +7732,8 @@ function obterTrechosMontanteCandidato(
                         "CTMT",
                         "ctmt",
                         "circuito",
-                        "CIRCUITO"
+                        
+"CIRCUITO"
                     ]
                 )
 
@@ -6483,7 +7747,8 @@ function obterTrechosMontanteCandidato(
         if (
             alimentadorReceptor &&
             alimentadorTrecho &&
-            !mesmoAlimentadorBDGD(
+            
+!mesmoAlimentadorBDGD(
                 alimentadorTrecho,
                 candidato?.alimentadorReceptor
             )
@@ -6495,7 +7760,8 @@ function obterTrechosMontanteCandidato(
                     false,
 
                 motivo:
-                    `A cadeia de trechos a montante saiu do alimentador receptor no trecho ${trechoMontanteId}. Alimentador esperado: ${candidato?.alimentadorReceptor ?? "não informado"}. Encontrado: ${primeiro(trecho, ["alimentador", "ALIMENTADOR", "CT_COD_OP", "CTMT", "ctmt", "circuito", "CIRCUITO"]) ?? "não informado"}.`,
+                    `A cadeia de trechos a montante saiu do alimentador receptor no trecho ${trechoMontanteId}. Alimentador esperado: 
+${candidato?.alimentadorReceptor ?? "não informado"}. Encontrado: ${primeiro(trecho, ["alimentador", "ALIMENTADOR", "CT_COD_OP", "CTMT", "ctmt", "circuito", "CIRCUITO"]) ?? "não informado"}.`,
 
                 trechos:
                     resultado,
@@ -6505,7 +7771,8 @@ function obterTrechosMontanteCandidato(
 
         // --------------------------------------------------
         // Preservar a orientação real.
-        // --------------------------------------------------
+        // 
+--------------------------------------------------
 
         resultado.push({
 
@@ -6523,7 +7790,8 @@ function obterTrechosMontanteCandidato(
                 null,
 
             __sentido:
-                "MONTANTE",
+                
+"MONTANTE",
 
         });
 
@@ -6534,7 +7802,8 @@ function obterTrechosMontanteCandidato(
         // seguinte, a orientação está incompleta e não pode ser aprovada.
         // --------------------------------------------------
 
-        if (!pontoMontanteId) {
+        if (!pontoMontanteId) 
+{
             return {
                 conhecida: false,
                 motivo: `A orientação do ponto ${chavePonto} informa o trecho a montante ${trechoMontanteId}, mas não informa o ponto montante de destino. O caminho não pode ser considerado completo.`,
@@ -6545,7 +7814,8 @@ function obterTrechosMontanteCandidato(
         pontoAtual = pontoMontanteId;
     }
 
-    if (
+    if 
+(
         resultado.length === 0
     ) {
 
@@ -6561,7 +7831,8 @@ function obterTrechosMontanteCandidato(
                 [],
 
         };
-    }
+    
+}
 
     return {
 
@@ -6591,7 +7862,8 @@ function obterTrechosMontanteCandidato(
 // corrente projetada = 180 A
 //
 // trecho 1 -> 240 mm² -> 500 A
-// trecho 2 -> 150 mm² -> 300 A
+// trecho 2 -> 150 mm² -> 300 
+A
 // trecho 3 -> 95 mm²  -> 220 A
 // trecho 4 -> 70 mm²  -> 150 A
 //
@@ -6606,7 +7878,8 @@ function obterTrechosMontanteCandidato(
 //
 // O sistema deve informar o trecho limitante real.
 //
-// ==========================================================
+// 
+==========================================================
 
 function validarCapacidadeMontanteCandidato(
     candidato,
@@ -6618,7 +7891,8 @@ function validarCapacidadeMontanteCandidato(
         ? correnteConvertida
         : null;
 
-    if (
+    if 
+(
         corrente === null
     ) {
 
@@ -6634,7 +7908,8 @@ function validarCapacidadeMontanteCandidato(
                 "Corrente projetada não informada para validação dos trechos a montante.",
 
             trechos:
-                [],
+                
+[],
 
         };
     }
@@ -6651,7 +7926,8 @@ function validarCapacidadeMontanteCandidato(
         return {
 
             conhecida:
-                false,
+                
+false,
 
             permitido:
                 false,
@@ -6685,7 +7961,8 @@ function validarCapacidadeMontanteCandidato(
 
                 trecho?.COD_ID ??
 
-                trecho?.codId
+                
+trecho?.codId
 
             );
 
@@ -6701,7 +7978,8 @@ function validarCapacidadeMontanteCandidato(
             );
 
         // --------------------------------------------------
-        // Sem capacidade conhecida, não permitimos
+        // Sem capacidade conhecida, 
+não permitimos
         // transferência automática.
         // --------------------------------------------------
 
@@ -6718,7 +7996,8 @@ function validarCapacidadeMontanteCandidato(
                     primeiro(
                         trecho,
                         [
-                            "alimentador",
+                            
+"alimentador",
                             "ALIMENTADOR",
                             "CT_COD_OP",
                             "CTMT",
@@ -6753,7 +8032,8 @@ function validarCapacidadeMontanteCandidato(
                 carregamento:
                     null,
 
-                permitido:
+                
+permitido:
                     false,
 
                 origemCapacidade:
@@ -6770,7 +8050,8 @@ function validarCapacidadeMontanteCandidato(
                 conhecida:
                     false,
 
-                permitido:
+                
+permitido:
                     false,
 
                 motivo:
@@ -6801,7 +8082,8 @@ function validarCapacidadeMontanteCandidato(
             capacidade <= 0
         ) {
 
-            const itemCapacidadeInvalida = {
+            const itemCapacidadeInvalida = 
+{
 
                 trecho:
                     trechoId,
@@ -6819,7 +8101,8 @@ function validarCapacidadeMontanteCandidato(
                             "CIRCUITO"
                         ]
                     ) ??
-                    null,
+                    
+null,
 
                 capacidade:
                     null,
@@ -6837,7 +8120,8 @@ function validarCapacidadeMontanteCandidato(
                     false,
 
                 origemCapacidade:
-                    detalhes?.origem ??
+                    detalhes?.origem 
+??
                     null,
 
                 motivo:
@@ -6854,7 +8138,8 @@ function validarCapacidadeMontanteCandidato(
                     false,
 
                 motivo:
-                    `A capacidade determinada para o trecho a montante ${trechoId} é inválida.`,
+                    `A capacidade determinada para o trecho a 
+montante ${trechoId} é inválida.`,
 
                 trechoLimitante:
                     itemCapacidadeInvalida,
@@ -6873,7 +8158,7 @@ function validarCapacidadeMontanteCandidato(
 
         const limiteOperacional =
             capacidade *
-            0.8;
+            FATOR_LIMITE_OPERACIONAL_CONDUTOR;
 
         const carregamento =
             (
@@ -6886,7 +8171,8 @@ function validarCapacidadeMontanteCandidato(
             corrente <=
             limiteOperacional;
 
-        const item = {
+        const item = 
+{
 
             trecho:
                 trechoId,
@@ -6904,7 +8190,8 @@ function validarCapacidadeMontanteCandidato(
                         "CIRCUITO"
                     ]
                 ) ??
-                null,
+                
+null,
 
             pontoMontante:
                 trecho?.__pontoMontante ??
@@ -6921,7 +8208,8 @@ function validarCapacidadeMontanteCandidato(
                 null,
 
             segmentoCondutorId:
-                trecho?.segmentoCondutorId ??
+                
+trecho?.segmentoCondutorId ??
                 trecho?.TIP_CND ??
                 trecho?.propriedades?.TIP_CND ??
                 null,
@@ -6936,7 +8224,8 @@ function validarCapacidadeMontanteCandidato(
 
             correnteNominal:
                 detalhes?.correnteNominal ??
-                null,
+                
+null,
 
             correnteMaxima:
                 detalhes?.correnteMaxima ??
@@ -6949,7 +8238,8 @@ function validarCapacidadeMontanteCandidato(
                 detalhes?.capacidadeEstimativa !== true,
 
             capacidadeEstimativa:
-                detalhes?.capacidadeEstimativa === true,
+                detalhes?.capacidadeEstimativa === 
+true,
 
             avisoCapacidade:
                 detalhes?.avisoCapacidade ?? null,
@@ -6966,7 +8256,8 @@ function validarCapacidadeMontanteCandidato(
             permitido:
                 permitido,
 
-            origemCapacidade:
+            
+origemCapacidade:
                 detalhes?.origem ??
                 null,
 
@@ -6981,7 +8272,8 @@ function validarCapacidadeMontanteCandidato(
             item
         );
 
-        // --------------------------------------------------
+        // 
+--------------------------------------------------
         // Não interrompemos imediatamente.
         //
         // Todos os trechos são analisados para que o
@@ -7009,7 +8301,8 @@ function validarCapacidadeMontanteCandidato(
                 [],
 
             detalheMontante:
-                montante,
+                
+montante,
 
         };
     }
@@ -7023,7 +8316,8 @@ function validarCapacidadeMontanteCandidato(
         item => item.capacidadeConfirmada === true
     );
 
-    // ------------------------------------------------------
+    // 
+------------------------------------------------------
     // Trecho limitante:
     //
     // o trecho com menor capacidade entre todos os trechos
@@ -7038,7 +8332,8 @@ function validarCapacidadeMontanteCandidato(
             ) => {
 
                 if (
-                    !menor
+                    
+!menor
                 ) {
                     return item;
                 }
@@ -7056,7 +8351,8 @@ function validarCapacidadeMontanteCandidato(
                 if (
                     capacidadeAtual ===
                     null
-                ) {
+                ) 
+{
                     return menor;
                 }
 
@@ -7074,7 +8370,8 @@ function validarCapacidadeMontanteCandidato(
                     ? item
                     : menor;
             },
-            null
+            
+null
         );
 
     if (
@@ -7092,7 +8389,8 @@ function validarCapacidadeMontanteCandidato(
             confirmada:
                 capacidadesConfirmadas,
 
-            permitido:
+            
+permitido:
                 false,
 
             motivo:
@@ -7101,7 +8399,8 @@ function validarCapacidadeMontanteCandidato(
             trechoLimitante:
                 trechoLimitante,
 
-            trechosBloqueados:
+            
+trechosBloqueados:
 
                 trechosBloqueados,
 
@@ -7117,7 +8416,8 @@ function validarCapacidadeMontanteCandidato(
             detalheMontante:
                 montante,
 
-        };
+        
+};
     }
 
     return {
@@ -7133,7 +8433,8 @@ function validarCapacidadeMontanteCandidato(
 
         motivo:
             trechoLimitante
-                ? `Todos os ${resultadoPorTrechos.length} trechos a montante suportam a corrente projetada. O trecho de menor capacidade é ${trechoLimitante.trecho}, com ${trechoLimitante.capacidade} A de capacidade e ${trechoLimitante.carregamento.toFixed(1)}% de carregamento.`
+                ? `Todos os ${resultadoPorTrechos.length} trechos a montante suportam a 
+corrente projetada. O trecho de menor capacidade é ${trechoLimitante.trecho}, com ${trechoLimitante.capacidade} A de capacidade e ${trechoLimitante.carregamento.toFixed(1)}% de carregamento.`
                 : "Todos os trechos a montante suportam a corrente projetada.",
 
         trechoLimitante:
@@ -7143,7 +8444,8 @@ function validarCapacidadeMontanteCandidato(
             [],
 
         trechos:
-            resultadoPorTrechos,
+            
+resultadoPorTrechos,
 
         quantidadeTrechos:
             resultadoPorTrechos.length,
@@ -7158,7 +8460,8 @@ function validarCapacidadeMontanteCandidato(
 }
 
 // ==========================================================
-// VALIDAR CAPACIDADE DO CANDIDATO
+// VALIDAR CAPACIDADE DO 
+CANDIDATO
 // ==========================================================
 //
 // Regra da corrente projetada:
@@ -7170,7 +8473,8 @@ function validarCapacidadeMontanteCandidato(
 // Quando a corrente transferida não estiver informada,
 // NÃO inventamos um valor.
 //
-// Nesse caso a análise utiliza somente a corrente conhecida
+// Nesse caso a análise utiliza somente a corrente 
+conhecida
 // do receptor e permanece condicionada quanto à parcela
 // transferida.
 //
@@ -7183,7 +8487,8 @@ function validarCapacidadeCandidato(
 ) {
 
     const correnteBaseConvertida = numero(correnteDestino);
-    const correnteTransferidaConvertida = numero(correnteDesligado);
+    const 
+correnteTransferidaConvertida = numero(correnteDesligado);
 
     const correnteBaseDestino = correnteBaseConvertida !== null && correnteBaseConvertida >= 0
         ? correnteBaseConvertida
@@ -7193,7 +8498,8 @@ function validarCapacidadeCandidato(
         ? correnteTransferidaConvertida
         : null;
 
-    // ------------------------------------------------------
+    // 
+------------------------------------------------------
     // Sem corrente do receptor:
     // não existe base para validar a carga.
     // ------------------------------------------------------
@@ -7209,7 +8515,8 @@ function validarCapacidadeCandidato(
                 false,
 
             permitido:
-                false,
+                
+false,
 
             correnteBaseDestino:
                 null,
@@ -7227,7 +8534,8 @@ function validarCapacidadeCandidato(
                 null,
 
             limiteOperacional:
-                null,
+                
+null,
 
             trechoLimitante:
                 null,
@@ -7242,7 +8550,8 @@ function validarCapacidadeCandidato(
     }
 
     // ------------------------------------------------------
-    // Caso exista a corrente transferida, somamos as duas.
+    // Caso exista a corrente 
+transferida, somamos as duas.
     //
     // Caso ela não exista, não colocamos 0 artificialmente.
     // Usamos somente a corrente conhecida do receptor.
@@ -7253,7 +8562,8 @@ function validarCapacidadeCandidato(
         : correnteBaseDestino;
 
     const validacaoMontante = validarCapacidadeMontanteCandidato(
-        candidato,
+        
+candidato,
         correnteProjetada
     );
 
@@ -7264,7 +8574,8 @@ function validarCapacidadeCandidato(
     return {
         // Sem corrente transferida não existe validação positiva da carga
         // total. Uma sobrecarga já presente na corrente-base, porém, é
-        // suficiente para bloquear a recomposição.
+        // suficiente para bloquear a 
+recomposição.
         conhecida: cargaBaseJaInsegura || (transferenciaConhecida && validacaoMontante?.conhecida === true),
         confirmada: validacaoMontante?.confirmada === true,
         permitido: cargaBaseJaInsegura
@@ -7273,7 +8584,8 @@ function validarCapacidadeCandidato(
                 ? null
                 : (validacaoMontante?.permitido === false
                     ? false
-                    : (validacaoMontante?.conhecida === true && validacaoMontante?.confirmada === true
+                    : 
+(validacaoMontante?.conhecida === true && validacaoMontante?.confirmada === true
                         ? true
                         : null))),
 
@@ -7306,7 +8618,8 @@ function validarCapacidadeCandidato(
                 ?.trechoLimitante ??
             null,
 
-        trechos:
+        
+trechos:
             validacaoMontante
                 ?.trechos ??
             [],
@@ -7323,7 +8636,8 @@ function validarCapacidadeCandidato(
 
         quantidadeTrechosBloqueados:
             validacaoMontante
-                ?.quantidadeTrechosBloqueados ??
+                ?.quantidadeTrechosBloqueados 
+??
             0,
 
         detalheMontante:
@@ -7333,15 +8647,17 @@ function validarCapacidadeCandidato(
 
         motivo: !transferenciaConhecida && !cargaBaseJaInsegura
             ? "Corrente transferida da área afetada não informada; a análise de capacidade permanece condicionada."
-            : (validacaoMontante?.confirmada === false && validacaoMontante?.permitido === true
-                ? "A triagem de corrente está dentro das capacidades estimadas por bitola, mas a manobra permanece condicionada até confirmar a ampacidade técnica dos condutores na BDGD/SEGCON."
+            : (validacaoMontante?.confirmada === false && validacaoMontante?.permitido 
+=== true
+                ? "A corrente ficou abaixo do valor preliminar disponível, mas a ampacidade máxima não foi confirmada para todos os trechos a montante. A recomposição permanece condicionada."
                 : (validacaoMontante?.motivo ?? null)),
 
     };
 }
 
 // ==========================================================
-// ANÁLISE DE RECOMPOSIÇÃO DA OCORRÊNCIA
+// ANÁLISE DE RECOMPOSIÇÃO DA 
+OCORRÊNCIA
 // ==========================================================
 //
 // Fluxo:
@@ -7352,7 +8668,8 @@ function validarCapacidadeCandidato(
 // 4. Validar a topologia de cada candidato.
 // 5. Simular o caminho elétrico.
 // 6. Validar TODOS os trechos a montante do receptor.
-// 7. Classificar:
+// 7. 
+Classificar:
 //
 //      VIAVEL
 //      BLOQUEADA
@@ -7365,7 +8682,8 @@ function validarCapacidadeCandidato(
 
 export function analisarRecomposicaoOcorrencia(
     ocorrencia,
-    opcoes = {}
+    opcoes = 
+{}
 ) {
 
     const equipamentoDesarmeId =
@@ -7379,7 +8697,8 @@ export function analisarRecomposicaoOcorrencia(
 
             null
 
-        );
+        
+);
 
     // ------------------------------------------------------
     // Equipamento de desarme obrigatório.
@@ -7394,7 +8713,8 @@ export function analisarRecomposicaoOcorrencia(
             sucesso:
                 false,
 
-            status:
+            
+status:
                 "EQUIPAMENTO_DESARME_NAO_INFORMADO",
 
             candidatos:
@@ -7409,7 +8729,8 @@ export function analisarRecomposicaoOcorrencia(
         };
     }
 
-    // ------------------------------------------------------
+    // 
+------------------------------------------------------
     // Confirmar que o equipamento existe realmente na BDGD.
     // ------------------------------------------------------
 
@@ -7424,7 +8745,8 @@ export function analisarRecomposicaoOcorrencia(
 
     if (
         !validacaoEquipamento?.valido
-    ) {
+    ) 
+{
 
         return {
 
@@ -7440,7 +8762,8 @@ export function analisarRecomposicaoOcorrencia(
             candidatos:
                 [],
 
-            recomendacao:
+            
+recomendacao:
                 null,
 
             motivo:
@@ -7454,7 +8777,8 @@ export function analisarRecomposicaoOcorrencia(
     // ------------------------------------------------------
     // Corrente do trecho/alimentador receptor.
     //
-    // Mantemos os nomes que já existem na interface.
+    // Mantemos os nomes que já 
+existem na interface.
     // ------------------------------------------------------
 
     const correnteDesligadoBruta = numero(
@@ -7465,7 +8789,8 @@ export function analisarRecomposicaoOcorrencia(
     );
     const correnteDestinoBruta = numero(
         opcoes?.correnteDestino ??
-        ocorrencia?.correnteTrechoRecuperacao ??
+        
+ocorrencia?.correnteTrechoRecuperacao ??
         ocorrencia?.manobra?.correnteDestino ??
         null
     );
@@ -7491,7 +8816,8 @@ export function analisarRecomposicaoOcorrencia(
 
                 correnteDestino,
 
-            }
+            
+}
 
         );
 
@@ -7506,7 +8832,8 @@ export function analisarRecomposicaoOcorrencia(
                 candidato
             ) => {
 
-                const capacidade =
+                const capacidade 
+=
                     validarCapacidadeCandidato(
 
                         candidato,
@@ -7520,7 +8847,8 @@ export function analisarRecomposicaoOcorrencia(
                 const permitidoCarga = capacidade?.conhecida === true
                     ? (capacidade?.permitido === true
                         ? true
-                        : (capacidade?.permitido === false ? false : null))
+                        : (capacidade?.permitido === false ? 
+false : null))
                     : null;
 
                 // --------------------------------------------------
@@ -7531,7 +8859,8 @@ export function analisarRecomposicaoOcorrencia(
                     candidato?.estadoConhecido === true &&
                     candidato?.estado === "ABERTO";
 
-                const caminhoComprovado =
+                const caminhoComprovado 
+=
                     candidato?.caminhoSimulado?.encontrado === true ||
                     candidato?.caminhoComprovado === true;
 
@@ -7544,7 +8873,8 @@ export function analisarRecomposicaoOcorrencia(
                 // Somente quando:
                 //
                 // - estado conhecido;
-                // - equipamento ABERTO;
+                // - equipamento 
+ABERTO;
                 // - capacidade conhecida;
                 // - todos os trechos suportam a corrente.
                 // --------------------------------------------------
@@ -7559,7 +8889,8 @@ export function analisarRecomposicaoOcorrencia(
                         true;
                 }
 
-                // --------------------------------------------------
+                // 
+--------------------------------------------------
                 // BLOQUEADA
                 //
                 // Pode ocorrer por:
@@ -7573,7 +8904,8 @@ export function analisarRecomposicaoOcorrencia(
                 // Observação:
                 // o estado desconhecido não é transformado em
                 // bloqueio definitivo somente por ausência de
-                // informação.
+                // 
+informação.
                 // --------------------------------------------------
 
                 else if (
@@ -7588,7 +8920,8 @@ export function analisarRecomposicaoOcorrencia(
                 }
 
                 else if (
-                    permitidoCarga === false
+                    permitidoCarga === 
+false
                 ) {
 
                     permitido =
@@ -7621,7 +8954,8 @@ export function analisarRecomposicaoOcorrencia(
 
                 } else if (
                     permitido ===
-                    false
+                    
+false
                 ) {
 
                     status =
@@ -7636,7 +8970,8 @@ export function analisarRecomposicaoOcorrencia(
                     // Correntes utilizadas na análise
                     // ----------------------------------------------
 
-                    correnteDesligado:
+                    
+correnteDesligado:
 
                         correnteDesligado,
 
@@ -7651,7 +8986,8 @@ export function analisarRecomposicaoOcorrencia(
 
                     correnteTransferida:
 
-                        capacidade?.correnteTransferida ??
+                        capacidade?.correnteTransferida 
+??
                         null,
 
                     correnteProjetada:
@@ -7665,7 +9001,8 @@ export function analisarRecomposicaoOcorrencia(
 
                     carregamento:
 
-                        capacidade?.carregamento ??
+                        
+capacidade?.carregamento ??
                         null,
 
                     capacidade:
@@ -7680,7 +9017,8 @@ export function analisarRecomposicaoOcorrencia(
 
                     trechoLimitante:
 
-                        capacidade?.trechoLimitante ??
+                        capacidade?.trechoLimitante 
+??
                         null,
 
                     // ----------------------------------------------
@@ -7694,7 +9032,8 @@ export function analisarRecomposicaoOcorrencia(
 
                     trechosBloqueados:
 
-                        capacidade?.trechosBloqueados ??
+                        
+capacidade?.trechosBloqueados ??
                         [],
 
                     quantidadeTrechos:
@@ -7741,7 +9080,8 @@ export function analisarRecomposicaoOcorrencia(
     // ORDENAR CANDIDATOS
     // ======================================================
     //
-    // A ordenação não cria preferência elétrica artificial.
+    // A ordenação não cria preferência elétrica 
+artificial.
     //
     // Primeiro:
     //   VIÁVEL
@@ -7756,7 +9096,8 @@ export function analisarRecomposicaoOcorrencia(
     // topológicas já calculadas.
     // ======================================================
 
-    const pesoStatus = {
+    const pesoStatus = 
+{
 
         VIAVEL:
             0,
@@ -7792,7 +9133,8 @@ export function analisarRecomposicaoOcorrencia(
                 pesoB
             ) {
 
-                return (
+                return 
+(
                     pesoA -
                     pesoB
                 );
@@ -7805,7 +9147,8 @@ export function analisarRecomposicaoOcorrencia(
             // ----------------------------------------------
 
             const distanciaA =
-                numero(
+                
+numero(
 
                     a?.caminhoSimulado
                         ?.quantidadeTrechos ??
@@ -7839,7 +9182,8 @@ export function analisarRecomposicaoOcorrencia(
             if (
                 distanciaA !== null &&
                 distanciaB !== null &&
-                distanciaA !== distanciaB
+                distanciaA !== 
+distanciaB
             ) {
 
                 return (
@@ -7854,7 +9198,8 @@ export function analisarRecomposicaoOcorrencia(
 
     // ======================================================
     // MELHOR ALTERNATIVA
-    // ======================================================
+    // 
+======================================================
 
     const melhorAlternativa =
         candidatos.find(
@@ -7868,7 +9213,8 @@ export function analisarRecomposicaoOcorrencia(
 
     // ======================================================
     // QUANTIDADES PARA O DIAGNÓSTICO
-    // ======================================================
+    // 
+======================================================
 
     const quantidadeViaveis =
         candidatos.filter(
@@ -7885,7 +9231,8 @@ export function analisarRecomposicaoOcorrencia(
         ).length;
 
     const quantidadeBloqueadas =
-        candidatos.filter(
+        
+candidatos.filter(
             candidato =>
                 candidato?.status ===
                 "BLOQUEADA"
@@ -7899,7 +9246,8 @@ export function analisarRecomposicaoOcorrencia(
 
     if (
         melhorAlternativa
-    ) {
+    ) 
+{
 
         motivo =
             "Foi encontrada uma alternativa de recomposição com equipamento aberto e capacidade dos trechos a montante compatível com a corrente projetada.";
@@ -7912,7 +9260,8 @@ export function analisarRecomposicaoOcorrencia(
     ) {
 
         motivo =
-            "Existem alternativas de recomposição, porém pelo menos um requisito operacional ou de capacidade ainda não pôde ser confirmado.";
+            "Existem alternativas de recomposição, porém pelo menos 
+um requisito operacional ou de capacidade ainda não pôde ser confirmado.";
 
     }
 
@@ -7926,7 +9275,8 @@ export function analisarRecomposicaoOcorrencia(
 
     }
 
-    else {
+    else 
+{
 
         motivo =
             "Nenhuma alternativa de recomposição foi encontrada.";
@@ -7939,7 +9289,8 @@ export function analisarRecomposicaoOcorrencia(
     return {
 
         sucesso:
-            true,
+            
+true,
 
         status:
             melhorAlternativa
@@ -7955,7 +9306,8 @@ export function analisarRecomposicaoOcorrencia(
         equipamentoDesarme:
             equipamentoDesarmeId,
 
-        equipamentoBDGD:
+        
+equipamentoBDGD:
             validacaoEquipamento?.equipamento ??
             validacaoEquipamento?.registro ??
             validacaoEquipamento ??
@@ -7967,7 +9319,8 @@ export function analisarRecomposicaoOcorrencia(
             null,
 
         tipoEquipamento:
-            validacaoEquipamento?.tipo ??
+            validacaoEquipamento?.tipo 
+??
             validacaoEquipamento?.tipoEquipamento ??
             null,
 
@@ -7980,7 +9333,8 @@ export function analisarRecomposicaoOcorrencia(
 
         correnteDestino,
 
-        candidatos,
+        
+candidatos,
 
         quantidadeCandidatos:
             candidatos.length,
@@ -8005,7 +9359,8 @@ export function analisarRecomposicaoOcorrencia(
 
 function registrarEstadoAlimentador(alimentador, energizado, opcoes = {}) {
     const id = normalizarId(alimentador);
-    if (!id) return { sucesso: false, mensagem: "Alimentador não informado." };
+    if (!id) return { sucesso: false, mensagem: "Alimentador não informado." 
+};
 
     const cadastrado = buscarAlimentador(id) || lista(estadoRede.topologiaBDGD?.alimentadores).some(item => {
         const valor = typeof item === "object" ? primeiro(item, ["id", "codigo", "alimentador", "CTMT", "ctmt"]) : item;
@@ -8019,20 +9374,23 @@ function registrarEstadoAlimentador(alimentador, energizado, opcoes = {}) {
         alimentador: id,
         energizado: Boolean(energizado),
         estadoAnterior: estadoRede.operacao.alimentadoresDesenergizados[chave] ? "DESENERGIZADO" : "ENERGIZADO_DESCONHECIDO",
-        origem: opcoes?.origem ?? "SIMULACAO_LOCAL",
+        origem: opcoes?.origem ?? 
+"SIMULACAO_LOCAL",
         observacao: opcoes?.observacao ?? null,
         atualizadoEm: new Date(),
     };
     if (energizado) delete estadoRede.operacao.alimentadoresDesenergizados[chave];
     else estadoRede.operacao.alimentadoresDesenergizados[chave] = registro;
 
-    estadoRede.operacao.historico.push({ data: new Date(), acao: energizado ? "ENERGIZAR_ALIMENTADOR_SIMULADO" : "DESENERGIZAR_ALIMENTADOR_SIMULADO", dados: registro });
+    estadoRede.operacao.historico.push({ data: new Date(), acao: energizado ? "ENERGIZAR_ALIMENTADOR_SIMULADO" : 
+"DESENERGIZAR_ALIMENTADOR_SIMULADO", dados: registro });
     estadoRede.operacao.ultimaAtualizacao = new Date();
     return { sucesso: true, ...registro, mensagem: energizado ? "Estado simulado do alimentador atualizado para energizado." : "Estado simulado do alimentador atualizado para desenergizado." };
 }
 
 export function desenergizarAlimentador(alimentador, opcoes = {}) {
-    return registrarEstadoAlimentador(alimentador, false, opcoes);
+    return registrarEstadoAlimentador(alimentador, false, 
+opcoes);
 }
 
 export function energizarAlimentador(alimentador, opcoes = {}) {
@@ -8057,7 +9415,8 @@ export function analisarManobraOperacional(equipamentoOuId, acao, opcoes = {}) {
         ? obterIdEquipamento(equipamentoOuId)
         : normalizarId(equipamentoOuId);
     const comando = normalizarTexto(acao);
-    if (!equipamentoId) return { sucesso: false, permitido: false, status: "EQUIPAMENTO_NAO_INFORMADO", motivo: "Equipamento não informado." };
+    if (!equipamentoId) return { sucesso: false, permitido: false, status: "EQUIPAMENTO_NAO_INFORMADO", motivo: "Equipamento não informado." 
+};
     if (!["ABRIR", "FECHAR"].includes(comando)) return { sucesso: false, permitido: false, status: "ACAO_INVALIDA", motivo: "Ação deve ser ABRIR ou FECHAR." };
 
     const validacao = validarEquipamentoBDGD(equipamentoId, opcoes?.alimentador ?? null);
@@ -8068,7 +9427,8 @@ export function analisarManobraOperacional(equipamentoOuId, acao, opcoes = {}) {
         return { sucesso: true, permitido: false, status: "BLOQUEADA", equipamentoId, acao: comando, estado, motivo: "Equipamento indisponível ou em bypass." };
     }
     if (!ESTADOS_VALIDOS.includes(estado?.estado)) {
-        return { sucesso: true, permitido: null, status: "CONDICIONADA", equipamentoId, acao: comando, estado, motivo: "Estado físico desconhecido; confirmar a posição do equipamento antes de autorizar a manobra." };
+        return { sucesso: true, permitido: null, status: 
+"CONDICIONADA", equipamentoId, acao: comando, estado, motivo: "Estado físico desconhecido; confirmar a posição do equipamento antes de autorizar a manobra." };
     }
     const estadoDesejado = comando === "ABRIR" ? "ABERTO" : "FECHADO";
     return {
@@ -8076,7 +9436,8 @@ export function analisarManobraOperacional(equipamentoOuId, acao, opcoes = {}) {
         permitido: true,
         status: estado.estado === estadoDesejado ? "JA_NO_ESTADO_DESEJADO" : "VALIDADA_PARA_SIMULACAO",
         equipamentoId,
-        acao: comando,
+        acao: 
+comando,
         estadoAtual: estado,
         estadoProjetado: estadoDesejado,
         motivo: "Validação local concluída. Esta função apenas analisa; não envia comando a equipamento físico.",
@@ -8085,12 +9446,14 @@ export function analisarManobraOperacional(equipamentoOuId, acao, opcoes = {}) {
 
 export function analisarImpactoManobra(equipamentoOuId, acao, opcoes = {}) {
     const equipamentoId = typeof equipamentoOuId === "object"
-        ? obterIdEquipamento(equipamentoOuId)
+        ? 
+obterIdEquipamento(equipamentoOuId)
         : normalizarId(equipamentoOuId);
     const comando = normalizarTexto(acao);
     const equipamento = buscarEquipamentoBDGD(equipamentoId);
     if (!equipamento) return { sucesso: false, status: "EQUIPAMENTO_NAO_ENCONTRADO", equipamentoId, motivo: "Equipamento não localizado na BDGD carregada." };
-    if (!["ABRIR", "FECHAR"].includes(comando)) return { sucesso: false, status: "ACAO_INVALIDA", equipamentoId, motivo: "Ação deve ser ABRIR ou FECHAR." };
+    if (!["ABRIR", "FECHAR"].includes(comando)) return { sucesso: false, status: "ACAO_INVALIDA", 
+equipamentoId, motivo: "Ação deve ser ABRIR ou FECHAR." };
 
     const pacs = obterPacsEquipamento(equipamento);
     const estadoAtual = consultarEstadoEquipamento(equipamentoId);
@@ -8098,7 +9461,8 @@ export function analisarImpactoManobra(equipamentoOuId, acao, opcoes = {}) {
     estadosProjetados[obterChaveEstadoEquipamento(equipamentoId)] = {
         equipamentoId,
         estado: comando === "ABRIR" ? "ABERTO" : "FECHADO",
-        origem: "SIMULACAO_IMPACTO",
+        origem: 
+"SIMULACAO_IMPACTO",
     };
 
     const redesAntes = pacs.map(pac => ({ ponto: pac, rede: buscarRedeConectada(pac, { respeitarEstadoOperacional: true }) }));
@@ -8106,7 +9470,8 @@ export function analisarImpactoManobra(equipamentoOuId, acao, opcoes = {}) {
     return {
         sucesso: true,
         equipamentoId,
-        acao: comando,
+        acao: 
+comando,
         estadoAtual,
         estadoProjetado: comando === "ABRIR" ? "ABERTO" : "FECHADO",
         pacs,
@@ -8118,14 +9483,16 @@ export function analisarImpactoManobra(equipamentoOuId, acao, opcoes = {}) {
 }
 
 export function resumoRede() {
-    const topo = estadoRede.topologiaBDGD;
+    const topo = 
+estadoRede.topologiaBDGD;
     return {
         subestacoes: estadoRede.subestacoes.length,
         alimentadores: estadoRede.alimentadores.length || lista(topo?.alimentadores).length,
         trechos: estadoRede.trechos.length || lista(topo?.trechos).length,
         equipamentos: estadoRede.equipamentos.length || lista(topo?.equipamentosOperacionais ?? topo?.equipamentos).length,
         pontosBDGD: lista(topo?.pontos).length,
-        trechosBDGD: lista(topo?.trechos).length,
+        trechosBDGD: 
+lista(topo?.trechos).length,
         equipamentosBDGD: lista(topo?.equipamentosOperacionais).length || lista(topo?.equipamentos).length,
         interligacoesBDGD: lista(topo?.interligacoes).length,
         topologiaDisponivel: Boolean(topo),
@@ -8134,7 +9501,8 @@ export function resumoRede() {
 }
 
 // ==========================================================
-// OBJETO MODELO
+// OBJETO 
+MODELO
 // ==========================================================
 //
 // API pública do modelo de rede.
@@ -8146,7 +9514,8 @@ export function resumoRede() {
 //
 //     analisarRecomposicaoOcorrencia()
 //
-// Dessa forma evitamos alterar desnecessariamente os imports
+// Dessa forma evitamos alterar desnecessariamente os 
+imports
 // existentes do sistema.
 //
 // ==========================================================
@@ -8190,7 +9559,8 @@ export const modeloRede = {
     validarEquipamentoBDGD,
 
 
-    // ------------------------------------------------------
+    // 
+------------------------------------------------------
     // BUSCAS
     // ------------------------------------------------------
 
@@ -8236,7 +9606,8 @@ export const modeloRede = {
 
     normalizarEstadoEquipamento,
 
-    consultarEstadoEquipamento,
+    
+consultarEstadoEquipamento,
 
     listarEstadosEquipamentos,
 
@@ -8244,13 +9615,16 @@ export const modeloRede = {
 
     obterMapaEstadosEquipamentos,
 
+    calcularEstadosEnergizacaoTrechos,
+
     equipamentoEstaAberto,
 
     equipamentoEstaFechado,
 
     equipamentoEstaDisponivel,
 
-    executarManobraEquipamento,
+    
+executarManobraEquipamento,
 
     desligarEquipamento,
 
@@ -8296,7 +9670,8 @@ export const modeloRede = {
 
     // ------------------------------------------------------
     // ANÁLISES EXISTENTES
-    // ------------------------------------------------------
+    // 
+------------------------------------------------------
 
     analisarNormalizacao,
 
@@ -8311,7 +9686,8 @@ export const modeloRede = {
     // ESTADO OPERACIONAL / RESTAURAÇÃO
     // ------------------------------------------------------
 
-    consultarEstadoOperacional,
+    
+consultarEstadoOperacional,
 
     resetarEstadosEquipamentos,
 
@@ -8326,7 +9702,8 @@ export const modeloRede = {
 
 
     // ------------------------------------------------------
-    // NAVEGAÇÃO
+    // 
+NAVEGAÇÃO
     // ------------------------------------------------------
 
     buscarMontante,
@@ -8354,7 +9731,8 @@ export const modeloRede = {
     filtrarRedePorAlimentador,
 
 
-    // ------------------------------------------------------
+    // 
+------------------------------------------------------
     // FICHAS OPERACIONAIS
     // ------------------------------------------------------
 
@@ -8367,7 +9745,8 @@ export const modeloRede = {
     // RECOMPOSIÇÃO
     // ------------------------------------------------------
 
-    descobrirCandidatosRecomposicao,
+    
+descobrirCandidatosRecomposicao,
 
     analisarRecomposicaoOcorrencia
 
@@ -8381,5 +9760,4 @@ export const modeloRede = {
 export {
     estadoRede
 };
-
 
